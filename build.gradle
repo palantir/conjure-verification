@@ -39,10 +39,10 @@ apply plugin: 'com.palantir.git-version'
 apply plugin: 'com.palantir.baseline-config'
 apply from: 'gradle/publish-rust-dist.gradle'
 
-version gitVersion()
-group 'com.palantir.conjure.verification'
-
 allprojects {
+    version gitVersion()
+    group 'com.palantir.conjure.verification'
+
     repositories {
         mavenCentral()
         maven {
