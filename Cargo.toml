@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "verification-server",
+    "verification-error",
+    "verification-error-derive",
+    "verification-http"
+]
+
+# Enable line number debuginfo on release builds for backtraces
+[profile.release]
+debug = 1

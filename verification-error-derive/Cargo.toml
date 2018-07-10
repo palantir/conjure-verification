@@ -1,0 +1,13 @@
+[package]
+name = "conjure-verification-error-derive"
+version = "0.1.0"
+authors = ["Steven Fackler <sfackler@palantir.com>"]
+license-file = "../LICENSE"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "0.14"
+quote = "0.6"
+proc-macro2 = "0.4"

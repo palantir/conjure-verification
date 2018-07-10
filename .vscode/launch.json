@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug",
+            "program": "${cargo:program}",
+            "args": [
+                "${workspaceRoot}/verification-api/build/test-cases.json"
+            ],
+            "cwd": "${workspaceRoot}",
+            "cargo": {
+                "args": [
+                    "build",
+                ]
+            }
+        }
+    ]
+}

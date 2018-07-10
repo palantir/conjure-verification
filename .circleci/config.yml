@@ -1,0 +1,90 @@
+restore_registry: &RESTORE_REGISTRY
+  restore_cache:
+    key: registry-v1
+save_registry: &SAVE_REGISTRY
+  save_cache:
+    key: registry-v1-{{ .BuildNum }}
+    paths:
+    - /root/.cargo/registry/index
+deps_key: &DEPS_KEY
+  key: deps-v1-{{ checksum "~/rust-version" }}-{{ checksum "Cargo.lock" }}
+restore_deps: &RESTORE_DEPS
+  restore_cache:
+    <<: *DEPS_KEY
+save_deps: &SAVE_DEPS
+  save_cache:
+    <<: *DEPS_KEY
+    paths:
+    - target
+    - /root/.cargo/registry/cache
+
+version: 2
+jobs:
+  cargo-build:
+    docker:
+    - image: circleci/rust:1.27
+    environment: {}
+      # RUSTFLAGS: -D warnings
+    steps:
+    - checkout
+    - run: rustc --version > ~/rust-version
+    - *RESTORE_REGISTRY
+    - *RESTORE_DEPS
+    - run: rustup component add rustfmt-preview
+    - run: cargo fmt --all -- --write-mode check
+    - run: cargo test && cargo build --release
+    - *SAVE_DEPS
+    - *SAVE_REGISTRY
+    - persist_to_workspace:
+        root: .
+        paths: [ . ]
+
+  publish:
+    docker:
+      - image: circleci/openjdk:8u171-jdk
+    steps:
+      - attach_workspace: { at: . }
+      - restore_cache:
+          key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      - restore_cache:
+          key: gradle-cache-v2-{{ checksum "build.gradle" }}
+      - deploy:
+          command: |
+            if [[ "${CIRCLE_BRANCH}" == "develop" || "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
+              ./gradlew --stacktrace --continue publish
+            fi
+
+  gradle-build:
+    docker:
+      - image: circleci/openjdk:8u171-jdk-node-browsers
+    steps:
+      - checkout
+      - restore_cache:
+          key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      - restore_cache:
+          key: gradle-cache-v2-{{ checksum "build.gradle" }}
+      - run: ./gradlew --parallel build
+      - save_cache:
+          key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+          paths:
+            - ~/.gradle/wrapper
+      - save_cache:
+          key: gradle-cache-v2-{{ checksum "build.gradle" }}
+          paths:
+            - ~/.gradle/caches
+      - store_artifacts:
+          path: ~/poms
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - cargo-build:
+          filters: { tags: { only: /.*/ } }
+      - gradle-build:
+          filters: { tags: { only: /.*/ } }
+      - publish:
+          requires:
+            - cargo-build
+            - gradle-build
+          filters: { tags: { only: /.*/ } }

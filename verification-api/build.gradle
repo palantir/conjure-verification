@@ -1,0 +1,36 @@
+apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
+apply plugin: 'maven-publish'
+apply plugin: 'com.palantir.conjure'
+
+dependencies {
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6'
+    compile 'com.palantir.conjure:conjure-core:4.0.0'
+    compile 'com.palantir.remoting3:jackson-support:3.33.0'
+    compile project(':verification-api:verification-api-objects')
+}
+
+task compileTestCasesJson(type: JavaExec) {
+   main = "com.palantir.conjure.verification.CompileTestCasesJson"
+   classpath = sourceSets.main.runtimeClasspath
+
+   inputs.file '../test-cases.yml'
+   outputs.file "$buildDir/test-cases.json"
+}
+
+publishing {
+    publications {
+        testCases(MavenPublication) {
+            artifact (compileTestCasesJson.outputs.files.singleFile) {
+                extension 'json'
+                builtBy compileTestCasesJson
+            }
+        }
+        conjureIr(MavenPublication) {
+            artifact (compileIr.outputs.files.singleFile) {
+                extension 'json'
+                builtBy compileIr
+            }
+        }
+    }
+}
