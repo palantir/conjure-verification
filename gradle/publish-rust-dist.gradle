@@ -21,16 +21,25 @@ bintrayUpload.onlyIf {
     versionDetails().isCleanTag
 }
 
-task distTar(type: Tar) {
+task distTarLinux(type: Tar) {
     from "target/release/conjure-verification-server"
-    baseName = 'verification-server'
+    baseName = 'verification-server-darwin'
+    compression = Compression.GZIP
+}
+
+task disTarOsx(type: Tar) {
+    from "target/x86_64-apple-darwin/release/conjure-verification-server"
+    baseName = 'verification-server-osx'
     compression = Compression.GZIP
 }
 
 publishing {
     publications {
-        dist(MavenPublication) {
-            artifact distTar
+        distTarLinux(MavenPublication) {
+            artifact distTarLinux
+        }
+        distTarOsx(MavenPublication) {
+            artifact distTarOsx
         }
     }
 }

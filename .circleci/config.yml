@@ -39,27 +39,27 @@ jobs:
     - persist_to_workspace:
         root: .
         paths: [ ./target/release/ ]
-#
-#  cargo-build-osx:
-#    macos:
-#      xcode: "9.2.0"
-#    environment:
-#      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
-#      FL_OUTPUT_DIR: output
-#    steps:
-#    - checkout
-#    - run: rustc --version > ~/rust-version
-#    - run: uname > ~/rust-system
-#    - *RESTORE_REGISTRY
-#    - *RESTORE_DEPS
-#    - run: cargo build --target x86_64-apple-darwin --release
-#    - *SAVE_DEPS
-#    - *SAVE_REGISTRY
-#    - persist_to_workspace:
-#        root: .
-#        paths: [ ./target/x86_64-apple-darwin ]
-#    - store_artifacts:
-#        path: ./target/x86_64-apple-darwin/release/conjure-verification-server
+
+  cargo-build-osx:
+    macos:
+      xcode: "9.2.0"
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
+      FL_OUTPUT_DIR: output
+    steps:
+    - checkout
+    - run: rustc --version > ~/rust-version
+    - run: uname > ~/rust-system
+    - *RESTORE_REGISTRY
+    - *RESTORE_DEPS
+    - run: cargo build --target x86_64-apple-darwin --release
+    - *SAVE_DEPS
+    - *SAVE_REGISTRY
+    - persist_to_workspace:
+        root: .
+        paths: [ ./target/x86_64-apple-darwin ]
+    - store_artifacts:
+        path: ./target/x86_64-apple-darwin/release/conjure-verification-server
 
   publish:
     docker:
@@ -104,13 +104,13 @@ workflows:
     jobs:
       - cargo-build-linux:
           filters: { tags: { only: /.*/ } }
-#      - cargo-build-osx:
-#          filters: { tags: { only: /.*/ } }
+      - cargo-build-osx:
+          filters: { tags: { only: /.*/ } }
       - gradle-build:
           filters: { tags: { only: /.*/ } }
       - publish:
           requires:
             - cargo-build-linux
-#            - cargo-build-osx
+            - cargo-build-osx
             - gradle-build
           filters: { tags: { only: /.*/ } }
