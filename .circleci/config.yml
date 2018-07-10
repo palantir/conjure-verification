@@ -24,7 +24,7 @@ jobs:
     docker:
     - image: circleci/rust:1.27
     environment: {}
-      # RUSTFLAGS: -D warnings
+      RUSTFLAGS: -D warnings
     steps:
     - checkout
     - run: rustc --version > ~/rust-version
