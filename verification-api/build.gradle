@@ -22,8 +22,6 @@ publishing {
     publications {
         conjureIr(MavenPublication) {
             artifactId project.name
-            groupId rootProject.group
-            version rootProject.version
             artifact (compileIr.outputs.files.singleFile) {
                 extension 'conjure.json'
                 builtBy compileIr
@@ -36,8 +34,6 @@ publishing {
     publications {
         testCases(MavenPublication) {
             artifactId "test-cases"
-            groupId rootProject.group
-            version rootProject.version
             artifact (compileTestCasesJson.outputs.files.singleFile) {
                 extension 'json'
                 builtBy compileTestCasesJson
