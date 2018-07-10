@@ -17,6 +17,15 @@ save_deps: &SAVE_DEPS
     paths:
     - target
     - ~/.cargo/registry/cache
+restore_rustup: &RESTORE_RUSTUP
+  restore_cache:
+    key: rustup-v1-{{ .Environment "RUSTUP_TOOLCHAIN" }}
+save_rustup: &SAVE_RUSTUP
+  save_cache:
+    key: rustup-v1-{{ .Environment "RUSTUP_TOOLCHAIN" }}
+    paths:
+    - ~/.rustup
+
 
 version: 2
 jobs:
@@ -46,13 +55,20 @@ jobs:
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
+      RUSTUP_TOOLCHAIN: 1.27.0-x86_64-apple-darwin
     steps:
     - checkout
+    - *RESTORE_RUSTUP
+    - run:
+        name: Install rustup
+        command: curl https://sh.rustup.rs -sSf | sh
+    - run: rustup default $RUSTUP_TOOLCHAIN
+    - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
     - run: uname > ~/rust-system
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
-    - run: cargo build --target x86_64-apple-darwin --release
+    - run: cargo build --target $RUSTUP_TOOLCHAIN --release
     - *SAVE_DEPS
     - *SAVE_REGISTRY
     - persist_to_workspace:
