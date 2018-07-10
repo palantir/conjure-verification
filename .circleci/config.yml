@@ -1,6 +1,6 @@
 restore_registry: &RESTORE_REGISTRY
   restore_cache:
-    key: registry-v1-{{ checksum "~/rust-system" }}-{{ .BuildNum }}
+    key: registry-v1-{{ checksum "~/rust-system" }}-
 save_registry: &SAVE_REGISTRY
   save_cache:
     key: registry-v1-{{ checksum "~/rust-system" }}-{{ .BuildNum }}
