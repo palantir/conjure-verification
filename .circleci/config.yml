@@ -1,13 +1,13 @@
 restore_registry: &RESTORE_REGISTRY
   restore_cache:
-    key: registry-v1-{{ checksum "~/rust-system" }}-
+    key: registry-v1-{{ arch }}-
 save_registry: &SAVE_REGISTRY
   save_cache:
-    key: registry-v1-{{ checksum "~/rust-system" }}-{{ .BuildNum }}
+    key: registry-v1-{{ arch }}-{{ .BuildNum }}
     paths:
     - ~/.cargo/registry/index
 deps_key: &DEPS_KEY
-  key: deps-v1-{{ checksum "~/rust-version" }}-{{ checksum "~/rust-system" }}-{{ checksum "Cargo.lock" }}
+  key: deps-v1-{{ arch }}-{{ checksum "~/rust-version" }}-{{ checksum "Cargo.lock" }}
 restore_deps: &RESTORE_DEPS
   restore_cache:
     <<: *DEPS_KEY
@@ -19,10 +19,10 @@ save_deps: &SAVE_DEPS
     - ~/.cargo/registry/cache
 restore_rustup: &RESTORE_RUSTUP
   restore_cache:
-    key: rustup-v1-{{ .Environment.RUSTUP_TOOLCHAIN }}
+    key: rustup-v1-{{ arch }}-{{ .Environment.RUSTUP_TOOLCHAIN }}
 save_rustup: &SAVE_RUSTUP
   save_cache:
-    key: rustup-v1-{{ .Environment.RUSTUP_TOOLCHAIN }}
+    key: rustup-v1-{{ arch }}-{{ .Environment.RUSTUP_TOOLCHAIN }}
     paths:
     - ~/.rustup
 
@@ -37,7 +37,6 @@ jobs:
     steps:
     - checkout
     - run: rustc --version > ~/rust-version
-    - run: uname > ~/rust-system
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
     - run: rustup component add rustfmt-preview
@@ -65,7 +64,6 @@ jobs:
     - run: rustup default $RUSTUP_TOOLCHAIN
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
-    - run: uname > ~/rust-system
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
     - run: cargo build --target $RUSTUP_TOOLCHAIN --release
