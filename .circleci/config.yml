@@ -23,7 +23,7 @@ jobs:
   cargo-build:
     docker:
     - image: circleci/rust:1.27
-    environment: {}
+    environment:
       RUSTFLAGS: -D warnings
     steps:
     - checkout
