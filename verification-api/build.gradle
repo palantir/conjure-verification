@@ -22,16 +22,23 @@ build.dependsOn compileTestCasesJson
 
 publishing {
     publications {
+        conjureIr(MavenPublication) {
+            artifactId project.name
+            artifact (compileIr.outputs.files.singleFile) {
+                extension 'conjure.json'
+                builtBy compileIr
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
         testCases(MavenPublication) {
+            artifactId "test-cases"
             artifact (compileTestCasesJson.outputs.files.singleFile) {
                 extension 'json'
                 builtBy compileTestCasesJson
-            }
-        }
-        conjureIr(MavenPublication) {
-            artifact (compileIr.outputs.files.singleFile) {
-                extension 'json'
-                builtBy compileIr
             }
         }
     }
