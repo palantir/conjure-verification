@@ -18,6 +18,8 @@ task compileTestCasesJson(type: JavaExec) {
    outputs.file "$buildDir/test-cases.json"
 }
 
+build.dependsOn compileTestCasesJson
+
 publishing {
     publications {
         testCases(MavenPublication) {

@@ -1,13 +1,13 @@
 restore_registry: &RESTORE_REGISTRY
   restore_cache:
-    key: registry-v1
+    key: registry-v1-{{ .BuildNum }}-{{ checksum "~/rust-system" }}
 save_registry: &SAVE_REGISTRY
   save_cache:
-    key: registry-v1-{{ .BuildNum }}
+    key: registry-v1-{{ .BuildNum }}-{{ checksum "~/rust-system" }}
     paths:
-    - /root/.cargo/registry/index
+    - ~/.cargo/registry/index
 deps_key: &DEPS_KEY
-  key: deps-v1-{{ checksum "~/rust-version" }}-{{ checksum "Cargo.lock" }}
+  key: deps-v1-{{ checksum "~/rust-version" }}-{{ checksum "Cargo.lock" }}-{{ checksum "~/rust-system" }}
 restore_deps: &RESTORE_DEPS
   restore_cache:
     <<: *DEPS_KEY
@@ -16,11 +16,11 @@ save_deps: &SAVE_DEPS
     <<: *DEPS_KEY
     paths:
     - target
-    - /root/.cargo/registry/cache
+    - ~/.cargo/registry/cache
 
 version: 2
 jobs:
-  cargo-build:
+  cargo-build-linux:
     docker:
     - image: circleci/rust:1.27
     environment: {}
@@ -28,6 +28,7 @@ jobs:
     steps:
     - checkout
     - run: rustc --version > ~/rust-version
+    - run: uname > ~/rust-system
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
     - run: rustup component add rustfmt-preview
@@ -37,12 +38,34 @@ jobs:
     - *SAVE_REGISTRY
     - persist_to_workspace:
         root: .
-        paths: [ . ]
+        paths: [ ./target/release/ ]
+
+  cargo-build-osx:
+    macos:
+      xcode: "9.2.0"
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
+      FL_OUTPUT_DIR: output
+    steps:
+    - checkout
+    - run: rustc --version > ~/rust-version
+    - run: uname > ~/rust-system
+    - *RESTORE_REGISTRY
+    - *RESTORE_DEPS
+    - run: cargo build --target x86_64-apple-darwin --release
+    - *SAVE_DEPS
+    - *SAVE_REGISTRY
+    - persist_to_workspace:
+        root: .
+        paths: [ ./target/x86_64-apple-darwin ]
+    - store_artifacts:
+        path: ./target/x86_64-apple-darwin/release/conjure-verification-server
 
   publish:
     docker:
       - image: circleci/openjdk:8u171-jdk
     steps:
+      - checkout
       - attach_workspace: { at: . }
       - restore_cache:
           key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
@@ -79,12 +102,15 @@ workflows:
   version: 2
   build:
     jobs:
-      - cargo-build:
+      - cargo-build-linux:
           filters: { tags: { only: /.*/ } }
+#      - cargo-build-osx:
+#          filters: { tags: { only: /.*/ } }
       - gradle-build:
           filters: { tags: { only: /.*/ } }
       - publish:
           requires:
-            - cargo-build
+            - cargo-build-linux
+#            - cargo-build-osx
             - gradle-build
           filters: { tags: { only: /.*/ } }
