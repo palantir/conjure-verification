@@ -19,10 +19,10 @@ save_deps: &SAVE_DEPS
     - ~/.cargo/registry/cache
 restore_rustup: &RESTORE_RUSTUP
   restore_cache:
-    key: rustup-v1-{{ .Environment "RUSTUP_TOOLCHAIN" }}
+    key: rustup-v1-{{ .Environment.RUSTUP_TOOLCHAIN }}
 save_rustup: &SAVE_RUSTUP
   save_cache:
-    key: rustup-v1-{{ .Environment "RUSTUP_TOOLCHAIN" }}
+    key: rustup-v1-{{ .Environment.RUSTUP_TOOLCHAIN }}
     paths:
     - ~/.rustup
 
