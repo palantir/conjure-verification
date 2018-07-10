@@ -1,13 +1,13 @@
 restore_registry: &RESTORE_REGISTRY
   restore_cache:
-    key: registry-v1-{{ .BuildNum }}-{{ checksum "~/rust-system" }}
+    key: registry-v1-{{ checksum "~/rust-system" }}-{{ .BuildNum }}
 save_registry: &SAVE_REGISTRY
   save_cache:
-    key: registry-v1-{{ .BuildNum }}-{{ checksum "~/rust-system" }}
+    key: registry-v1-{{ checksum "~/rust-system" }}-{{ .BuildNum }}
     paths:
     - ~/.cargo/registry/index
 deps_key: &DEPS_KEY
-  key: deps-v1-{{ checksum "~/rust-version" }}-{{ checksum "Cargo.lock" }}-{{ checksum "~/rust-system" }}
+  key: deps-v1-{{ checksum "~/rust-version" }}-{{ checksum "~/rust-system" }}-{{ checksum "Cargo.lock" }}
 restore_deps: &RESTORE_DEPS
   restore_cache:
     <<: *DEPS_KEY
