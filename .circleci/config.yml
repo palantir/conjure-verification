@@ -114,7 +114,11 @@ jobs:
           key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
       - restore_cache:
           key: gradle-cache-v2-{{ checksum "build.gradle" }}
-      - deploy: ./gradlew --stacktrace --continue publish
+      - deploy:
+          command: |
+            if [[ "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
+              ./gradlew --stacktrace --continue publish
+            fi
 
 workflows:
   version: 2
@@ -131,4 +135,4 @@ workflows:
             - cargo-build-linux
             - cargo-build-osx
             - gradle-build
-          filters: { tags: { only: /.*/ }, branches: { ignore: /.*/ } }
+          filters: { tags: { only: /.*/ } }
