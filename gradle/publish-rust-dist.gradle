@@ -27,7 +27,7 @@ task distTarLinux(type: Tar) {
     compression = Compression.GZIP
 }
 
-task disTarOsx(type: Tar) {
+task distTarOsx(type: Tar) {
     from "target/x86_64-apple-darwin/release/conjure-verification-server"
     baseName = 'verification-server-osx'
     compression = Compression.GZIP
