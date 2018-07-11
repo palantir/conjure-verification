@@ -24,7 +24,7 @@ Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github
     ```
 - Set up rustup to use the nightly toolchain by default (note: `stable` works too)
     ```
-    rustup default nightly
+    rustup default stable
     ```
 - Create an ssh key if you don't have one, and add it to [github](https://github.com/settings/keys)
 - make sure the key is added to the ssh-agent, so that cargo can login to github, in order to access the palantir repository index
