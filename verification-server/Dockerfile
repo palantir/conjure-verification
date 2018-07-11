@@ -7,6 +7,7 @@ RUN set -eux; \
     mkdir -p /opt/palantir/services/conjure-verification-server
 
 ADD conjure-verification-server /opt/palantir/services/conjure-verification-server/
+ADD test-cases.json /opt/palantir/services/conjure-verification-server/
 
 RUN chmod +x /opt/palantir/services/conjure-verification-server/conjure-verification-server
 
@@ -14,4 +15,4 @@ EXPOSE 8000
 
 WORKDIR /opt/palantir/services/conjure-verification-server
 ENTRYPOINT ["dumb-init", "--"]
-CMD /opt/palantir/services/conjure-verification-server/conjure-verification-server
+CMD ["/opt/palantir/services/conjure-verification-server/conjure-verification-server", "test-cases.json"]
