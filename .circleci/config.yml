@@ -19,10 +19,10 @@ save_deps: &SAVE_DEPS
     - ~/.cargo/registry/cache
 restore_rustup: &RESTORE_RUSTUP
   restore_cache:
-    key: rustup-v2-{{ arch }}-{{ checksum "~/rust-toolchain" }}
+    key: rustup-v2-{{ arch }}-{{ checksum "/tmp/rust-toolchain" }}
 save_rustup: &SAVE_RUSTUP
   save_cache:
-    key: rustup-v2-{{ arch }}-{{ checksum "~/rust-toolchain" }}
+    key: rustup-v2-{{ arch }}-{{ checksum "/tmp/rust-toolchain" }}
     paths:
     - ~/.rustup
     - ~/.cargo/bin
@@ -62,7 +62,7 @@ jobs:
     - run:
         name: 'Add ~/.cargo/bin to the PATH'
         command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
-    - run: echo "$RUST_CHANNEL-$TARGET" > ~/rust-toolchain
+    - run: echo "$RUST_CHANNEL-$TARGET" > /tmp/rust-toolchain
     - *RESTORE_RUSTUP
     - run:
         name: Install rustup
@@ -70,7 +70,7 @@ jobs:
           if [[ ! -e ~/.cargo/bin/rustup ]]; then
              curl https://sh.rustup.rs -sSf | sh -s -- --no-modify-path --default-toolchain none -y
           fi
-    - run: rustup default $(cat ~/rust-toolchain)
+    - run: rustup default $(cat /tmp/rust-toolchain)
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
