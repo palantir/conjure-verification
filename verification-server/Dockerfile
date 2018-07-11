@@ -1,0 +1,16 @@
+FROM debian:stretch-slim
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends dumb-init; \
+    rm -rf /var/lib/apt/lists/*;
+
+ADD conjure-verification-server /opt/palantir/services/conjure-verification-server
+
+EXPOSE 8000
+
+WORKDIR /opt/palantir/services/conjure-verification-server
+ENTRYPOINT ["dumb-init", "--"]
+CMD /opt/palantir/services/conjure-verification-server
+
+
