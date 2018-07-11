@@ -1,6 +1,6 @@
 restore_registry: &RESTORE_REGISTRY
   restore_cache:
-    key: registry-v1-{{ arch }}
+    key: registry-v1-{{ arch }}-
 save_registry: &SAVE_REGISTRY
   save_cache:
     key: registry-v1-{{ arch }}-{{ .BuildNum }}
@@ -118,6 +118,8 @@ jobs:
           command: |
             if [[ "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
               ./gradlew --stacktrace --continue publish
+            else
+              ./gradlew --stacktrace publishToMavenLocal
             fi
 
 workflows:
