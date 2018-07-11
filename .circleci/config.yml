@@ -35,7 +35,7 @@ jobs:
     - image: circleci/rust:1.27
     environment:
       RUSTFLAGS: -D warnings
-      // rustc --print target-list | pr -tw100 --columns 3
+      ## rustc --print target-list | pr -tw100 --columns 3
       TARGET: x86_64-unknown-linux-gnu
     steps:
     - checkout
