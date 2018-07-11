@@ -149,7 +149,7 @@ client:
         - '{"value":{}}'
         # - '{"value":null}'
         #   tag: "!lenient"
-    receiveSetExample:
+    receiveSetStringExample:
       positive:
         - '{"value":[]}'
         - '{"value":["","a","b","c"]}'
@@ -161,6 +161,13 @@ client:
         #   tag: "!lenient"
         # TODO SPEC: behavior for an object declared as a "Set" that receives a list with multiple elements that are equal.
         - '{"value":["a","a"]}'
+    receiveSetDoubleExample:
+      positive:
+        - '{"value":[]}'
+        - '{"value":[1.100, 1.2, 1.3]}'
+        - '{}'
+      negative:
+        - '{"value":[1.1, 1.10, 01.100]}'
     receiveMapExample:
       positive:
         - '{"value":{"key":"value","key2":"value2"}}'
