@@ -12,7 +12,7 @@ bintray {
         name = rootProject.name
         userOrg = 'palantir'
         licenses = ['Apache-2.0']
-        publications = ['dist']
+        publications = ['distTarLinux', 'distTarOsx']
     }
 }
 
@@ -21,27 +21,31 @@ bintrayUpload.onlyIf {
     versionDetails().isCleanTag
 }
 
-task distTarRust(type: Tar) {
-    baseName = 'verification-server'
-    into("bin/x86_64-unknown-linux-gnu") {
-        from ("target/x86_64-unknown-linux-gnu/release/conjure-verification-server") {
-            rename "conjure-verification-server", "verification-server"
-        }
-    }
+task distTarLinux(type: Tar) {
+    from "target/release/conjure-verification-server"
+    baseName = 'verification-server-linux'
+    compression = Compression.GZIP
+}
 
-    into("bin/x86_64-apple-darwin") {
-        from ("target/x86_64-apple-darwin/release/conjure-verification-server") {
-            rename "conjure-verification-server", "verification-server"
-        }
-    }
+task distTarOsx(type: Tar) {
+    from "target/x86_64-apple-darwin/release/conjure-verification-server"
+    baseName = 'verification-server-osx'
     compression = Compression.GZIP
 }
 
 publishing {
     publications {
-        dist(MavenPublication) {
+        distTarLinux(MavenPublication) {
             artifactId "verification-server"
-            artifact distTarRust
+            artifact (tasks.distTarLinux) {
+                classifier "linux"
+            }
+        }
+        distTarOsx(MavenPublication) {
+            artifactId "verification-server"
+            artifact (tasks.distTarOsx) {
+                classifier "osx"
+            }
         }
     }
 }
