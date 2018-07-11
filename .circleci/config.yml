@@ -57,10 +57,16 @@ jobs:
       RUSTUP_TOOLCHAIN: 1.27.0-x86_64-apple-darwin
     steps:
     - checkout
+    - run:
+        name: 'Add ~/.cargo/bin to the PATH'
+        command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a ~/.profile ~/.bash_profile
     - *RESTORE_RUSTUP
     - run:
         name: Install rustup
-        command: curl https://sh.rustup.rs -sSf | sh
+        command: |
+          if [[ ! -e ~/.cargo/bin/rustup ]]; then
+             echo 1 | sh <(curl https://sh.rustup.rs -sSf) -- --no-modify-path --default-toolchain none
+          fi
     - run: rustup default $RUSTUP_TOOLCHAIN
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
