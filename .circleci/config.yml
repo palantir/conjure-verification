@@ -63,10 +63,12 @@ jobs:
     - run: ./gradlew compileTestCasesJson
     - attach_workspace: { at: . } # this gets the release binary from the 'cargo-build-linux' job
     - run: ./scripts/docker_build.sh
-    - run: docker run palantirtechnologies/conjure-verification-server:$(git describe --tags --always --first-parent)
+    # commented out because when the verification-server comes up, it stays up and hangs the build!
+    # - run: docker run palantirtechnologies/conjure-verification-server:$(git describe --tags --always --first-parent)
     - deploy:
         command: |
           if [[ "${CIRCLE_BRANCH}" == "develop" || "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
             docker push palantirtechnologies/conjure-verification-server:$(git describe --tags --always --first-parent)
           fi
 
