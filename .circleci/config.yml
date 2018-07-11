@@ -35,6 +35,8 @@ jobs:
     - image: circleci/rust:1.27
     environment:
       RUSTFLAGS: -D warnings
+      ## rustc --print target-list | pr -tw100 --columns 3
+      TARGET: x86_64-unknown-linux-gnu
     steps:
     - checkout
     - run: rustc --version > ~/rust-version
@@ -42,26 +44,23 @@ jobs:
     - *RESTORE_DEPS
     - run: rustup component add rustfmt-preview
     - run: cargo fmt --all -- --write-mode check
-    - run: cargo test && cargo build --release
+    - run: cargo test && cargo build --target $TARGET --release
     - *SAVE_DEPS
     - *SAVE_REGISTRY
     - persist_to_workspace:
         root: .
-        paths: [ ./target/release/ ]
+        paths: [ ./target/x86_64-unknown-linux-gnu/release/conjure-verification-server ]
 
   cargo-build-osx:
     macos:
       xcode: "9.2.0"
     environment:
-      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
-      FL_OUTPUT_DIR: output
       RUST_CHANNEL: 1.27.0
+      RUSTFLAGS: -D warnings
       TARGET: x86_64-apple-darwin
     steps:
     - checkout
-    - run:
-        name: 'Add ~/.cargo/bin to the PATH'
-        command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
+    - run: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
     - run: echo "$RUST_CHANNEL-$TARGET" > /tmp/rust-toolchain
     - *RESTORE_RUSTUP
     - run:
@@ -80,25 +79,7 @@ jobs:
     - *SAVE_REGISTRY
     - persist_to_workspace:
         root: .
-        paths: [ ./target/x86_64-apple-darwin ]
-    - store_artifacts:
-        path: ./target/x86_64-apple-darwin/release/conjure-verification-server
-
-  publish:
-    docker:
-      - image: circleci/openjdk:8u171-jdk
-    steps:
-      - checkout
-      - attach_workspace: { at: . }
-      - restore_cache:
-          key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
-      - restore_cache:
-          key: gradle-cache-v2-{{ checksum "build.gradle" }}
-      - deploy:
-          command: |
-            if [[ "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
-              ./gradlew --stacktrace --continue publish
-            fi
+        paths: [ ./target/x86_64-apple-darwin/release/conjure-verification-server ]
 
   gradle-build:
     docker:
@@ -120,6 +101,26 @@ jobs:
             - ~/.gradle/caches
       - store_artifacts:
           path: ~/poms
+
+  publish:
+    docker:
+      - image: circleci/openjdk:8u171-jdk
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
+    steps:
+      - checkout
+      - attach_workspace: { at: . }
+      - restore_cache:
+          key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      - restore_cache:
+          key: gradle-cache-v2-{{ checksum "build.gradle" }}
+      - deploy:
+          command: |
+            if [[ "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
+              ./gradlew --stacktrace --continue publish
+            else
+              ./gradlew --stacktrace publishToMavenLocal
+            fi
 
 workflows:
   version: 2
