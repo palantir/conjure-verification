@@ -12,7 +12,7 @@ bintray {
         name = rootProject.name
         userOrg = 'palantir'
         licenses = ['Apache-2.0']
-        publications = ['dist']
+        publications = ['distTarLinux', 'distTarOsx']
     }
 }
 
