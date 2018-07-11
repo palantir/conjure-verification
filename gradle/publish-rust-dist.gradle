@@ -23,7 +23,7 @@ bintrayUpload.onlyIf {
 
 task distTarLinux(type: Tar) {
     from "target/release/conjure-verification-server"
-    baseName = 'verification-server-darwin'
+    baseName = 'verification-server-linux'
     compression = Compression.GZIP
 }
 
