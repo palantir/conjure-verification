@@ -52,11 +52,16 @@ jobs:
 
   publish-docker:
     docker:
-    - image: circleci/rust:1.27
+    - image: circleci/openjdk:8u171-jdk
     steps:
     - setup_remote_docker
     - checkout
-    - attach_workspace: { at: . }
+    - restore_cache:
+        key: gradle-wrapper-v2-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+    - restore_cache:
+        key: gradle-cache-v2-{{ checksum "build.gradle" }}
+    - run: ./gradlew compileTestCasesJson
+    - attach_workspace: { at: . } # this gets the release binary from the 'cargo-build-linux' job
     - run: ./scripts/docker_build.sh
     - run: docker run palantirtechnologies/conjure-verification-server:$(git describe --tags --always --first-parent)
     - deploy:
