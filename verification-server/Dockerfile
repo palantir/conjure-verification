@@ -15,5 +15,3 @@ EXPOSE 8000
 WORKDIR /opt/palantir/services/conjure-verification-server
 ENTRYPOINT ["dumb-init", "--"]
 CMD /opt/palantir/services/conjure-verification-server/conjure-verification-server
-
-

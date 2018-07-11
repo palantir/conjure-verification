@@ -30,6 +30,7 @@ save_rustup: &SAVE_RUSTUP
 
 version: 2
 jobs:
+
   cargo-build-linux:
     docker:
     - image: circleci/rust:1.27
@@ -48,6 +49,15 @@ jobs:
     - persist_to_workspace:
         root: .
         paths: [ ./target/release/ ]
+
+  publish-docker:
+    docker:
+    - image: circleci/rust:1.27
+    steps:
+    - setup_remote_docker
+    - checkout
+    - attach_workspace: { at: . }
+    - run: ./scripts/docker_build.sh
 
   cargo-build-osx:
     macos:
@@ -130,6 +140,10 @@ workflows:
       - cargo-build-osx:
           filters: { tags: { only: /.*/ } }
       - gradle-build:
+          filters: { tags: { only: /.*/ } }
+      - publish-docker:
+          requires:
+            - cargo-build-linux
           filters: { tags: { only: /.*/ } }
       - publish:
           requires:
