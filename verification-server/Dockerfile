@@ -15,5 +15,5 @@ RUN chmod +x /opt/palantir/services/conjure-verification-server/service/bin/conj
 EXPOSE 8000
 
 WORKDIR /opt/palantir/services/conjure-verification-server
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["service/bin/conjure-verification-server", "var/conf/test-cases.json"]
+ENTRYPOINT ["dumb-init", "--", "service/bin/conjure-verification-server"]
+CMD ["var/conf/test-cases.json"]
