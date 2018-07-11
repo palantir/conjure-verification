@@ -4,15 +4,16 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends dumb-init; \
     rm -rf /var/lib/apt/lists/*; \
-    mkdir -p /opt/palantir/services/conjure-verification-server
+    mkdir -p /opt/palantir/services/conjure-verification-server/service/bin; \
+    mkdir -p /opt/palantir/services/conjure-verification-server/var/conf
 
-ADD conjure-verification-server /opt/palantir/services/conjure-verification-server/
-ADD test-cases.json /opt/palantir/services/conjure-verification-server/
+ADD conjure-verification-server /opt/palantir/services/conjure-verification-server/service/bin
+ADD test-cases.json /opt/palantir/services/conjure-verification-server/var/conf
 
-RUN chmod +x /opt/palantir/services/conjure-verification-server/conjure-verification-server
+RUN chmod +x /opt/palantir/services/conjure-verification-server/service/bin/conjure-verification-server
 
 EXPOSE 8000
 
 WORKDIR /opt/palantir/services/conjure-verification-server
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["/opt/palantir/services/conjure-verification-server/conjure-verification-server", "test-cases.json"]
+CMD ["service/bin/conjure-verification-server", "var/conf/test-cases.json"]
