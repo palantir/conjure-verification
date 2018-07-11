@@ -36,10 +36,16 @@ task distTarOsx(type: Tar) {
 publishing {
     publications {
         distTarLinux(MavenPublication) {
-            artifact distTarLinux
+            artifactId "verification-server"
+            artifact (tasks.distTarLinux) {
+                classifier "linux"
+            }
         }
         distTarOsx(MavenPublication) {
-            artifact distTarOsx
+            artifactId "verification-server"
+            artifact (tasks.distTarOsx) {
+                classifier "osx"
+            }
         }
     }
 }
