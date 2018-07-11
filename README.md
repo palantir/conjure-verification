@@ -4,6 +4,15 @@ Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github
 
 [test-cases.yml](./test-cases.yml) contains a variety of positive and negative tests.  It refers to various Conjure-defined services defined in the API project.
 
+## docker image
+
+A docker image containing the server and an embedded `test-cases.json` is published to: https://hub.docker.com/r/palantirtechnologies/conjure-verification-server/.
+
+```
+$ docker run palantirtechnologies/conjure-verification-server:0.2.0
+Listening on http://127.0.0.1:8000
+```
+
 ## Running the server
 
 - Ensure you've installed `rustup` as indicated in the [Development](#development) section
