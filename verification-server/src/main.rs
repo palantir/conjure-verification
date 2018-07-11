@@ -54,7 +54,9 @@ use resource::SpecTestResource;
 use router::Binder;
 use router::Router;
 use std::env;
+use std::env::VarError;
 use std::fs::File;
+use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
@@ -73,6 +75,11 @@ mod test_spec;
 fn main() {
     pretty_env_logger::init();
     let test_cases = read_test_cases();
+    let port = match env::var("PORT") {
+        Ok(port) => port.parse().unwrap(),
+        Err(VarError::NotPresent) => 8000,
+        Err(e) => Err(e).unwrap(),
+    };
 
     let mut builder = router::Router::builder();
     register_resource(
@@ -81,7 +88,7 @@ fn main() {
     );
     let router = builder.build();
 
-    start_server(router);
+    start_server(router, port);
 }
 
 fn read_test_cases() -> TestCases {
@@ -99,9 +106,8 @@ fn read_test_cases() -> TestCases {
     test_spec::from_json_file(f).unwrap()
 }
 
-fn start_server(router: Router) {
-    // This is our socket address...
-    let addr = "127.0.0.1:8000".parse().unwrap();
+fn start_server(router: Router, port: u16) {
+    let addr = SocketAddr::new("127.0.0.1".parse().unwrap(), port);
 
     let router = Arc::new(router);
 
