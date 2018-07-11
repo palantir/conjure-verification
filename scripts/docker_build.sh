@@ -12,6 +12,7 @@ if [ -f $BINARY ]; then
     exit 1
 fi
 
+VERSION=$(git describe --tags --always --first-parent)
 DEST=build/docker-context
 
 rm -rf $DEST
@@ -23,4 +24,4 @@ cp ./verification-server/Dockerfile $DEST/Dockerfile
 
 cd $DEST
 
-docker build .
+docker build -t "palantirtechnologies/conjure-verification-server:$VERSION" .
