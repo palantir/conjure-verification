@@ -74,9 +74,14 @@ fn main() {
     pretty_env_logger::init();
 
     let args = &env::args().collect::<Vec<String>>()[..];
-    if args.len() != 2 || args[1].eq("--help") {
+    if args.len() != 2 {
         eprintln!("Usage: {} <test-cases.json>", args[0]);
         process::exit(1);
+    }
+
+    if args[1].eq("--help") {
+        eprintln!("Usage: {} <test-cases.json>", args[0]);
+        process::exit(0);
     }
 
     // Read the test file.
