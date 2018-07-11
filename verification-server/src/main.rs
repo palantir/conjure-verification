@@ -72,7 +72,22 @@ mod test_spec;
 
 fn main() {
     pretty_env_logger::init();
-    let test_cases = read_test_cases();
+
+    let args = &env::args().collect::<Vec<String>>()[..];
+    if args.len() != 2 {
+        eprintln!("Usage: {} <test-cases.json>", args[0]);
+        process::exit(1);
+    }
+
+    if args[1].eq("--help") {
+        eprintln!("Usage: {} <test-cases.json>", args[0]);
+        process::exit(0);
+    }
+
+    // Read the test file.
+    let path: &str = &args[1];
+    let f = File::open(Path::new(path)).unwrap();
+    let test_cases: TestCases = test_spec::from_json_file(f).unwrap();
 
     let mut builder = router::Router::builder();
     register_resource(
@@ -82,21 +97,6 @@ fn main() {
     let router = builder.build();
 
     start_server(router);
-}
-
-fn read_test_cases() -> TestCases {
-    let args = &env::args().collect::<Vec<String>>()[..];
-    let path = &(match args {
-        [_, path] => path.clone(),
-        _ => {
-            eprintln!("Usage: {} <test-cases.json>", args[0]);
-            process::exit(1);
-        }
-    });
-
-    // Read the test file.
-    let f = File::open(Path::new(path)).unwrap();
-    test_spec::from_json_file(f).unwrap()
 }
 
 fn start_server(router: Router) {
