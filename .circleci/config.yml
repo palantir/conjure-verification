@@ -1,6 +1,6 @@
 restore_registry: &RESTORE_REGISTRY
   restore_cache:
-    key: registry-v1-{{ arch }}-
+    key: registry-v1-{{ arch }}
 save_registry: &SAVE_REGISTRY
   save_cache:
     key: registry-v1-{{ arch }}-{{ .BuildNum }}
@@ -53,15 +53,11 @@ jobs:
     macos:
       xcode: "9.2.0"
     environment:
-      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
-      FL_OUTPUT_DIR: output
       RUST_CHANNEL: 1.27.0
       TARGET: x86_64-apple-darwin
     steps:
     - checkout
-    - run:
-        name: 'Add ~/.cargo/bin to the PATH'
-        command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
+    - run: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
     - run: echo "$RUST_CHANNEL-$TARGET" > /tmp/rust-toolchain
     - *RESTORE_RUSTUP
     - run:
@@ -80,13 +76,15 @@ jobs:
     - *SAVE_REGISTRY
     - persist_to_workspace:
         root: .
-        paths: [ ./target/x86_64-apple-darwin ]
+        paths: [ ./target/$TARGET ]
     - store_artifacts:
-        path: ./target/x86_64-apple-darwin/release/conjure-verification-server
+        path: ./target/$TARGET/release/conjure-verification-server
 
   publish:
     docker:
       - image: circleci/openjdk:8u171-jdk
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
     steps:
       - checkout
       - attach_workspace: { at: . }
