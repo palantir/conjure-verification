@@ -19,12 +19,13 @@ save_deps: &SAVE_DEPS
     - ~/.cargo/registry/cache
 restore_rustup: &RESTORE_RUSTUP
   restore_cache:
-    key: rustup-v1-{{ arch }}-{{ checksum "~/rust-toolchain" }}
+    key: rustup-v2-{{ arch }}-{{ checksum "~/rust-toolchain" }}
 save_rustup: &SAVE_RUSTUP
   save_cache:
-    key: rustup-v1-{{ arch }}-{{ checksum "~/rust-toolchain" }}
+    key: rustup-v2-{{ arch }}-{{ checksum "~/rust-toolchain" }}
     paths:
     - ~/.rustup
+    - ~/.cargo/bin
 
 
 version: 2
