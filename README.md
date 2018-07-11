@@ -22,7 +22,7 @@ Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github
     ```
     brew install rustup
     ```
-- Set up rustup to use the nightly toolchain by default (note: `stable` works too)
+- Set up rustup to use the stable toolchain by default (note: nightly's cargofmt output will be different)
     ```
     rustup default stable
     ```
