@@ -21,10 +21,13 @@ types:
         fields:
           value: list<string>
 
-      SetExample:
+      SetStringExample:
         fields:
-          items: set<string>
-          doubleItems: set<double>
+          value: set<string>
+
+      SetDoubleExample:
+        fields:
+          value: set<double>
 
       MapExample:
         fields:

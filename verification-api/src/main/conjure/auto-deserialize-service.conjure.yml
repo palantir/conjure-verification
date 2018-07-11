@@ -94,9 +94,14 @@ services:
         returns: examples.ListExample
         args: { index: integer }
 
-      receiveSetExample:
-        http: GET /receiveSetExample/{index}
-        returns: examples.SetExample
+      receiveSetStringExample:
+        http: GET /receiveSetStringExample/{index}
+        returns: examples.SetStringExample
+        args: { index: integer }
+
+      receiveSetDoubleExample:
+        http: GET /receiveSetDoubleExample/{index}
+        returns: examples.SetDoubleExample
         args: { index: integer }
 
       receiveMapExample:
