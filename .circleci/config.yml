@@ -55,6 +55,7 @@ jobs:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
       RUSTUP_TOOLCHAIN: 1.27.0
+      TARGET: x86_64-apple-darwin
     steps:
     - checkout
     - run:
@@ -67,7 +68,7 @@ jobs:
           if [[ ! -e ~/.cargo/bin/rustup ]]; then
              curl https://sh.rustup.rs -sSf | sh -s -- --no-modify-path --default-toolchain none -y
           fi
-    - run: rustup default $RUSTUP_TOOLCHAIN-x86_64-apple-darwin
+    - run: rustup default $RUSTUP_TOOLCHAIN-$TARGET
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
