@@ -19,10 +19,10 @@ save_deps: &SAVE_DEPS
     - ~/.cargo/registry/cache
 restore_rustup: &RESTORE_RUSTUP
   restore_cache:
-    key: rustup-v1-{{ arch }}-{{ .Environment.RUSTUP_TOOLCHAIN }}
+    key: rustup-v1-{{ arch }}-{{ checksum "~/rust-toolchain" }}
 save_rustup: &SAVE_RUSTUP
   save_cache:
-    key: rustup-v1-{{ arch }}-{{ .Environment.RUSTUP_TOOLCHAIN }}
+    key: rustup-v1-{{ arch }}-{{ checksum "~/rust-toolchain" }}
     paths:
     - ~/.rustup
 
@@ -54,13 +54,14 @@ jobs:
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
-      RUSTUP_TOOLCHAIN: 1.27.0
+      RUST_CHANNEL: 1.27.0
       TARGET: x86_64-apple-darwin
     steps:
     - checkout
     - run:
         name: 'Add ~/.cargo/bin to the PATH'
         command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
+    - run: echo "$RUST_CHANNEL-$TARGET" > ~/rust-toolchain
     - *RESTORE_RUSTUP
     - run:
         name: Install rustup
@@ -68,7 +69,7 @@ jobs:
           if [[ ! -e ~/.cargo/bin/rustup ]]; then
              curl https://sh.rustup.rs -sSf | sh -s -- --no-modify-path --default-toolchain none -y
           fi
-    - run: rustup default $RUSTUP_TOOLCHAIN-$TARGET
+    - run: rustup default $(cat ~/rust-toolchain)
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
