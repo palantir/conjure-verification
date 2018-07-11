@@ -120,7 +120,7 @@ workflows:
       - cargo-build-linux:
           filters: { tags: { only: /.*/ } }
       - cargo-build-osx:
-          filters: { tags: { only: /.*/ }, branches: { ignore: /.*/ } }
+          filters: { tags: { only: /.*/ } }
       - gradle-build:
           filters: { tags: { only: /.*/ } }
       - publish:
