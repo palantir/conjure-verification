@@ -59,7 +59,7 @@ jobs:
     - checkout
     - run:
         name: 'Add ~/.cargo/bin to the PATH'
-        command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a ~/.profile ~/.bash_profile
+        command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a ~/.bashrc
     - *RESTORE_RUSTUP
     - run:
         name: Install rustup
