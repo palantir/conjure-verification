@@ -428,15 +428,6 @@ mod test {
             Err(err) => assert_eq!(err.name(), "ConjureVerification:UnexpectedBody"),
             _ => panic!("Bad request didn't fail validation checks"),
         }
-
-        match send_request(&router, Method::GET, "/foo/0", 0, |builder| {
-            builder
-                .headers
-                .insert(::http::header::CONTENT_TYPE, "text/plain".parse().unwrap());
-        }) {
-            Err(err) => assert_eq!(err.name(), "ConjureVerification:UnexpectedContentType"),
-            _ => panic!("Bad request didn't fail validation checks"),
-        }
     }
 
     #[test]
