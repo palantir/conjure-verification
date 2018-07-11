@@ -65,7 +65,7 @@ jobs:
         name: Install rustup
         command: |
           if [[ ! -e ~/.cargo/bin/rustup ]]; then
-             echo 1 | sh <(curl https://sh.rustup.rs -sSf) --no-modify-path --default-toolchain none
+             curl https://sh.rustup.rs -sSf | sh -- --no-modify-path --default-toolchain none -y
           fi
     - run: rustup default $RUSTUP_TOOLCHAIN
     - *SAVE_RUSTUP
