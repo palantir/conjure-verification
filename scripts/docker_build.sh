@@ -7,7 +7,7 @@ case $(uname -s) in
     Darwin*) echo "unable to build linux docker image on mac" && exit 1 ;;
 esac
 
-if [ -f $BINARY ]; then
+if [ ! -f $BINARY ]; then
     echo "$BINARY must exist - run 'cargo build --release' to create it"
     exit 1
 fi
