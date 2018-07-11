@@ -76,10 +76,9 @@ impl SpecTestResource {
         move |resource: &SpecTestResource, request: &mut Request| -> Result<_> {
             let index = SpecTestResource::parse_index(request)?;
             let param = get_param(request)?;
-            let validate = |request: &mut Request| {
-                SpecTestResource::assert_no_request_body(request)?;
-                SpecTestResource::assert_no_content_type(request)
-            };
+            let validate =
+                |request: &mut Request| SpecTestResource::assert_no_request_body(request);
+
             validate(request)?;
             let test_cases = test_cases_for_endpoint(get_cases(&resource.test_cases), &endpoint)?;
             let expected_param = {
@@ -102,26 +101,6 @@ impl SpecTestResource {
             }
             Ok(NoContent)
         }
-    }
-
-    /// Assert no content-type header.
-    fn assert_no_content_type(request: &mut Request) -> Result<()> {
-        let content_type_opt: Option<&HeaderValue> = request.headers().get("content-type");
-        if let Some(content_type) = content_type_opt {
-            return Err(Error::new_safe(
-                "Did not expect content type",
-                VerificationError::UnexpectedContentType {
-                    content_type: (match content_type.to_str() {
-                        Ok(value) => value,
-                        Err(e) => {
-                            error!("Couldn't turn content-type into a string: {}", e);
-                            "<unparseable as string>"
-                        }
-                    }).to_string(),
-                },
-            ));
-        };
-        Ok(())
     }
 
     /// Assert the request body was empty.
@@ -152,10 +131,8 @@ impl SpecTestResource {
 
             // Perform all assertions in this block, because if they fail, we want to catch the
             // error and record it.
-            let validate = |request: &mut Request| {
-                SpecTestResource::assert_no_request_body(request)?;
-                SpecTestResource::assert_no_content_type(request)
-            };
+            let validate =
+                |request: &mut Request| SpecTestResource::assert_no_request_body(request);
 
             validate(request)?;
 
@@ -177,11 +154,11 @@ impl SpecTestResource {
             .parse()
             .map_err(|err| Error::new_safe(err, Code::InvalidArgument))
     }
-
     /// Returns a `VerificationError::ConfirmationFailure` if the result is not what was expected.
     fn confirm(&self, request: &mut Request) -> Result<NoContent> {
         let index: usize = SpecTestResource::parse_index(request)?;
         let endpoint = EndpointName::new(request.path_param("endpoint"));
+
         let expected_body = {
             let positive_cases =
                 &test_cases_for_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
