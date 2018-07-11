@@ -12,7 +12,7 @@ bintray {
         name = rootProject.name
         userOrg = 'palantir'
         licenses = ['Apache-2.0']
-        publications = ['distTarLinux', 'distTarOsx']
+        publications = ['dist']
     }
 }
 
@@ -35,14 +35,11 @@ task distTarOsx(type: Tar) {
 
 publishing {
     publications {
-        distTarLinux(MavenPublication) {
+        dist(MavenPublication) {
             artifactId "verification-server"
             artifact (tasks.distTarLinux) {
                 classifier "linux"
             }
-        }
-        distTarOsx(MavenPublication) {
-            artifactId "verification-server"
             artifact (tasks.distTarOsx) {
                 classifier "osx"
             }
