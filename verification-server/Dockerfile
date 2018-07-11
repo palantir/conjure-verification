@@ -14,6 +14,9 @@ RUN chmod +x /opt/palantir/services/conjure-verification-server/service/bin/conj
 
 EXPOSE 8000
 
+ENV RUST_LOG conjure_verification_server=info,conjure_verification_http=info
+
 WORKDIR /opt/palantir/services/conjure-verification-server
+
 ENTRYPOINT ["dumb-init", "--", "service/bin/conjure-verification-server"]
 CMD ["var/conf/test-cases.json"]
