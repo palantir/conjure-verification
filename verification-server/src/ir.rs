@@ -13,69 +13,69 @@
 // limitations under the License.
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct Ir {
-    pub types: Vec<TypeDeclarationIr>,
-    pub services: Vec<ServiceIr>,
+pub struct Conjure {
+    pub types: Vec<TypeDefinition>,
+    pub services: Vec<ServiceDefinition>,
 }
 
 // Types
 
 #[derive(ConjureDeserialize, Debug)]
-pub enum TypeDeclarationIr {
-    Object(ObjectTypeIr),
-    Alias(AliasTypeIr),
-    Enum(EnumTypeIr),
-    Union(UnionTypeIr),
+pub enum TypeDefinition {
+    Object(ObjectDefinition),
+    Alias(AliasDefinition),
+    Enum(EnumDefinition),
+    Union(UnionDefintion),
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct ObjectTypeIr {
-    type_name: TypeNameIr,
-    fields: Vec<FieldIr>,
+pub struct ObjectDefinition {
+    type_name: TypeName,
+    fields: Vec<FieldDefinition>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct AliasTypeIr {
-    pub type_name: TypeNameIr,
-    pub alias: Box<TypeRefIr>,
+pub struct AliasDefinition {
+    pub type_name: TypeName,
+    pub alias: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct EnumTypeIr {
-    pub type_name: TypeNameIr,
-    values: Vec<EnumValueIr>,
+pub struct EnumDefinition {
+    pub type_name: TypeName,
+    pub values: Vec<EnumValueDefinition>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct EnumValueIr {
-    value: String,
+pub struct EnumValueDefinition {
+    pub value: String,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct UnionTypeIr {
-    pub type_name: TypeNameIr,
-    // TODO
+pub struct UnionDefintion {
+    pub type_name: TypeName,
+    pub union: Vec<FieldDefinition>
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub enum TypeRefIr {
-    Reference(TypeNameIr),
+pub enum Type {
+    Reference(TypeName),
     Primitive(PrimitiveType),
-    Optional(OptionalTypeIr),
-    List(ListTypeIr),
-    Set(SetTypeIr),
-    Map(MapTypeIr),
+    Optional(OptionalType),
+    List(ListType),
+    Set(SetType),
+    Map(MapType),
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct TypeNameIr {
-    name: String,
-    package: String,
+pub struct TypeName {
+    pub name: String,
+    pub package: String,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct OptionalTypeIr {
-    pub item_type: Box<TypeRefIr>,
+pub struct OptionalType {
+    pub item_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
@@ -94,47 +94,45 @@ pub enum PrimitiveType {
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct ListTypeIr {
-    item_type: Box<TypeRefIr>,
+pub struct ListType {
+    pub item_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct SetTypeIr {
-    item_type: Box<TypeRefIr>,
+pub struct SetType {
+    pub item_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct MapTypeIr {
-    key_type: Box<TypeRefIr>,
-    value_type: Box<TypeRefIr>,
+pub struct MapType {
+    pub key_type: Box<Type>,
+    pub value_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct FieldIr {
-    field_name: String,
-    type_: TypeRefIr,
+pub struct FieldDefinition {
+    pub field_name: String,
+    pub type_: Type,
 }
 
 // Services
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct ServiceIr {
-    pub endpoints: Vec<EndpointIr>,
+pub struct ServiceDefinition {
+    pub endpoints: Vec<EndpointDefinition>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct EndpointIr {
+pub struct EndpointDefinition {
     pub endpoint_name: String,
-    pub args: Vec<EndpointArgIr>,
+    pub args: Vec<ArgumentDefinition>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct EndpointArgIr {
+pub struct ArgumentDefinition {
     pub arg_name: String,
-    pub type_: ArgTypeIr,
+    pub type_: Type,
 }
-
-type ArgTypeIr = TypeRefIr;
 
 #[cfg(test)]
 mod test {
@@ -144,11 +142,10 @@ mod test {
     use std::path::Path;
 
     #[test]
-    #[ignore] // test ignored because you need to `./gradlew compileTestCasesJson` first
     fn test() {
         let file = File::open(Path::new(
             "../verification-api/build/conjure-ir/verification-api.json",
         )).unwrap();
-        let _ir: Ir = serde_json::from_reader(file).unwrap();
+        let _ir: Conjure = serde_json::from_reader(file).unwrap();
     }
 }
