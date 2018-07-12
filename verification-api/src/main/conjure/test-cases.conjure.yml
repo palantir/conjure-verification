@@ -21,3 +21,10 @@ types:
         fields:
           positive: list<string> # json strings
           negative: list<string>
+
+      IgnoredTestCases:
+        client: IgnoredClientTestCases
+
+      IgnoredClientTestCases:
+        fields:
+          autoDeserialize: map<EndpointName, set<string>>
