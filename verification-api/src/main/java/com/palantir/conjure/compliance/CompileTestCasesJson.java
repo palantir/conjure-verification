@@ -17,7 +17,6 @@ import com.palantir.remoting3.ext.jackson.ObjectMappers;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -60,7 +59,7 @@ public final class CompileTestCasesJson {
                 serviceByName(ir, "SingleQueryParamService"));
     }
 
-    private static long countTestCases(Map<EndpointName, List<String>> tests) {
+    private static long countTestCases(Map<EndpointName, Set<String>> tests) {
         return tests.entrySet().stream()
                 .flatMap(e -> e.getValue().stream())
                 .count();
