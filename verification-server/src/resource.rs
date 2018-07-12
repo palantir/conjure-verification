@@ -34,16 +34,45 @@ use std::string::ToString;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
 use test_spec::TestIndex;
+use type_resolution::resolve_type;
+use type_resolution::ResolvedType;
 use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ClientTestCases>,
-    ir: Option<Box<Conjure>>,
+    param_types: Option<Box<HashMap<String, ResolvedType>>>,
 }
 
 impl SpecTestResource {
-    pub fn new(test_cases: Box<ClientTestCases>, ir: Option<Box<Conjure>>) -> SpecTestResource {
-        SpecTestResource { test_cases, ir }
+    pub fn new(test_cases: Box<ClientTestCases>, ir: Option<&Conjure>) -> SpecTestResource {
+        // Resolve endpoint -> type mappings eagerly
+        let param_types = ir.as_ref().map(|ir| {
+            let mut param_types = Box::new(HashMap::new());
+            ir.services
+                .iter()
+                .flat_map(|service| &service.endpoints)
+                .for_each(|e| {
+                    let arg_type = e.args
+                        .iter()
+                        .find(|arg| arg.arg_name != "index")
+                        .unwrap()
+                        .type_
+                        .clone();
+                    // Resolve aliases
+                    let arg_type = resolve_type(&ir.types, &arg_type);
+                    // Create a unique map
+                    assert!(
+                        param_types
+                            .insert(e.endpoint_name.clone(), arg_type)
+                            .is_none()
+                    );
+                });
+            param_types
+        });
+        SpecTestResource {
+            test_cases,
+            param_types,
+        }
     }
 
     fn decode_json_as_param_string(json: &str) -> Result<Option<String>> {
