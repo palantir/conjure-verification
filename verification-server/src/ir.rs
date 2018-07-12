@@ -22,27 +22,32 @@ pub struct Conjure {
 
 #[derive(ConjureDeserialize, Debug)]
 pub enum TypeDefinition {
-    Object(ObjectDefinition),
-    Alias(AliasDefinition),
-    Enum(EnumDefinition),
-    Union(UnionDefintion),
+    Object(TypeDefinitionBody<ObjectDefinition>),
+    Alias(TypeDefinitionBody<AliasDefinition>),
+    Enum(TypeDefinitionBody<EnumDefinition>),
+    Union(TypeDefinitionBody<UnionDefintion>),
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TypeDefinitionBody<T> {
+    pub type_name: TypeName,
+    #[serde(flatten)]
+    definition: T,
 }
 
 #[derive(ConjureDeserialize, Debug)]
 pub struct ObjectDefinition {
-    pub type_name: TypeName,
     pub fields: Vec<FieldDefinition>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
 pub struct AliasDefinition {
-    pub type_name: TypeName,
     pub alias: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
 pub struct EnumDefinition {
-    pub type_name: TypeName,
     pub values: Vec<EnumValueDefinition>,
 }
 
@@ -53,7 +58,6 @@ pub struct EnumValueDefinition {
 
 #[derive(ConjureDeserialize, Debug)]
 pub struct UnionDefintion {
-    pub type_name: TypeName,
     pub union: Vec<FieldDefinition>,
 }
 
