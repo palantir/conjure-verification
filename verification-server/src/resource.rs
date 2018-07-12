@@ -42,7 +42,7 @@ use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ClientTestCases>,
-    param_types: Option<Box<HashMap<String, ResolvedType>>>,
+    param_types: Box<HashMap<String, ResolvedType>>,
 }
 
 const PACKAGE: &'static str = "com.palantir.conjure.verification";
@@ -61,9 +61,9 @@ lazy_static! {
 }
 
 impl SpecTestResource {
-    pub fn new(test_cases: Box<ClientTestCases>, ir: Option<&Conjure>) -> SpecTestResource {
+    pub fn new(test_cases: Box<ClientTestCases>, ir: &Conjure) -> SpecTestResource {
         // Resolve endpoint -> type mappings eagerly
-        let param_types = ir.as_ref().map(|ir| {
+        let param_types = {
             let mut param_types = Box::new(HashMap::new());
             ir.services
                 .iter()
@@ -86,7 +86,7 @@ impl SpecTestResource {
                     );
                 });
             param_types
-        });
+        };
         SpecTestResource {
             test_cases,
             param_types,
@@ -551,7 +551,12 @@ mod test {
 
     fn create_resource(test_cases: ClientTestCases) -> (Router, Arc<SpecTestResource>) {
         let mut builder = router::Router::builder();
-        let resource = Arc::new(SpecTestResource::new(Box::new(test_cases), None));
+        // TODO
+        let ir = Conjure {
+            types: Vec::default(),
+            services: Vec::default(),
+        };
+        let resource = Arc::new(SpecTestResource::new(Box::new(test_cases), &ir));
         register_resource(&mut builder, &resource);
         (builder.build(), resource)
     }

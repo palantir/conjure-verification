@@ -103,7 +103,7 @@ fn main() {
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
-        &Arc::new(SpecTestResource::new(test_cases.client.into(), Some(&ir))),
+        &Arc::new(SpecTestResource::new(test_cases.client.into(), &ir)),
     );
     let router = builder.build();
 
