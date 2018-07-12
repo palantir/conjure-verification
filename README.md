@@ -9,9 +9,17 @@ Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github
 A docker image containing the server and an embedded `test-cases.json` is published to: https://hub.docker.com/r/palantirtechnologies/conjure-verification-server/.
 
 ```
-$ docker run palantirtechnologies/conjure-verification-server:0.2.0
-Listening on http://127.0.0.1:8000
+$ docker run -p 8000:8000 docker.io/palantirtechnologies/conjure-verification-server:0.1.1-3-g5b3778f
+Listening on http://0.0.0.0:8000
+
+# in another terminal:
+$ curl http://localhost:8000/receiveDoubleExample/0
+{"value":1.23}
+$ curl --data '{"value":1.23}' http://0.0.0.0:8000/confirm/receiveDoubleExample/0 -H 'Content-Type: application/json'
+curl --data 'broken' http://0.0.0.0:8000/confirm/receiveDoubleExample/1 -H 'Content-Type: application/json'
 ```
+
+_Fox maximum logging, add `-e RUST_LOG=debug` to the docker run command._
 
 ## Running the server
 

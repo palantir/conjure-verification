@@ -227,7 +227,8 @@ trait RouteWithOptions<T>: Route<T> {
             );
             headers.append(
                 "Access-Control-Allow-Headers",
-                HeaderValue::from_static("Content-Type"),
+                // single-header-service.conjure.yml uses 'Some-Header', so we need to whitelist it in preflight checks
+                HeaderValue::from_static("Content-Type, Some-Header"),
             );
         }
         Ok(response)
