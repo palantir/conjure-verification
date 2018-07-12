@@ -3,7 +3,9 @@ members = [
     "verification-server",
     "verification-error",
     "verification-error-derive",
-    "verification-http"
+    "verification-http",
+    "serde-conjure",
+    "serde-conjure-derive"
 ]
 
 # Enable line number debuginfo on release builds for backtraces
