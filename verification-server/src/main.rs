@@ -32,6 +32,7 @@ extern crate conjure_verification_http;
 extern crate core;
 extern crate flate2;
 extern crate itertools;
+#[macro_use]
 extern crate lazy_static;
 extern crate pretty_env_logger;
 extern crate serde_json;

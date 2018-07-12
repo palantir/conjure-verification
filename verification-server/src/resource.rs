@@ -26,10 +26,12 @@ use http::status::StatusCode;
 use http::Method;
 use hyper::header::HeaderValue;
 use ir::Conjure;
+use ir::ServiceName;
 use raw_json::RawJson;
 use serde_json;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::string::ToString;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
@@ -43,6 +45,21 @@ pub struct SpecTestResource {
     param_types: Option<Box<HashMap<String, ResolvedType>>>,
 }
 
+const PACKAGE: &'static str = "com.palantir.conjure.verification";
+
+lazy_static! {
+    /// Services accepting a single parameter (except 'index') whose type we care about.
+    static ref WHITELISTED_SERVICES: HashSet<ServiceName> = vec![
+        "AutoDeserializeConfirmService",
+        "SingleHeaderService",
+        "SinglePathParamService",
+        "SingleQueryParamService",
+    ].into_iter().map(|s| ServiceName {
+        name: s.into(), package: PACKAGE.into(),
+    })
+    .collect();
+}
+
 impl SpecTestResource {
     pub fn new(test_cases: Box<ClientTestCases>, ir: Option<&Conjure>) -> SpecTestResource {
         // Resolve endpoint -> type mappings eagerly
@@ -50,6 +67,7 @@ impl SpecTestResource {
             let mut param_types = Box::new(HashMap::new());
             ir.services
                 .iter()
+                .filter(|s| WHITELISTED_SERVICES.contains(&s.service_name))
                 .flat_map(|service| &service.endpoints)
                 .for_each(|e| {
                     let arg_type = e.args

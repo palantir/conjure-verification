@@ -134,7 +134,14 @@ pub struct FieldDefinition<Inner> {
 
 #[derive(ConjureDeserialize, Debug)]
 pub struct ServiceDefinition {
+    pub service_name: ServiceName,
     pub endpoints: Vec<EndpointDefinition>,
+}
+
+#[derive(ConjureDeserialize, Debug, Clone, Eq, PartialEq, Hash)]
+pub struct ServiceName {
+    pub name: String,
+    pub package: String,
 }
 
 #[derive(ConjureDeserialize, Debug)]
