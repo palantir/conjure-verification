@@ -91,17 +91,17 @@ fn main() {
     // Read the test cases file.
     let test_cases_path: &str = &args[1];
     let test_cases = File::open(Path::new(test_cases_path)).unwrap();
-    let test_cases: TestCases = test_spec::from_json_file(test_cases).unwrap();
+    let test_cases: Box<TestCases> = Box::new(test_spec::from_json_file(test_cases).unwrap());
 
     // Read the conjure IR.
     let ir_path: &str = &args[2];
     let ir = File::open(Path::new(ir_path)).unwrap();
-    let ir: Ir = serde_json::from_reader(ir).unwrap();
+    let ir: Box<Ir> = Box::new(serde_json::from_reader(ir).unwrap());
 
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
-        &Arc::new(SpecTestResource::new(test_cases.client)),
+        &Arc::new(SpecTestResource::new(test_cases.client.into(), Some(ir))),
     );
     let router = builder.build();
 

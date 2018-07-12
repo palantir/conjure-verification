@@ -25,6 +25,7 @@ use errors::*;
 use http::status::StatusCode;
 use http::Method;
 use hyper::header::HeaderValue;
+use ir::Ir;
 use raw_json::RawJson;
 use serde_json;
 use serde_json::Value;
@@ -37,13 +38,12 @@ use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ClientTestCases>,
+    ir: Option<Box<Ir>>,
 }
 
 impl SpecTestResource {
-    pub fn new(test_cases: ClientTestCases) -> SpecTestResource {
-        SpecTestResource {
-            test_cases: Box::new(test_cases),
-        }
+    pub fn new(test_cases: Box<ClientTestCases>, ir: Option<Box<Ir>>) -> SpecTestResource {
+        SpecTestResource { test_cases, ir }
     }
 
     fn decode_json_as_param_string(json: &str) -> Result<Option<String>> {
@@ -504,7 +504,7 @@ mod test {
 
     fn create_resource(test_cases: ClientTestCases) -> (Router, Arc<SpecTestResource>) {
         let mut builder = router::Router::builder();
-        let resource = Arc::new(SpecTestResource::new(test_cases));
+        let resource = Arc::new(SpecTestResource::new(Box::new(test_cases), None));
         register_resource(&mut builder, &resource);
         (builder.build(), resource)
     }
