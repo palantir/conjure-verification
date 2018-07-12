@@ -27,5 +27,12 @@ if [ ! -f $TEST_CASES ]; then
 fi
 cp $TEST_CASES $DEST
 
+IR_FILE=./verification-api/build/conjure-ir/verification-api.json
+if [ ! -f $IR_FILE ]; then
+    echo "$IR_FILE file must exist - run './gradlew compileIr' to create it"
+    exit 1
+fi
+cp $IR_FILE $DEST
+
 cd $DEST
 docker build -t "palantirtechnologies/conjure-verification-server:$VERSION" .

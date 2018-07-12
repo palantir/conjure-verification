@@ -6,10 +6,10 @@ Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github
 
 ## docker image
 
-A docker image containing the server and an embedded `test-cases.json` is published to: https://hub.docker.com/r/palantirtechnologies/conjure-verification-server/.
+A docker image containing the server along with embedded `test-cases.json` and `verification-api.json` are published to: https://hub.docker.com/r/palantirtechnologies/conjure-verification-server/.
 
 ```
-$ docker run -p 8000:8000 docker.io/palantirtechnologies/conjure-verification-server:0.1.1-3-g5b3778f
+$ docker run -p 8000:8000 docker.io/palantirtechnologies/conjure-verification-server:latest
 Listening on http://0.0.0.0:8000
 
 # in another terminal:
@@ -24,13 +24,15 @@ _Fox maximum logging, add `-e RUST_LOG=debug` to the docker run command._
 ## Running the server
 
 - Ensure you've installed `rustup` as indicated in the [Development](#development) section
-- Generate the `test-cases.json` file
+- Generate the `test-cases.json` and `verification-api.json` files
     ```
-    ./gradlew compileTestCasesJson
+    ./gradlew compileTestCasesJson compileIr
     ```
-- Start the server on http://127.0.0.1:8000
+- Start the server on http://0.0.0.0:8000
     ```
-    cargo run --package conjure-verification-server -- verification-api/build/test-cases.json
+    cargo run --package conjure-verification-server -- \
+        verification-api/build/test-cases.json \
+        verification-api/build/conjure-ir/verification-api.json
     ```
 
 ## Development
