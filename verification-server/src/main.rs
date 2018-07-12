@@ -53,7 +53,7 @@ use conjure_verification_http::resource::Route;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
-use ir::Ir;
+use ir::Conjure;
 use resource::SpecTestResource;
 use router::Binder;
 use router::Router;
@@ -96,7 +96,7 @@ fn main() {
     // Read the conjure IR.
     let ir_path: &str = &args[2];
     let ir = File::open(Path::new(ir_path)).unwrap();
-    let ir: Box<Ir> = Box::new(serde_json::from_reader(ir).unwrap());
+    let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
     let mut builder = router::Router::builder();
     register_resource(

@@ -25,7 +25,7 @@ use errors::*;
 use http::status::StatusCode;
 use http::Method;
 use hyper::header::HeaderValue;
-use ir::Ir;
+use ir::Conjure;
 use raw_json::RawJson;
 use serde_json;
 use serde_json::Value;
@@ -38,11 +38,11 @@ use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ClientTestCases>,
-    ir: Option<Box<Ir>>,
+    ir: Option<Box<Conjure>>,
 }
 
 impl SpecTestResource {
-    pub fn new(test_cases: Box<ClientTestCases>, ir: Option<Box<Ir>>) -> SpecTestResource {
+    pub fn new(test_cases: Box<ClientTestCases>, ir: Option<Box<Conjure>>) -> SpecTestResource {
         SpecTestResource { test_cases, ir }
     }
 
