@@ -14,25 +14,68 @@
 
 #[derive(ConjureDeserialize, Debug)]
 pub struct Ir {
-    //    pub types: Vec<IrType>,
+    pub types: Vec<TypeDeclarationIr>,
     pub services: Vec<ServiceIr>,
 }
 
+// Types
+
 #[derive(ConjureDeserialize, Debug)]
-pub struct ServiceIr {
-    pub endpoints: Vec<EndpointIr>,
+pub enum TypeDeclarationIr {
+    Object(ObjectTypeIr),
+    Alias(AliasTypeIr),
+    Enum(EnumTypeIr),
+    Union(UnionTypeIr),
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct EndpointIr {
-    pub endpoint_name: String,
-    pub args: Vec<EndpointArgIr>,
+pub struct ObjectTypeIr {
+    type_name: TypeNameIr,
+    fields: Vec<FieldIr>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct EndpointArgIr {
-    pub arg_name: String,
-    pub type_: ArgTypeIr,
+pub struct AliasTypeIr {
+    pub type_name: TypeNameIr,
+    pub alias: Box<TypeRefIr>,
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct EnumTypeIr {
+    pub type_name: TypeNameIr,
+    values: Vec<EnumValueIr>,
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct EnumValueIr {
+    value: String,
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct UnionTypeIr {
+    pub type_name: TypeNameIr,
+    // TODO
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub enum TypeRefIr {
+    Reference(TypeNameIr),
+    Primitive(PrimitiveType),
+    Optional(OptionalTypeIr),
+    List(ListTypeIr),
+    Set(SetTypeIr),
+    Map(MapTypeIr),
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct TypeNameIr {
+    name: String,
+    package: String,
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct OptionalTypeIr {
+    pub item_type: Box<TypeRefIr>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
@@ -51,22 +94,47 @@ pub enum PrimitiveType {
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub enum ArgTypeIr {
-    Primitive(PrimitiveType),
-    Optional(Box<OptionalArgTypeIr>),
-    Reference(ReferenceTypeIr),
+pub struct ListTypeIr {
+    item_type: Box<TypeRefIr>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct ReferenceTypeIr {
-    name: String,
-    package: String,
+pub struct SetTypeIr {
+    item_type: Box<TypeRefIr>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct OptionalArgTypeIr {
-    pub item_type: ArgTypeIr,
+pub struct MapTypeIr {
+    key_type: Box<TypeRefIr>,
+    value_type: Box<TypeRefIr>,
 }
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct FieldIr {
+    field_name: String,
+    type_: TypeRefIr,
+}
+
+// Services
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct ServiceIr {
+    pub endpoints: Vec<EndpointIr>,
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct EndpointIr {
+    pub endpoint_name: String,
+    pub args: Vec<EndpointArgIr>,
+}
+
+#[derive(ConjureDeserialize, Debug)]
+pub struct EndpointArgIr {
+    pub arg_name: String,
+    pub type_: ArgTypeIr,
+}
+
+type ArgTypeIr = TypeRefIr;
 
 #[cfg(test)]
 mod test {
