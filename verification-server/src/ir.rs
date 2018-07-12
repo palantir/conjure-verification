@@ -30,8 +30,8 @@ pub enum TypeDefinition {
 
 #[derive(ConjureDeserialize, Debug)]
 pub struct ObjectDefinition {
-    type_name: TypeName,
-    fields: Vec<FieldDefinition>,
+    pub type_name: TypeName,
+    pub fields: Vec<FieldDefinition>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
