@@ -24,6 +24,9 @@ extern crate scheduled_thread_pool;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_conjure;
+#[macro_use]
+extern crate serde_conjure_derive;
 extern crate conjure_verification_error;
 extern crate conjure_verification_http;
 extern crate core;
@@ -65,6 +68,7 @@ mod macros;
 mod error_handling;
 mod errors;
 mod handler;
+mod ir;
 mod raw_json;
 mod resource;
 mod router;
