@@ -53,6 +53,7 @@ use conjure_verification_http::resource::Route;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
+use ir::Ir;
 use resource::SpecTestResource;
 use router::Binder;
 use router::Router;
@@ -76,22 +77,26 @@ mod test_spec;
 
 fn main() {
     pretty_env_logger::init();
-
-    let args = &env::args().collect::<Vec<String>>()[..];
-    if args.len() != 2 {
-        eprintln!("Usage: {} <test-cases.json>", args[0]);
-        process::exit(1);
-    }
-
-    if args[1].eq("--help") {
-        eprintln!("Usage: {} <test-cases.json>", args[0]);
+    let args = &env::args().collect::<Vec<_>>()[..];
+    if args.iter().any(|x| x == "--help") {
+        print_usage(&args[0]);
         process::exit(0);
     }
 
-    // Read the test file.
-    let path: &str = &args[1];
-    let f = File::open(Path::new(path)).unwrap();
-    let test_cases: TestCases = test_spec::from_json_file(f).unwrap();
+    if args.len() != 3 {
+        print_usage(&args[0]);
+        process::exit(1);
+    }
+
+    // Read the test cases file.
+    let test_cases_path: &str = &args[1];
+    let test_cases = File::open(Path::new(test_cases_path)).unwrap();
+    let test_cases: TestCases = test_spec::from_json_file(test_cases).unwrap();
+
+    // Read the conjure IR.
+    let ir_path: &str = &args[2];
+    let ir = File::open(Path::new(ir_path)).unwrap();
+    let ir: Ir = serde_json::from_reader(ir).unwrap();
 
     let mut builder = router::Router::builder();
     register_resource(
@@ -101,6 +106,10 @@ fn main() {
     let router = builder.build();
 
     start_server(router);
+}
+
+fn print_usage(arg0: &String) {
+    eprintln!("Usage: {} <test-cases.json> <verification-api.json>", arg0);
 }
 
 fn start_server(router: Router) {
