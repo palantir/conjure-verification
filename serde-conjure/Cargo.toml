@@ -1,0 +1,7 @@
+[package]
+name = "serde-conjure"
+version = "0.1.4"
+authors = ["Steven Fackler <sfackler@palantir.com>"]
+
+[dependencies]
+serde = "1.0"
