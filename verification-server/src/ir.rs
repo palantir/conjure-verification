@@ -28,6 +28,17 @@ pub enum TypeDefinition {
     Union(TypeDefinitionBody<UnionDefintion>),
 }
 
+impl TypeDefinition {
+    fn type_name(&self) -> &TypeName {
+        &(match self {
+            &TypeDefinition::Object(def) => def.type_name,
+            &TypeDefinition::Alias(def) => def.type_name,
+            &TypeDefinition::Enum(def) => def.type_name,
+            &TypeDefinition::Union(def) => def.type_name,
+        })
+    }
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TypeDefinitionBody<T> {
