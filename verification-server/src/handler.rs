@@ -110,7 +110,7 @@ impl HttpService {
     > {
         match (route, path_params) {
             (RouteResult::NotFound, _) => {
-                info!("unrouted request");
+                info!("unrouted request: {}", request.uri());
                 let mut response = hyper::Response::new(hyper::Body::empty());
                 *response.status_mut() = StatusCode::NOT_FOUND;
                 Box::new(future::ok((response, 0)))
