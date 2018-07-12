@@ -60,7 +60,7 @@ public final class CompileTestCasesJson {
                 serviceByName(ir, "SingleQueryParamService"));
     }
 
-    private static long countTestCases(Map<EndpointName, List<String>> tests) {
+    private static long countTestCases(Map<EndpointName, Set<String>> tests) {
         return tests.entrySet().stream()
                 .flatMap(e -> e.getValue().stream())
                 .count();

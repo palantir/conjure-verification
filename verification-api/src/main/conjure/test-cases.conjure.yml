@@ -23,7 +23,8 @@ types:
           negative: set<string>
 
       IgnoredTestCases:
-        client: IgnoredClientTestCases
+        fields:
+          client: IgnoredClientTestCases
 
       IgnoredClientTestCases:
         fields:
