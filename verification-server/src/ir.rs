@@ -54,10 +54,10 @@ pub struct EnumValueDefinition {
 #[derive(ConjureDeserialize, Debug)]
 pub struct UnionDefintion {
     pub type_name: TypeName,
-    pub union: Vec<FieldDefinition>
+    pub union: Vec<FieldDefinition>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub enum Type {
     Reference(TypeName),
     Primitive(PrimitiveType),
@@ -67,18 +67,18 @@ pub enum Type {
     Map(MapType),
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub struct TypeName {
     pub name: String,
     pub package: String,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub struct OptionalType {
     pub item_type: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub enum PrimitiveType {
     String,
     Integer,
@@ -93,17 +93,17 @@ pub enum PrimitiveType {
     Any,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub struct ListType {
     pub item_type: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub struct SetType {
     pub item_type: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub struct MapType {
     pub key_type: Box<Type>,
     pub value_type: Box<Type>,
