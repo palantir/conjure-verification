@@ -10,17 +10,17 @@ types:
       ClientTestCases:
         fields:
           autoDeserialize: map<EndpointName, PositiveAndNegativeTestCases>
-          singleHeaderService: map<EndpointName, set<string>>
-          singlePathParamService: map<EndpointName, set<string>>
-          singleQueryParamService: map<EndpointName, set<string>>
+          singleHeaderService: map<EndpointName, list<string>>
+          singlePathParamService: map<EndpointName, list<string>>
+          singleQueryParamService: map<EndpointName, list<string>>
 
       EndpointName:
         alias: string
 
       PositiveAndNegativeTestCases:
         fields:
-          positive: set<string> # json strings
-          negative: set<string>
+          positive: list<string> # json strings
+          negative: list<string>
 
       IgnoredTestCases:
         fields:
