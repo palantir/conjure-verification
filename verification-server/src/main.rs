@@ -100,8 +100,8 @@ fn main() {
 }
 
 fn start_server(router: Router) {
-    // This is our socket address...
-    let addr = "127.0.0.1:8000".parse().unwrap();
+    // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
+    let addr = "0.0.0.0:8000".parse().unwrap();
 
     let router = Arc::new(router);
 
