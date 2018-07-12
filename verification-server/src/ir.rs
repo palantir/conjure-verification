@@ -142,6 +142,7 @@ mod test {
     use std::path::Path;
 
     #[test]
+    #[ignore] // test ignored because you need to `./gradlew compileTestCasesJson` first
     fn test() {
         let file = File::open(Path::new(
             "../verification-api/build/conjure-ir/verification-api.json",
