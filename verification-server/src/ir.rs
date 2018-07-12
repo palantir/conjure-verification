@@ -22,20 +22,20 @@ pub struct Conjure {
 
 #[derive(ConjureDeserialize, Debug)]
 pub enum TypeDefinition {
-    Object(TypeDefinitionBody<ObjectDefinition>),
-    Alias(TypeDefinitionBody<AliasDefinition>),
+    Object(TypeDefinitionBody<ObjectDefinition<Type>>),
+    Alias(TypeDefinitionBody<AliasDefinition<Type>>),
     Enum(TypeDefinitionBody<EnumDefinition>),
-    Union(TypeDefinitionBody<UnionDefintion>),
+    Union(TypeDefinitionBody<UnionDefinition<Type>>),
 }
 
 impl TypeDefinition {
-    fn type_name(&self) -> &TypeName {
-        &(match self {
-            &TypeDefinition::Object(def) => def.type_name,
-            &TypeDefinition::Alias(def) => def.type_name,
-            &TypeDefinition::Enum(def) => def.type_name,
-            &TypeDefinition::Union(def) => def.type_name,
-        })
+    pub fn type_name<'a>(&'a self) -> &'a TypeName {
+        match self {
+            &TypeDefinition::Object(ref def) => &def.type_name,
+            &TypeDefinition::Alias(ref def) => &def.type_name,
+            &TypeDefinition::Enum(ref def) => &def.type_name,
+            &TypeDefinition::Union(ref def) => &def.type_name,
+        }
     }
 }
 
@@ -44,53 +44,53 @@ impl TypeDefinition {
 pub struct TypeDefinitionBody<T> {
     pub type_name: TypeName,
     #[serde(flatten)]
-    definition: T,
+    pub definition: T,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct ObjectDefinition {
-    pub fields: Vec<FieldDefinition>,
+pub struct ObjectDefinition<Inner> {
+    pub fields: Vec<FieldDefinition<Inner>>,
 }
 
 #[derive(ConjureDeserialize, Debug)]
-pub struct AliasDefinition {
-    pub alias: Box<Type>,
+pub struct AliasDefinition<Inner> {
+    pub alias: Box<Inner>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub struct EnumDefinition {
     pub values: Vec<EnumValueDefinition>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, Debug, Clone)]
 pub struct EnumValueDefinition {
     pub value: String,
 }
 
-#[derive(ConjureDeserialize, Debug)]
-pub struct UnionDefintion {
-    pub union: Vec<FieldDefinition>,
+#[derive(ConjureDeserialize, Debug, Clone)]
+pub struct UnionDefinition<Inner> {
+    pub union: Vec<FieldDefinition<Inner>>,
 }
 
 #[derive(ConjureDeserialize, Debug, Clone)]
 pub enum Type {
     Reference(TypeName),
     Primitive(PrimitiveType),
-    Optional(OptionalType),
-    List(ListType),
-    Set(SetType),
-    Map(MapType),
+    Optional(OptionalType<Type>),
+    List(ListType<Type>),
+    Set(SetType<Type>),
+    Map(MapType<Type, Type>),
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, Debug, Clone, Eq, PartialEq)]
 pub struct TypeName {
     pub name: String,
     pub package: String,
 }
 
 #[derive(ConjureDeserialize, Debug, Clone)]
-pub struct OptionalType {
-    pub item_type: Box<Type>,
+pub struct OptionalType<Inner> {
+    pub item_type: Box<Inner>,
 }
 
 #[derive(ConjureDeserialize, Debug, Clone)]
@@ -109,25 +109,25 @@ pub enum PrimitiveType {
 }
 
 #[derive(ConjureDeserialize, Debug, Clone)]
-pub struct ListType {
-    pub item_type: Box<Type>,
+pub struct ListType<Inner> {
+    pub item_type: Box<Inner>,
 }
 
 #[derive(ConjureDeserialize, Debug, Clone)]
-pub struct SetType {
-    pub item_type: Box<Type>,
+pub struct SetType<Inner> {
+    pub item_type: Box<Inner>,
 }
 
 #[derive(ConjureDeserialize, Debug, Clone)]
-pub struct MapType {
-    pub key_type: Box<Type>,
-    pub value_type: Box<Type>,
+pub struct MapType<Key, Value> {
+    pub key_type: Box<Key>,
+    pub value_type: Box<Value>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
-pub struct FieldDefinition {
+#[derive(ConjureDeserialize, Debug, Clone)]
+pub struct FieldDefinition<Inner> {
     pub field_name: String,
-    pub type_: Type,
+    pub type_: Inner,
 }
 
 // Services

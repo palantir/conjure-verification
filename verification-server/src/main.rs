@@ -74,6 +74,7 @@ mod raw_json;
 mod resource;
 mod router;
 mod test_spec;
+mod type_resolution;
 
 fn main() {
     pretty_env_logger::init();
