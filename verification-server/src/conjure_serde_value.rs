@@ -55,14 +55,17 @@ pub enum ConjureValue {
     Optional(Option<Box<ConjureValue>>),
     Object(BTreeMap<String, ConjureValue>),
     Enum(String),
-    Union {
-        field_name: String,
-        value: Box<ConjureValue>,
-    },
+    Union(ConjureUnionValue),
     // anonymous
     List(Vec<ConjureValue>),
     Set(BTreeSet<ConjureValue>),
     Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ConjureUnionValue {
+    pub field_name: String,
+    pub value: Box<ConjureValue>,
 }
 
 /// Allows you to deserialize a given type without having to type it.
