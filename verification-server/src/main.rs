@@ -20,8 +20,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_conjure_derive;
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate conjure_verification_error_derive;
