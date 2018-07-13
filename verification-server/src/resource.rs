@@ -26,15 +26,14 @@ use errors::*;
 use http::status::StatusCode;
 use http::Method;
 use hyper::header::HeaderValue;
+use ir;
 use ir::Conjure;
 use ir::ServiceName;
 use raw_json::RawJson;
 use serde_json;
-use serde_json::Value;
 use serde_json_2;
 use serde_plain;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::string::ToString;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
@@ -50,43 +49,60 @@ pub struct SpecTestResource {
 
 const PACKAGE: &'static str = "com.palantir.conjure.verification";
 
-lazy_static! {
-    /// Services accepting a single parameter (except 'index') whose type we care about.
-    static ref WHITELISTED_SERVICES: HashSet<ServiceName> = vec![
-        "AutoDeserializeConfirmService",
-        "SingleHeaderService",
-        "SinglePathParamService",
-        "SingleQueryParamService",
-    ].into_iter().map(|s| ServiceName {
-        name: s.into(), package: PACKAGE.into(),
-    })
-    .collect();
+fn service_name(s: &str) -> ServiceName {
+    ServiceName {
+        name: s.into(),
+        package: PACKAGE.into(),
+    }
 }
+
+fn type_of_non_index_arg(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
+    &endpoint_def
+        .args
+        .iter()
+        .find(|arg| arg.arg_name != "index")
+        .unwrap()
+        .type_
+}
+
+fn return_type(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
+    (&endpoint_def.returns).as_ref().unwrap()
+}
+
+type TypeForEndpoint = fn(&ir::EndpointDefinition) -> &ir::Type;
 
 impl SpecTestResource {
     pub fn new(test_cases: Box<ClientTestCases>, ir: &Conjure) -> SpecTestResource {
+        // Services whose endpoints we care about, and how to extract the type we care about.
+        let mut services: HashMap<ServiceName, TypeForEndpoint> = HashMap::new();
+        services.insert(service_name("AutoDeserializeService"), return_type);
+        services.insert(service_name("SingleHeaderService"), type_of_non_index_arg);
+        services.insert(
+            service_name("SinglePathParamService"),
+            type_of_non_index_arg,
+        );
+        services.insert(
+            service_name("SingleQueryParamService"),
+            type_of_non_index_arg,
+        );
+
         // Resolve endpoint -> type mappings eagerly
         let param_types = {
             let mut param_types = Box::new(HashMap::new());
             ir.services
                 .iter()
-                .filter(|s| WHITELISTED_SERVICES.contains(&s.service_name))
-                .flat_map(|service| &service.endpoints)
-                .for_each(|e| {
-                    let arg_type = e.args
-                        .iter()
-                        .find(|arg| arg.arg_name != "index")
-                        .unwrap()
-                        .type_
-                        .clone();
-                    // Resolve aliases
-                    let arg_type = resolve_type(&ir.types, &arg_type);
-                    // Create a unique map
-                    assert!(
-                        param_types
-                            .insert(e.endpoint_name.clone().into(), arg_type)
-                            .is_none()
-                    );
+                .filter_map(|s| services.get(&s.service_name).map(|func| (s, func)))
+                .for_each(|(s, func)| {
+                    for e in &s.endpoints {
+                        // Resolve aliases
+                        let type_ = resolve_type(&ir.types, func(&e));
+                        // Create a unique map
+                        assert!(
+                            param_types
+                                .insert(e.endpoint_name.clone().into(), type_)
+                                .is_none()
+                        );
+                    }
                 });
             param_types
         };
@@ -215,12 +231,14 @@ impl SpecTestResource {
             .parse()
             .map_err(|err| Error::new_safe(err, Code::InvalidArgument))
     }
+
     /// Returns a `VerificationError::ConfirmationFailure` if the result is not what was expected.
     fn confirm(&self, request: &mut Request) -> Result<NoContent> {
         let index: usize = SpecTestResource::parse_index(request)?;
         let endpoint = EndpointName::new(request.path_param("endpoint"));
 
-        let expected_body = {
+        let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
+        let expected_body_str = {
             let positive_cases =
                 &get_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
             positive_cases.get(index).ok_or_else(|| {
@@ -233,18 +251,30 @@ impl SpecTestResource {
                 )
             })
         }?.to_string();
-        let expected_body_value: Value =
-            serde_json::from_str(&*expected_body).map_err(Error::internal_safe)?;
-        let request_body_value: Value = request.body()?;
+        let expected_body = serde_json_2::from_str(conjure_type, &*expected_body_str)
+            .map_err(Error::internal_safe)?;
+        let request_body_value: serde_json::Value = request.body()?;
+        let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {
+            Error::new_safe(
+                e,
+                VerificationError::confirmation_failure(
+                    &expected_body_str,
+                    &expected_body,
+                    request_body_value.clone(),
+                    None,
+                ),
+            )
+        })?;
         // Compare request_body with what the test case says we sent
-        if request_body_value != expected_body_value {
+        if request_body != expected_body {
             return Err(Error::new_safe(
-                "Body didn't match expected JSON value",
-                VerificationError::ConfirmationFailure {
-                    expected_body,
-                    request_body: serde_json::to_string(&request_body_value)
-                        .map_err(|e| Error::new_safe(e, Code::CustomClient))?,
-                },
+                "Body didn't match expected Conjure value",
+                VerificationError::confirmation_failure(
+                    &expected_body_str,
+                    &expected_body,
+                    request_body_value,
+                    Some(&request_body),
+                ),
             ));
         }
         Ok(NoContent)
