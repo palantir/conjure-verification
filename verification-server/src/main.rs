@@ -11,31 +11,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-extern crate bytes;
 #[macro_use]
 extern crate futures;
-extern crate http;
-extern crate hyper;
 #[macro_use]
 extern crate derive_more;
-extern crate mime;
-extern crate route_recognizer;
-extern crate scheduled_thread_pool;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_conjure;
 #[macro_use]
 extern crate serde_conjure_derive;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate conjure_verification_error_derive;
+
+extern crate bytes;
+extern crate chrono;
 extern crate conjure_verification_error;
 extern crate conjure_verification_http;
 extern crate core;
 extern crate flate2;
+extern crate http;
+extern crate hyper;
 extern crate itertools;
-#[macro_use]
-extern crate lazy_static;
-extern crate chrono;
+extern crate mime;
 extern crate pretty_env_logger;
+extern crate route_recognizer;
+extern crate scheduled_thread_pool;
+extern crate serde;
+extern crate serde_conjure;
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
@@ -45,10 +50,6 @@ extern crate typed_headers;
 extern crate url;
 extern crate uuid;
 
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate conjure_verification_error_derive;
 extern crate either;
 extern crate tokio;
 
