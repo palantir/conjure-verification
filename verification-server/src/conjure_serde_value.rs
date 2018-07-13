@@ -155,8 +155,11 @@ impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
     {
         //        let known_fields: Vec<String> = self.map.keys().map(|s| s.to_string()).collect();
         let mut result = BTreeMap::new();
-        while let Some(key) = items.next_key::<&str>()? {
-            let field_type = self.map.remove(key);
+        // Note: must deserialize String, not &str, because `de::Deserializer<'de> for
+        // ::serde_json::value::Value` calls `visit_string` on our visitor, and the visitor used by
+        // `de::Deserialize for String` (::serde::de::impls::StrVisitor) can't handle that.
+        while let Some(key) = items.next_key::<String>()? {
+            let field_type = self.map.remove(key.as_str());
             if let Some(field_type) = field_type {
                 let value = items.next_value_seed(field_type)?;
                 if let Some(_) = result.insert(key.to_string(), value) {
