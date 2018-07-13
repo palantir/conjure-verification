@@ -40,9 +40,13 @@ pub enum VerificationError {
     #[error_type(code = "InvalidArgument")]
     ParamValidationFailure {
         #[error_type(safe)]
-        expected_param: String,
+        expected_param_conjure: String,
         #[error_type(safe)]
-        request_param: String,
+        expected_param_raw: String,
+        #[error_type(safe)]
+        request_param_conjure: String,
+        #[error_type(safe)]
+        request_param_raw: String,
     },
     #[error_type(code = "InvalidArgument")]
     IndexOutOfBounds {
@@ -57,12 +61,17 @@ pub enum VerificationError {
 
 impl VerificationError {
     pub fn param_validation_failure(
+        expected_param_str: &str,
         expected_param: &ConjureValue,
-        request_param: &ConjureValue,
+        // Option because it might be undefined
+        request_param_str: Option<String>,
+        request_param: Option<&ConjureValue>,
     ) -> VerificationError {
         VerificationError::ParamValidationFailure {
-            expected_param: serde_json::ser::to_string(expected_param).unwrap(),
-            request_param: serde_json::ser::to_string(request_param).unwrap(),
+            expected_param_conjure: serde_json::ser::to_string(expected_param).unwrap(),
+            expected_param_raw: expected_param_str.to_string(),
+            request_param_conjure: request_param.map(|rp| serde_json::ser::to_string(rp).unwrap()).unwrap_or_else(|| "<undefined>".to_string()),
+            request_param_raw: request_param_str.unwrap_or_else(|| "<undefined>".to_string()),
         }
     }
 }

@@ -111,7 +111,7 @@ impl SpecTestResource {
     {
         move |resource: &SpecTestResource, request: &mut Request| -> Result<_> {
             let index = SpecTestResource::parse_index(request)?;
-            let param = get_param(request)?;
+            let param_str = get_param(request)?;
             let validate =
                 |request: &mut Request| SpecTestResource::assert_no_request_body(request);
 
@@ -119,7 +119,7 @@ impl SpecTestResource {
 
             let conjure_type = get_endpoint(&resource.param_types, &endpoint)?;
             let test_cases = get_endpoint(get_cases(&resource.test_cases), &endpoint)?;
-            let expected_param: &str = {
+            let expected_param_str: &str = {
                 test_cases.get(index).ok_or_else(|| {
                     Error::new_safe(
                         "Index out of bounds",
@@ -130,20 +130,34 @@ impl SpecTestResource {
                     )
                 })
             }?;
-            let param = param
+            let expected_param = serde_json_2::from_str(conjure_type, expected_param_str)
+                .map_err(Error::internal_safe)?;
+            let param = param_str
+                .as_ref()
                 .map(|str| {
                     let de = serde_plain::Deserializer::from_str(&str);
-                    conjure_type
-                        .deserialize(de)
-                        .map_err(|e| Error::new_safe(e, Code::InvalidArgument))
+                    conjure_type.deserialize(de).map_err(|e| {
+                        Error::new_safe(
+                            e,
+                            VerificationError::param_validation_failure(
+                                expected_param_str,
+                                &expected_param,
+                                Some(str.clone()),
+                                None,
+                            ),
+                        )
+                    })
                 })
                 .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
-            let expected_param =
-                serde_json_2::from_str(conjure_type, expected_param).map_err(Error::internal_safe)?;
             if param != expected_param {
                 return Err(Error::new_safe(
                     "Param didn't match expected value",
-                    VerificationError::param_validation_failure(&expected_param, &param),
+                    VerificationError::param_validation_failure(
+                        expected_param_str,
+                        &expected_param,
+                        param_str,
+                        Some(&param),
+                    ),
                 ));
             }
             Ok(NoContent)
