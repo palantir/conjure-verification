@@ -14,7 +14,6 @@
 
 use chrono::DateTime;
 use chrono::FixedOffset;
-use conjure_verification_error::{Code, Error};
 use core::fmt;
 use ir::*;
 use itertools::Itertools;
@@ -182,7 +181,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
                 .join(", ");
             if keys.is_empty() {
                 // Only optional fields. Set their values to None
-                for (k, v) in self.map.into_iter() {
+                for (k, _) in self.map.into_iter() {
                     result.insert(k.to_string(), ConjureValue::Optional(None));
                 }
             } else {
