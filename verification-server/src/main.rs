@@ -77,6 +77,7 @@ mod ir;
 mod raw_json;
 mod resource;
 mod router;
+mod serde_json_2;
 mod test_spec;
 mod type_resolution;
 

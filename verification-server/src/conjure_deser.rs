@@ -12,27 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ir::*;
-use serde::Deserialize;
-use type_resolution::ResolvedType;
-use type_resolution::ResolvedType::*;
-//use erased_serde::Deserializer;
-use serde::{self, Deserializer};
-use serde_json;
-use serde_value::Value;
-//use either::{Either, Left, Right};
 use chrono::DateTime;
 use chrono::FixedOffset;
 use conjure_verification_error::{Code, Error};
 use core::fmt;
+use ir::*;
 use serde::de::DeserializeSeed;
 use serde::de::Visitor;
-use std::any::Any;
+use serde::Deserialize;
+use serde::{self, Deserializer};
+use serde_value::Value;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
-use std::error;
 use std::error::Error as StdError;
-use std::marker::PhantomData;
+use type_resolution::ResolvedType;
+use type_resolution::ResolvedType::*;
 use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
@@ -163,29 +157,10 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     }
 }
 
-pub fn from_str<'de: 'a, 'a, T>(seed: T, str: &'de str) -> serde_json::Result<T::Value>
-where
-    T: DeserializeSeed<'de>,
-{
-    from_trait(seed, serde_json::de::StrRead::new(str))
-}
-
-pub fn from_trait<'de: 'a, 'a, R, T>(seed: T, read: R) -> serde_json::Result<T::Value>
-where
-    R: serde_json::de::Read<'de>,
-    T: DeserializeSeed<'de>,
-{
-    let mut de = serde_json::Deserializer::new(read);
-    let value = seed.deserialize(&mut de)?;
-
-    // Make sure the whole stream has been consumed.
-    de.end()?;
-    Ok(value)
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
+    use serde_json_2::*;
 
     #[test]
     fn test_double() {
