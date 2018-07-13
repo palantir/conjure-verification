@@ -18,65 +18,200 @@ use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
 //use erased_serde::Deserializer;
 use serde::{self, Deserializer};
-use serde_json::{self, Value};
+use serde_json;
+use serde_value::Value;
 //use either::{Either, Left, Right};
+use chrono::DateTime;
+use chrono::FixedOffset;
 use conjure_verification_error::{Code, Error};
+use core::fmt;
+use serde::de::DeserializeSeed;
+use serde::de::Visitor;
+use std::any::Any;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::error;
+use std::error::Error as StdError;
 use std::marker::PhantomData;
+use uuid::Uuid;
 
-#[derive(Deserialize, PartialEq)]
-struct BearerToken(String);
+#[derive(Debug, PartialEq)]
+pub enum ConjurePrimitiveValue {
+    String(String),
+    Integer(i32),
+    Double(f64),
+    Boolean(bool),
+    /// Integer with value ranging from -2^53 - 1 to 2^53 - 1 // TODO enforce?
+    Safelong(i64),
+    Binary(Vec<u8>),
+    Uuid(Uuid),
+    Rid(String),         // TODO
+    Bearertoken(String), // TODO
+    Datetime(DateTime<FixedOffset>),
+    Any(Value), // just use Value for any
+}
 
-#[derive(Deserialize, PartialEq)]
-struct Uuid(String);
+#[derive(Debug, PartialEq)]
+pub enum ConjureValue {
+    Primitive(ConjurePrimitiveValue),
+    // complex
+    Optional(Option<Box<ConjureValue>>),
+    Object(BTreeMap<String, ConjureValue>),
+    Enum(String),
+    Union {
+        field_name: String,
+        value: Box<ConjureValue>,
+    },
+    // anonymous
+    List(Vec<ConjureValue>),
+    Set(BTreeSet<ConjureValue>),
+    Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
+}
 
-#[derive(Deserialize, PartialEq)]
-struct Rid(String);
+/// Allows you to deserialize a given type without having to type it.
+trait DeserQuick<'de> {
+    type Error;
+    fn deser<T>(self) -> Result<T, Self::Error>
+    where
+        T: Deserialize<'de>;
+}
 
-#[allow(dead_code)]
-pub fn equals<'de, D1, D2, E1, E2>(type_: &'de ResolvedType, a: D1, b: D2) -> Result<bool, Error>
+impl<'de, D> DeserQuick<'de> for D
 where
-    D1: Deserializer<'de, Error = E1>,
-    D2: Deserializer<'de, Error = E2>,
-    E1: serde::de::Error + Into<Box<error::Error + Sync + Send>>,
-    E2: serde::de::Error + Into<Box<error::Error + Sync + Send>>,
+    D: Deserializer<'de>,
 {
-    match type_ {
-        Primitive(PrimitiveType::Bearertoken) => compare(a, b, PhantomData::<BearerToken>),
-        Primitive(PrimitiveType::Uuid) => compare(a, b, PhantomData::<Uuid>),
-        Primitive(PrimitiveType::Rid) => compare(a, b, PhantomData::<Rid>),
+    type Error = D::Error;
 
-//        Primitive(PrimitiveType::Datetime) => compare(a, b, PhantomData::<??>), // TODO
-        // TODO(dsanduleac): what type matches safelong?
-        Primitive(PrimitiveType::Safelong) => compare(a, b, PhantomData::<u64>),
-        Primitive(PrimitiveType::Integer) => compare(a, b, PhantomData::<u64>),
-        Primitive(PrimitiveType::Double) => compare(a, b, PhantomData::<f64>),
-        Primitive(PrimitiveType::String) => compare(a, b, PhantomData::<&str>),
-        Primitive(PrimitiveType::Binary) => compare(a, b, PhantomData::<&[u8]>),
-        Primitive(PrimitiveType::Boolean) => compare(a, b, PhantomData::<bool>),
-        // Compare everything else as literal json value
-        _ => compare(a, b, PhantomData::<Value>),
+    fn deser<T>(self) -> Result<T, Self::Error>
+    where
+        T: Deserialize<'de>,
+    {
+        T::deserialize(self)
     }
 }
 
-fn deser_as<'de, T, D, E>(deserializer: D) -> Result<T, Error>
-where
-    D: Deserializer<'de, Error = E>,
-    T: Deserialize<'de>,
-    E: serde::de::Error + Into<Box<error::Error + Sync + Send>>,
-{
-    Deserialize::deserialize(deserializer).map_err(|e| Error::new_safe(e, Code::InvalidArgument))
+// Visitors!!!
+
+struct OptionVisitor<'a>(&'a ResolvedType);
+
+impl<'de: 'a, 'a> Visitor<'de> for OptionVisitor<'a> {
+    type Value = Option<ConjureValue>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("option")
+    }
+
+    #[inline]
+    fn visit_none<E>(self) -> Result<Self::Value, E>
+    where
+        E: StdError,
+    {
+        Ok(None)
+    }
+
+    #[inline]
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        self.0.deserialize(deserializer).map(Some)
+    }
+
+    #[inline]
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
+    where
+        E: StdError,
+    {
+        Ok(None)
+    }
 }
 
-fn compare<'de, T, D1, D2, E1, E2>(a: D1, b: D2, phantom: PhantomData<T>) -> Result<bool, Error>
+impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
+    type Value = ConjureValue;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let deser_primitive =
+            |de: D, pt: &PrimitiveType| -> Result<ConjurePrimitiveValue, D::Error> {
+                let out = match *pt {
+                    PrimitiveType::Safelong => ConjurePrimitiveValue::Safelong(de.deser()?),
+                    PrimitiveType::Integer => ConjurePrimitiveValue::Integer(de.deser()?),
+                    PrimitiveType::Double => ConjurePrimitiveValue::Double(de.deser()?),
+                    PrimitiveType::String => ConjurePrimitiveValue::String(de.deser()?),
+                    PrimitiveType::Binary => ConjurePrimitiveValue::Binary(de.deser()?),
+                    PrimitiveType::Boolean => ConjurePrimitiveValue::Boolean(de.deser()?),
+                    PrimitiveType::Uuid => ConjurePrimitiveValue::Uuid(de.deser()?),
+                    PrimitiveType::Rid => ConjurePrimitiveValue::Rid(de.deser()?),
+                    PrimitiveType::Bearertoken => ConjurePrimitiveValue::Bearertoken(de.deser()?),
+                    PrimitiveType::Datetime => ConjurePrimitiveValue::Datetime(de.deser()?),
+                    PrimitiveType::Any => ConjurePrimitiveValue::Any(de.deser()?),
+                };
+                Ok(out)
+            };
+
+        Ok(match self {
+            Primitive(p) => ConjureValue::Primitive(deser_primitive(deserializer, p)?),
+            Optional(OptionalType { item_type }) => ConjureValue::Optional(
+                deserializer
+                    .deserialize_option(OptionVisitor(&item_type))?
+                    .map(Box::new),
+            ),
+            _ => unimplemented!(),
+        })
+    }
+}
+
+pub fn from_str<'de: 'a, 'a, T>(seed: T, str: &'de str) -> serde_json::Result<T::Value>
 where
-    D1: Deserializer<'de, Error = E1>,
-    D2: Deserializer<'de, Error = E2>,
-    T: Deserialize<'de> + PartialEq,
-    E1: serde::de::Error + Into<Box<error::Error + Sync + Send>>,
-    E2: serde::de::Error + Into<Box<error::Error + Sync + Send>>,
+    T: DeserializeSeed<'de>,
 {
-    let left: T = deser_as(a)?;
-    let right: T = deser_as(b)?;
-    Ok(left == right)
+    from_trait(seed, serde_json::de::StrRead::new(str))
+}
+
+pub fn from_trait<'de: 'a, 'a, R, T>(seed: T, read: R) -> serde_json::Result<T::Value>
+where
+    R: serde_json::de::Read<'de>,
+    T: DeserializeSeed<'de>,
+{
+    let mut de = serde_json::Deserializer::new(read);
+    let value = seed.deserialize(&mut de)?;
+
+    // Make sure the whole stream has been consumed.
+    de.end()?;
+    Ok(value)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_double() {
+        let type_ = ResolvedType::Primitive(PrimitiveType::Double);
+        assert_eq!(
+            from_str(&type_, "123").unwrap(),
+            ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0))
+        );
+        assert!(from_str(&type_, "").is_err());
+        assert!(from_str(&type_, "null").is_err());
+    }
+
+    #[test]
+    fn test_optional() {
+        let type_ = ResolvedType::Optional(OptionalType {
+            item_type: ResolvedType::Primitive(PrimitiveType::Double).into(),
+        });
+        assert_eq!(
+            from_str(&type_, "123").unwrap(),
+            ConjureValue::Optional(Some(
+                ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)).into()
+            ))
+        );
+        assert_eq!(
+            from_str(&type_, "null").unwrap(),
+            ConjureValue::Optional(None)
+        );
+    }
 }

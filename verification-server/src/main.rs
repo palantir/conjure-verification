@@ -34,6 +34,7 @@ extern crate flate2;
 extern crate itertools;
 #[macro_use]
 extern crate lazy_static;
+extern crate chrono;
 extern crate pretty_env_logger;
 extern crate serde_json;
 extern crate serde_value;
@@ -41,6 +42,7 @@ extern crate serde_yaml;
 extern crate tokio_threadpool;
 extern crate typed_headers;
 extern crate url;
+extern crate uuid;
 
 #[macro_use]
 extern crate log;
