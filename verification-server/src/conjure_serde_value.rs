@@ -242,6 +242,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
 mod test {
     use super::*;
     use serde_json_2::*;
+    use serde_plain;
 
     #[test]
     fn test_double() {
@@ -325,5 +326,16 @@ mod test {
 
         // Fails on missing required field
         assert!(from_str(&type_, r#"{}"#).is_err());
+    }
+
+    /// Testing that we can use serde_plain::Deserializer with our DeserializeSeed implementation.
+    #[test]
+    fn deser_from_string() {
+        let de = serde_plain::Deserializer::from_str("123");
+        let typ = ResolvedType::Primitive(PrimitiveType::Double);
+        assert_eq!(
+            typ.deserialize(de).unwrap(),
+            ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0))
+        );
     }
 }
