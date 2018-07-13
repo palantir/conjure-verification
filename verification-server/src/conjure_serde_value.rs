@@ -57,8 +57,9 @@ pub enum ConjureValue {
     Union(ConjureUnionValue),
     // anonymous
     List(Vec<ConjureValue>),
-//    Set(BTreeSet<ConjureValue>),
-//    Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
+    // TODO(dsanduleac): implement these cases after ConjureValue can be Eq
+    Set(Value), // BTreeSet<ConjureValue>),
+    Map(Value), // BTreeMap<ConjurePrimitiveValue, ConjureValue>),
 }
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
