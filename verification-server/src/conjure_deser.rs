@@ -17,13 +17,16 @@ use chrono::FixedOffset;
 use conjure_verification_error::{Code, Error};
 use core::fmt;
 use ir::*;
+use itertools::Itertools;
 use serde::de::DeserializeSeed;
+use serde::de::MapAccess;
 use serde::de::Visitor;
 use serde::Deserialize;
 use serde::{self, Deserializer};
 use serde_value::Value;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
+use std::collections::HashMap;
 use std::error::Error as StdError;
 use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
@@ -120,6 +123,79 @@ impl<'de: 'a, 'a> Visitor<'de> for OptionVisitor<'a> {
     }
 }
 
+struct ObjectVisitor<'a> {
+    map: HashMap<&'a str, &'a ResolvedType>,
+    skip_unknown: bool,
+}
+
+impl<'a> ObjectVisitor<'a> {
+    fn new(fields: &'a Vec<FieldDefinition<ResolvedType>>, skip_unknown: bool) -> ObjectVisitor {
+        ObjectVisitor {
+            map: fields
+                .iter()
+                .map(|FieldDefinition { field_name, type_ }| (&**field_name, type_))
+                .collect(),
+            skip_unknown,
+        }
+    }
+}
+
+impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
+    type Value = BTreeMap<String, ConjureValue>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("struct")
+    }
+
+    fn visit_map<A>(mut self, mut items: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        //        let known_fields: Vec<String> = self.map.keys().map(|s| s.to_string()).collect();
+        let mut result = BTreeMap::new();
+        while let Some(key) = items.next_key::<&str>()? {
+            let field_type = self.map.remove(key);
+            if let Some(field_type) = field_type {
+                let value = items.next_value_seed(field_type)?;
+                if let Some(_) = result.insert(key.to_string(), value) {
+                    return Err(serde::de::Error::custom(format_args!(
+                        "duplicate field `{}`",
+                        key
+                    )));
+                }
+            } else if !self.skip_unknown {
+                return Err(serde::de::Error::unknown_field(
+                    &key.to_string(),
+                    &[], /*&known_fields*/
+                ));
+            }
+        }
+        // Handle missing *required* fields (filter out fields which were optional)
+        if !self.map.is_empty() {
+            let keys = self.map
+                .iter()
+                .filter_map(|(k, v)| match v {
+                    Optional(_) => None,
+                    _ => Some(k),
+                })
+                .map(|k| format!("`{}`", k))
+                .join(", ");
+            if keys.is_empty() {
+                // Only optional fields. Set their values to None
+                for (k, v) in self.map.into_iter() {
+                    result.insert(k.to_string(), ConjureValue::Optional(None));
+                }
+            } else {
+                return Err(serde::de::Error::custom(format_args!(
+                    "missing fields: {}",
+                    keys
+                )));
+            }
+        }
+        Ok(result)
+    }
+}
+
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     type Value = ConjureValue;
 
@@ -152,6 +228,12 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                     .deserialize_option(OptionVisitor(&item_type))?
                     .map(Box::new),
             ),
+            Object(ObjectDefinition { fields }) => {
+                // TODO(dsanduleac): bubble up the skip_unknown (it's false for servers)
+                ConjureValue::Object(
+                    deserializer.deserialize_map(ObjectVisitor::new(&fields, false))?
+                )
+            }
             _ => unimplemented!(),
         })
     }
@@ -188,5 +270,61 @@ mod test {
             from_str(&type_, "null").unwrap(),
             ConjureValue::Optional(None)
         );
+    }
+
+    #[test]
+    fn test_object_optional_fields() {
+        let double_type = || ResolvedType::Primitive(PrimitiveType::Double);
+        let type_ = ResolvedType::Object(ObjectDefinition {
+            fields: vec![
+                FieldDefinition {
+                    field_name: "foo".to_string(),
+                    type_: double_type(),
+                },
+                FieldDefinition {
+                    field_name: "bar".to_string(),
+                    type_: ResolvedType::Optional(OptionalType {
+                        item_type: double_type().into(),
+                    }),
+                },
+            ],
+        });
+
+        // Accepts missing optional fields
+        assert_eq!(
+            from_str(&type_, r#"{"foo": 123}"#).unwrap(),
+            ConjureValue::Object(btreemap!(
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)),
+                "bar" => ConjureValue::Optional(None)
+            ))
+        );
+
+        // Does not tolerate null for required field
+        assert!(from_str(&type_, r#"{"foo": null}"#).is_err());
+
+        // Tolerates null for optional field
+        assert_eq!(
+            from_str(&type_, r#"{"bar": null, "foo": 123}"#).unwrap(),
+            ConjureValue::Object(btreemap!(
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)),
+                "bar" => ConjureValue::Optional(None)
+            ))
+        );
+
+        // Deserializes present optional fields
+        assert_eq!(
+            from_str(&type_, r#"{"bar": 555, "foo": 123}"#).unwrap(),
+            ConjureValue::Object(btreemap!(
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)),
+                "bar" => ConjureValue::Optional(Some(
+                    ConjureValue::Primitive(ConjurePrimitiveValue::Double(555.0)).into()))
+            ))
+        );
+
+        // Fails on unknown fields (default = server implementation)
+        assert!(from_str(&type_, r#"{"foo": 123, "whoami": 1}"#).is_err());
+
+        // Fails on missing required field
+        assert!(from_str(&type_, r#"{}"#).is_err());
     }
 }
