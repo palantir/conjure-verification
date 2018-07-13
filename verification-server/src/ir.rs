@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct Conjure {
     pub types: Vec<TypeDefinition>,
     pub services: Vec<ServiceDefinition>,
@@ -20,7 +20,7 @@ pub struct Conjure {
 
 // Types
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub enum TypeDefinition {
     Object(TypeDefinitionBody<ObjectDefinition<Type>>),
     Alias(TypeDefinitionBody<AliasDefinition<Type>>),
@@ -39,7 +39,7 @@ impl TypeDefinition {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TypeDefinitionBody<T> {
     pub type_name: TypeName,
@@ -47,32 +47,32 @@ pub struct TypeDefinitionBody<T> {
     pub definition: T,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct ObjectDefinition<Inner> {
     pub fields: Vec<FieldDefinition<Inner>>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct AliasDefinition<Inner> {
     pub alias: Box<Inner>,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct EnumDefinition {
     pub values: Vec<EnumValueDefinition>,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct EnumValueDefinition {
     pub value: String,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct UnionDefinition<Inner> {
     pub union: Vec<FieldDefinition<Inner>>,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub enum Type {
     Reference(TypeName),
     Primitive(PrimitiveType),
@@ -82,13 +82,13 @@ pub enum Type {
     Map(MapType<Type, Type>),
 }
 
-#[derive(ConjureDeserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, Eq, PartialEq)]
 pub struct TypeName {
     pub name: String,
     pub package: String,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct OptionalType<Inner> {
     pub item_type: Box<Inner>,
 }
@@ -101,7 +101,7 @@ impl<Inner> OptionalType<Inner> {
     }
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub enum PrimitiveType {
     String,
     Integer,
@@ -116,23 +116,23 @@ pub enum PrimitiveType {
     Any,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct ListType<Inner> {
     pub item_type: Box<Inner>,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct SetType<Inner> {
     pub item_type: Box<Inner>,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct MapType<Key, Value> {
     pub key_type: Box<Key>,
     pub value_type: Box<Value>,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct FieldDefinition<Inner> {
     pub field_name: String,
     pub type_: Inner,
@@ -140,25 +140,25 @@ pub struct FieldDefinition<Inner> {
 
 // Services
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct ServiceDefinition {
     pub service_name: ServiceName,
     pub endpoints: Vec<EndpointDefinition>,
 }
 
-#[derive(ConjureDeserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ServiceName {
     pub name: String,
     pub package: String,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct EndpointDefinition {
     pub endpoint_name: String,
     pub args: Vec<ArgumentDefinition>,
 }
 
-#[derive(ConjureDeserialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct ArgumentDefinition {
     pub arg_name: String,
     pub type_: Type,
