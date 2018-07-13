@@ -156,6 +156,7 @@ pub struct ServiceName {
 pub struct EndpointDefinition {
     pub endpoint_name: String,
     pub args: Vec<ArgumentDefinition>,
+    pub returns: Option<Type>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]

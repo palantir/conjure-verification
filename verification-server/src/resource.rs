@@ -444,6 +444,7 @@ mod test {
                 arg_name: "irrelevant".into(),
                 type_: arg_type,
             }],
+            returns: None,
         }
     }
 
