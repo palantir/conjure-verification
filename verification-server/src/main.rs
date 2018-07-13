@@ -69,7 +69,7 @@ use test_spec::TestCases;
 
 #[macro_use]
 mod macros;
-mod conjure_deser;
+mod conjure_serde_value;
 mod error_handling;
 mod errors;
 mod handler;
