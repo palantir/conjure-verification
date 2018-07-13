@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use bytes::Bytes;
+use conjure_serde_value::*;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
 use conjure_verification_http::request::Request;
@@ -30,6 +31,8 @@ use ir::ServiceName;
 use raw_json::RawJson;
 use serde_json;
 use serde_json::Value;
+use serde_json_2;
+use serde_plain;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::string::ToString;
@@ -42,7 +45,7 @@ use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ClientTestCases>,
-    param_types: Box<HashMap<String, ResolvedType>>,
+    param_types: Box<HashMap<EndpointName, ResolvedType>>,
 }
 
 const PACKAGE: &'static str = "com.palantir.conjure.verification";
@@ -81,7 +84,7 @@ impl SpecTestResource {
                     // Create a unique map
                     assert!(
                         param_types
-                            .insert(e.endpoint_name.clone(), arg_type)
+                            .insert(e.endpoint_name.clone().into(), arg_type)
                             .is_none()
                     );
                 });
@@ -93,30 +96,16 @@ impl SpecTestResource {
         }
     }
 
-    fn decode_json_as_param_string(json: &str) -> Result<Option<String>> {
-        let value: Value = serde_json::from_str(json).map_err(Error::internal_safe)?;
-        let result = match value {
-            Value::Bool(bool) => Some(bool.to_string()),
-            Value::Number(number) => Some(number.to_string()),
-            Value::String(string) => Some(string),
-            Value::Null => None,
-            v => {
-                Err(Error::internal_safe("Not supported").with_safe_param("value", v.to_string()))?
-            }
-        };
-        Ok(result)
-    }
-
     /// Create a test that validates that some param from the request is as expected.
-    /// The comparison is done on strings.
-    /// Converting the test case JSON to the actual expected value is done by
-    /// [decode_json_as_param_string].
+    /// The comparison is done by deserializing both sides to [ConjureValue], the test case json
+    /// using /// deser_json, and the param value using deser_plain.
     fn create_param_test<F, G>(
         endpoint: EndpointName,
         get_param: F,
         get_cases: G,
     ) -> impl Fn(&SpecTestResource, &mut Request) -> Result<NoContent> + Sync
     where
+        // TODO return Result<Option<&str>>
         F: Fn(&mut Request) -> Result<Option<String>> + Sync + Send,
         G: Fn(&ClientTestCases) -> &HashMap<EndpointName, Vec<String>> + Sync + Send,
     {
@@ -127,8 +116,10 @@ impl SpecTestResource {
                 |request: &mut Request| SpecTestResource::assert_no_request_body(request);
 
             validate(request)?;
-            let test_cases = test_cases_for_endpoint(get_cases(&resource.test_cases), &endpoint)?;
-            let expected_param = {
+
+            let conjure_type = get_endpoint(&resource.param_types, &endpoint)?;
+            let test_cases = get_endpoint(get_cases(&resource.test_cases), &endpoint)?;
+            let expected_param: &str = {
                 test_cases.get(index).ok_or_else(|| {
                     Error::new_safe(
                         "Index out of bounds",
@@ -139,11 +130,20 @@ impl SpecTestResource {
                     )
                 })
             }?;
-            let expected_param = SpecTestResource::decode_json_as_param_string(expected_param)?;
+            let param = param
+                .map(|str| {
+                    let de = serde_plain::Deserializer::from_str(&str);
+                    conjure_type
+                        .deserialize(de)
+                        .map_err(|e| Error::new_safe(e, Code::InvalidArgument))
+                })
+                .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
+            let expected_param =
+                serde_json_2::from_str(conjure_type, expected_param).map_err(Error::internal_safe)?;
             if param != expected_param {
                 return Err(Error::new_safe(
                     "Param didn't match expected value",
-                    VerificationError::param_validation_failure(expected_param, param),
+                    VerificationError::param_validation_failure(&expected_param, &param),
                 ));
             }
             Ok(NoContent)
@@ -183,7 +183,7 @@ impl SpecTestResource {
 
             validate(request)?;
 
-            let cases = test_cases_for_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
+            let cases = get_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
             let reply: Bytes = cases
                 .index(&index)?
                 .map_left(|case| case.0)
@@ -208,7 +208,7 @@ impl SpecTestResource {
 
         let expected_body = {
             let positive_cases =
-                &test_cases_for_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
+                &get_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
             positive_cases.get(index).ok_or_else(|| {
                 Error::new_safe(
                     "Index out of bounds",
@@ -357,7 +357,7 @@ impl DynamicResource for SpecTestResource {
     }
 }
 
-fn test_cases_for_endpoint<'a, V>(
+fn get_endpoint<'a, V>(
     map: &'a HashMap<EndpointName, V>,
     endpoint: &EndpointName,
 ) -> Result<&'a V> {
@@ -390,6 +390,7 @@ mod test {
     use super::*;
     use hyper::HeaderMap;
     use hyper::Method;
+    use ir;
     use mime::APPLICATION_JSON;
     use register_resource;
     use router;
@@ -397,7 +398,7 @@ mod test {
     use router::Router;
     use std::collections::HashMap;
     use std::sync::Arc;
-    use test_spec::*;
+    use test_spec::{EndpointName, PositiveAndNegativeTestCases};
     use typed_headers::{ContentType, HeaderMapExt};
 
     /// This exists because `Request` takes references only so it can't be used as a builder.
@@ -422,15 +423,43 @@ mod test {
         }
     }
 
+    fn endpoint_definition(endpoint_name: &str, arg_type: ir::Type) -> ir::EndpointDefinition {
+        ir::EndpointDefinition {
+            endpoint_name: endpoint_name.into(),
+            args: vec![ir::ArgumentDefinition {
+                arg_name: "irrelevant".into(),
+                type_: arg_type,
+            }],
+        }
+    }
+
     #[test]
     fn test_header() {
-        let router = setup_routes(|cases| {
+        let router = setup_routes(|cases, ir| {
             cases.single_header_service = hashmap!(
                 EndpointName::new("string") => vec!["\"yo\"".into()],
                 EndpointName::new("int") => vec!["-1234".into()],
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
+            ir.services.push(ir::ServiceDefinition {
+                // Note: must use whitelisted service name
+                service_name: ServiceName {
+                    name: "SingleHeaderService".into(),
+                    package: PACKAGE.into(),
+                },
+                endpoints: vec![
+                    endpoint_definition("string", ir::Type::Primitive(ir::PrimitiveType::String)),
+                    endpoint_definition("int", ir::Type::Primitive(ir::PrimitiveType::Integer)),
+                    endpoint_definition("bool", ir::Type::Primitive(ir::PrimitiveType::Boolean)),
+                    endpoint_definition(
+                        "opt",
+                        ir::Type::Optional(ir::OptionalType::new(ir::Type::Primitive(
+                            ir::PrimitiveType::Any,
+                        ))),
+                    ),
+                ],
+            });
         });
         let header_name: &'static str = "Some-Header";
         send_request(&router, Method::POST, "/string/0", 0, |req| {
@@ -447,13 +476,31 @@ mod test {
 
     #[test]
     fn test_query() {
-        let router = setup_routes(|cases| {
+        let router = setup_routes(|cases, ir| {
             cases.single_query_param_service = hashmap!(
                 EndpointName::new("string") => vec!["\"yo\"".into()],
                 EndpointName::new("int") => vec!["-1234".into()],
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
+            ir.services.push(ir::ServiceDefinition {
+                // Note: must use whitelisted service name
+                service_name: ServiceName {
+                    name: "SingleQueryParamService".into(),
+                    package: PACKAGE.into(),
+                },
+                endpoints: vec![
+                    endpoint_definition("string", ir::Type::Primitive(ir::PrimitiveType::String)),
+                    endpoint_definition("int", ir::Type::Primitive(ir::PrimitiveType::Integer)),
+                    endpoint_definition("bool", ir::Type::Primitive(ir::PrimitiveType::Boolean)),
+                    endpoint_definition(
+                        "opt",
+                        ir::Type::Optional(ir::OptionalType::new(ir::Type::Primitive(
+                            ir::PrimitiveType::Any,
+                        ))),
+                    ),
+                ],
+            });
         });
         send_request(&router, Method::POST, "/string/0", 0, |req| {
             req.query_params.insert("foo".into(), vec!["yo".into()]);
@@ -529,10 +576,17 @@ mod test {
     }
 
     /// Sets up a router handling the desired client test cases.
-    fn setup_routes(f: impl FnOnce(&mut ClientTestCases)) -> Router {
+    fn setup_routes<F>(f: F) -> Router
+    where
+        F: FnOnce(&mut ClientTestCases, &mut Conjure),
+    {
         let mut test_cases = ClientTestCases::default();
-        f(&mut test_cases);
-        let (router, _) = create_resource(test_cases);
+        let mut ir = Conjure {
+            types: Vec::default(),
+            services: Vec::default(),
+        };
+        f(&mut test_cases, &mut ir);
+        let (router, _) = create_resource(test_cases, ir);
         router
     }
 
@@ -545,17 +599,22 @@ mod test {
                 negative: vec![],
             }
         );
-        let (router, resource) = create_resource(test_cases);
+        let (router, resource) = create_resource(
+            test_cases,
+            // TODO
+            Conjure {
+                types: Vec::default(),
+                services: Vec::default(),
+            },
+        );
         (expected_body, router, resource)
     }
 
-    fn create_resource(test_cases: ClientTestCases) -> (Router, Arc<SpecTestResource>) {
+    fn create_resource(
+        test_cases: ClientTestCases,
+        ir: Conjure,
+    ) -> (Router, Arc<SpecTestResource>) {
         let mut builder = router::Router::builder();
-        // TODO
-        let ir = Conjure {
-            types: Vec::default(),
-            services: Vec::default(),
-        };
         let resource = Arc::new(SpecTestResource::new(Box::new(test_cases), &ir));
         register_resource(&mut builder, &resource);
         (builder.build(), resource)

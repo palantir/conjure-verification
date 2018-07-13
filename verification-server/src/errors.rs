@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use test_spec::EndpointName;
+use conjure_serde_value::ConjureValue;
 
 #[derive(ErrorType)]
 #[error_type(namespace = "ConjureVerification")]
@@ -55,19 +56,12 @@ pub enum VerificationError {
 
 impl VerificationError {
     pub fn param_validation_failure(
-        expected_param: Option<String>,
-        request_param: Option<String>,
+        expected_param: &ConjureValue,
+        request_param: &ConjureValue,
     ) -> VerificationError {
         VerificationError::ParamValidationFailure {
-            expected_param: opt_to_string(expected_param),
-            request_param: opt_to_string(request_param),
+            expected_param: format!("{:?}", expected_param),
+            request_param: format!("{:?}", request_param),
         }
-    }
-}
-
-fn opt_to_string(opt: Option<String>) -> String {
-    match opt {
-        Some(str) => format!("defined: {}", str),
-        None => "undefined".into(),
     }
 }

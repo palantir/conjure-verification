@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub use serde::de::DeserializeSeed;
+
 use chrono::DateTime;
 use chrono::FixedOffset;
 use core::fmt;
 use ir::*;
 use itertools::Itertools;
-use serde::de::DeserializeSeed;
 use serde::de::MapAccess;
 use serde::de::Visitor;
 use serde::Deserialize;

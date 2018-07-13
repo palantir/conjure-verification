@@ -93,6 +93,14 @@ pub struct OptionalType<Inner> {
     pub item_type: Box<Inner>,
 }
 
+impl<Inner> OptionalType<Inner> {
+    pub fn new(t: Inner) -> OptionalType<Inner> {
+        OptionalType {
+            item_type: t.into(),
+        }
+    }
+}
+
 #[derive(ConjureDeserialize, Debug, Clone)]
 pub enum PrimitiveType {
     String,

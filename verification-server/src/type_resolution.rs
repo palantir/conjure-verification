@@ -13,6 +13,7 @@
 // limitations under the License.
 use ir::*;
 
+#[derive(Debug)]
 pub enum ResolvedType {
     Primitive(PrimitiveType),
     // declared types
