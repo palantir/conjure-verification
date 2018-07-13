@@ -25,14 +25,13 @@ use serde::Deserialize;
 use serde::{self, Deserializer};
 use serde_value::Value;
 use std::collections::BTreeMap;
-use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
 use uuid::Uuid;
 
-#[derive(Debug, PartialEq)]
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
 pub enum ConjurePrimitiveValue {
     String(String),
     Integer(i32),
@@ -48,7 +47,7 @@ pub enum ConjurePrimitiveValue {
     Any(Value), // just use Value for any
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
 pub enum ConjureValue {
     Primitive(ConjurePrimitiveValue),
     // complex
@@ -58,11 +57,11 @@ pub enum ConjureValue {
     Union(ConjureUnionValue),
     // anonymous
     List(Vec<ConjureValue>),
-    Set(BTreeSet<ConjureValue>),
-    Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
+//    Set(BTreeSet<ConjureValue>),
+//    Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
 pub struct ConjureUnionValue {
     pub field_name: String,
     pub value: Box<ConjureValue>,
