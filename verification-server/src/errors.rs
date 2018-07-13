@@ -13,6 +13,7 @@
 // limitations under the License.
 use test_spec::EndpointName;
 use conjure_serde_value::ConjureValue;
+use serde_json;
 
 #[derive(ErrorType)]
 #[error_type(namespace = "ConjureVerification")]
@@ -60,8 +61,8 @@ impl VerificationError {
         request_param: &ConjureValue,
     ) -> VerificationError {
         VerificationError::ParamValidationFailure {
-            expected_param: format!("{:?}", expected_param),
-            request_param: format!("{:?}", request_param),
+            expected_param: serde_json::ser::to_string(expected_param).unwrap(),
+            request_param: serde_json::ser::to_string(request_param).unwrap(),
         }
     }
 }
