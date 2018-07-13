@@ -80,6 +80,7 @@ mod resource;
 mod router;
 mod serde_json_2;
 mod test_spec;
+mod type_mapping;
 mod type_resolution;
 
 fn main() {
@@ -108,7 +109,10 @@ fn main() {
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
-        &Arc::new(SpecTestResource::new(test_cases.client.into(), &ir)),
+        &Arc::new(SpecTestResource::new(
+            test_cases.client.into(),
+            type_mapping::resolve_types(&ir),
+        )),
     );
     let router = builder.build();
 

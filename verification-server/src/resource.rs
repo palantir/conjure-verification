@@ -26,9 +26,6 @@ use errors::*;
 use http::status::StatusCode;
 use http::Method;
 use hyper::header::HeaderValue;
-use ir;
-use ir::Conjure;
-use ir::ServiceName;
 use raw_json::RawJson;
 use serde_json;
 use serde_json_2;
@@ -38,7 +35,6 @@ use std::string::ToString;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
 use test_spec::TestIndex;
-use type_resolution::resolve_type;
 use type_resolution::ResolvedType;
 use DynamicResource;
 
@@ -47,65 +43,10 @@ pub struct SpecTestResource {
     param_types: Box<HashMap<EndpointName, ResolvedType>>,
 }
 
-const PACKAGE: &'static str = "com.palantir.conjure.verification";
-
-fn service_name(s: &str) -> ServiceName {
-    ServiceName {
-        name: s.into(),
-        package: PACKAGE.into(),
-    }
-}
-
-fn type_of_non_index_arg(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
-    &endpoint_def
-        .args
-        .iter()
-        .find(|arg| arg.arg_name != "index")
-        .unwrap()
-        .type_
-}
-
-fn return_type(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
-    (&endpoint_def.returns).as_ref().unwrap()
-}
-
-type TypeForEndpoint = fn(&ir::EndpointDefinition) -> &ir::Type;
+type ParamTypes = HashMap<EndpointName, ResolvedType>;
 
 impl SpecTestResource {
-    pub fn new(test_cases: Box<ClientTestCases>, ir: &Conjure) -> SpecTestResource {
-        // Services whose endpoints we care about, and how to extract the type we care about.
-        let mut services: HashMap<ServiceName, TypeForEndpoint> = HashMap::new();
-        services.insert(service_name("AutoDeserializeService"), return_type);
-        services.insert(service_name("SingleHeaderService"), type_of_non_index_arg);
-        services.insert(
-            service_name("SinglePathParamService"),
-            type_of_non_index_arg,
-        );
-        services.insert(
-            service_name("SingleQueryParamService"),
-            type_of_non_index_arg,
-        );
-
-        // Resolve endpoint -> type mappings eagerly
-        let param_types = {
-            let mut param_types = Box::new(HashMap::new());
-            ir.services
-                .iter()
-                .filter_map(|s| services.get(&s.service_name).map(|func| (s, func)))
-                .for_each(|(s, func)| {
-                    for e in &s.endpoints {
-                        // Resolve aliases
-                        let type_ = resolve_type(&ir.types, func(&e));
-                        // Create a unique map
-                        assert!(
-                            param_types
-                                .insert(e.endpoint_name.clone().into(), type_)
-                                .is_none()
-                        );
-                    }
-                });
-            param_types
-        };
+    pub fn new(test_cases: Box<ClientTestCases>, param_types: Box<ParamTypes>) -> SpecTestResource {
         SpecTestResource {
             test_cases,
             param_types,
@@ -467,44 +408,33 @@ mod test {
         }
     }
 
-    fn endpoint_definition(endpoint_name: &str, arg_type: ir::Type) -> ir::EndpointDefinition {
-        ir::EndpointDefinition {
-            endpoint_name: endpoint_name.into(),
-            args: vec![ir::ArgumentDefinition {
-                arg_name: "irrelevant".into(),
-                type_: arg_type,
-            }],
-            returns: None,
-        }
-    }
-
     #[test]
     fn test_header() {
-        let router = setup_routes(|cases, ir| {
+        let router = setup_routes(|cases, types| {
             cases.single_header_service = hashmap!(
                 EndpointName::new("string") => vec!["\"yo\"".into()],
                 EndpointName::new("int") => vec!["-1234".into()],
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
-            ir.services.push(ir::ServiceDefinition {
-                // Note: must use whitelisted service name
-                service_name: ServiceName {
-                    name: "SingleHeaderService".into(),
-                    package: PACKAGE.into(),
-                },
-                endpoints: vec![
-                    endpoint_definition("string", ir::Type::Primitive(ir::PrimitiveType::String)),
-                    endpoint_definition("int", ir::Type::Primitive(ir::PrimitiveType::Integer)),
-                    endpoint_definition("bool", ir::Type::Primitive(ir::PrimitiveType::Boolean)),
-                    endpoint_definition(
-                        "opt",
-                        ir::Type::Optional(ir::OptionalType::new(ir::Type::Primitive(
-                            ir::PrimitiveType::Any,
-                        ))),
-                    ),
-                ],
-            });
+            types.insert(
+                EndpointName::new("string"),
+                ResolvedType::Primitive(ir::PrimitiveType::String),
+            );
+            types.insert(
+                EndpointName::new("int"),
+                ResolvedType::Primitive(ir::PrimitiveType::Integer),
+            );
+            types.insert(
+                EndpointName::new("bool"),
+                ResolvedType::Primitive(ir::PrimitiveType::Boolean),
+            );
+            types.insert(
+                EndpointName::new("opt"),
+                ResolvedType::Optional(ir::OptionalType {
+                    item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
+                }),
+            );
         });
         let header_name: &'static str = "Some-Header";
         send_request(&router, Method::POST, "/string/0", 0, |req| {
@@ -521,31 +451,31 @@ mod test {
 
     #[test]
     fn test_query() {
-        let router = setup_routes(|cases, ir| {
+        let router = setup_routes(|cases, types| {
             cases.single_query_param_service = hashmap!(
                 EndpointName::new("string") => vec!["\"yo\"".into()],
                 EndpointName::new("int") => vec!["-1234".into()],
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
-            ir.services.push(ir::ServiceDefinition {
-                // Note: must use whitelisted service name
-                service_name: ServiceName {
-                    name: "SingleQueryParamService".into(),
-                    package: PACKAGE.into(),
-                },
-                endpoints: vec![
-                    endpoint_definition("string", ir::Type::Primitive(ir::PrimitiveType::String)),
-                    endpoint_definition("int", ir::Type::Primitive(ir::PrimitiveType::Integer)),
-                    endpoint_definition("bool", ir::Type::Primitive(ir::PrimitiveType::Boolean)),
-                    endpoint_definition(
-                        "opt",
-                        ir::Type::Optional(ir::OptionalType::new(ir::Type::Primitive(
-                            ir::PrimitiveType::Any,
-                        ))),
-                    ),
-                ],
-            });
+            types.insert(
+                EndpointName::new("string"),
+                ResolvedType::Primitive(ir::PrimitiveType::String),
+            );
+            types.insert(
+                EndpointName::new("int"),
+                ResolvedType::Primitive(ir::PrimitiveType::Integer),
+            );
+            types.insert(
+                EndpointName::new("bool"),
+                ResolvedType::Primitive(ir::PrimitiveType::Boolean),
+            );
+            types.insert(
+                EndpointName::new("opt"),
+                ResolvedType::Optional(ir::OptionalType {
+                    item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
+                }),
+            );
         });
         send_request(&router, Method::POST, "/string/0", 0, |req| {
             req.query_params.insert("foo".into(), vec!["yo".into()]);
@@ -620,18 +550,25 @@ mod test {
         }
     }
 
+    fn field_definition(
+        field_name: &str,
+        type_: ResolvedType,
+    ) -> ir::FieldDefinition<ResolvedType> {
+        ir::FieldDefinition {
+            field_name: field_name.into(),
+            type_,
+        }
+    }
+
     /// Sets up a router handling the desired client test cases.
     fn setup_routes<F>(f: F) -> Router
     where
-        F: FnOnce(&mut ClientTestCases, &mut Conjure),
+        F: FnOnce(&mut ClientTestCases, &mut ParamTypes),
     {
         let mut test_cases = ClientTestCases::default();
-        let mut ir = Conjure {
-            types: Vec::default(),
-            services: Vec::default(),
-        };
-        f(&mut test_cases, &mut ir);
-        let (router, _) = create_resource(test_cases, ir);
+        let mut param_types = HashMap::default();
+        f(&mut test_cases, &mut param_types);
+        let (router, _) = create_resource(test_cases, param_types);
         router
     }
 
@@ -644,23 +581,29 @@ mod test {
                 negative: vec![],
             }
         );
-        let (router, resource) = create_resource(
-            test_cases,
-            // TODO
-            Conjure {
-                types: Vec::default(),
-                services: Vec::default(),
-            },
-        );
+        let param_types = hashmap![
+            EndpointName::new("foo") => ResolvedType::Object(ir::ObjectDefinition {
+                fields: vec![
+                    field_definition(
+                        "heyo",
+                        ResolvedType::Primitive(ir::PrimitiveType::Integer)
+                    )
+                ]
+            })
+        ];
+        let (router, resource) = create_resource(test_cases, param_types);
         (expected_body, router, resource)
     }
 
     fn create_resource(
         test_cases: ClientTestCases,
-        ir: Conjure,
+        param_types: ParamTypes,
     ) -> (Router, Arc<SpecTestResource>) {
         let mut builder = router::Router::builder();
-        let resource = Arc::new(SpecTestResource::new(Box::new(test_cases), &ir));
+        let resource = Arc::new(SpecTestResource::new(
+            Box::new(test_cases),
+            Box::new(param_types),
+        ));
         register_resource(&mut builder, &resource);
         (builder.build(), resource)
     }
