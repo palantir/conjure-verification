@@ -36,6 +36,7 @@ use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
 use uuid::Uuid;
 use std::collections::BTreeSet;
+use std::collections::btree_map;
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ConjurePrimitiveValue {
@@ -279,6 +280,41 @@ impl<'de: 'a, 'a> Visitor<'de> for SetVisitor<'a> {
     }
 }
 
+struct MapVisitor<'a> {
+    key_type: &'a PrimitiveType,
+    value_type: &'a ResolvedType,
+}
+
+impl<'de: 'a, 'a> Visitor<'de> for MapVisitor<'a> {
+    type Value = BTreeMap<ConjurePrimitiveValue, ConjureValue>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("map")
+    }
+
+    fn visit_map<A>(self, mut items: A) -> Result<Self::Value, A::Error>
+        where
+            A: MapAccess<'de>,
+    {
+        let mut result = BTreeMap::new();
+        while let Some(key) = items.next_key_seed(self.key_type)? {
+            let value = items.next_value_seed(self.value_type)?;
+            match result.entry(key) {
+                btree_map::Entry::Occupied(entry) => {
+                    return Err(serde::de::Error::custom(format_args!(
+                        "duplicate field `{}`",
+                        serde_json::ser::to_string(entry.key()).unwrap()
+                    )))
+                },
+                btree_map::Entry::Vacant(entry) => {
+                    entry.insert(value);
+                }
+            }
+        }
+        Ok(result)
+    }
+}
+
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
     type Value = ConjurePrimitiveValue;
 
@@ -330,6 +366,12 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 ConjureValue::Set(deserializer.deserialize_seq(SetVisitor {
                     item_type,
                     fail_on_duplicates: false,
+                })?)
+            },
+            Map(MapType { ref key_type, ref value_type }) => {
+                ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
+                    key_type,
+                    value_type,
                 })?)
             },
             _ => unimplemented!(),

@@ -24,7 +24,7 @@ pub enum ResolvedType {
     Optional(OptionalType<ResolvedType>),
     List(ListType<ResolvedType>),
     Set(SetType<ResolvedType>),
-    Map(MapType<ResolvedType, ResolvedType>),
+    Map(MapType<PrimitiveType, ResolvedType>),
 }
 
 /// Recursively resolve references and aliases to get to the real types.
@@ -49,7 +49,10 @@ pub fn resolve_type(types: &Vec<TypeDefinition>, t: &Type) -> ResolvedType {
             key_type,
             value_type,
         }) => ResolvedType::Map(MapType {
-            key_type: resolve_type(types, &key_type).into(),
+            key_type: (match resolve_type(types, &key_type) {
+                ResolvedType::Primitive(prim) => prim,
+                it => panic!("Map key type should be primitive but found: {:?}", it),
+            }).into(),
             value_type: resolve_type(types, &value_type).into(),
         }),
     }
