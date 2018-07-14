@@ -29,3 +29,5 @@ cp $TEST_CASES $DEST
 
 cd $DEST
 docker build -t "palantirtechnologies/conjure-verification-server:$VERSION" .
+
+docker tag "palantirtechnologies/conjure-verification-server:$VERSION" "palantirtechnologies/conjure-verification-server:latest"
