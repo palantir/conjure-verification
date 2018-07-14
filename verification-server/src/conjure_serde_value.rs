@@ -29,14 +29,15 @@ use serde::Deserialize;
 use serde::{self, Deserializer};
 use serde_json;
 use serde_value::Value;
+use std::collections::btree_map;
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::error::Error as StdError;
 use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
 use uuid::Uuid;
-use std::collections::BTreeSet;
-use std::collections::btree_map;
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ConjurePrimitiveValue {
@@ -48,8 +49,10 @@ pub enum ConjurePrimitiveValue {
     Safelong(i64),
     Binary(Vec<u8>),
     Uuid(Uuid),
-    Rid(String),         // TODO
-    Bearertoken(String), // TODO
+    // TODO(dsanduleac): own type
+    Rid(String),
+    // TODO(dsanduleac): own type
+    Bearertoken(String),
     Datetime(DateTime<FixedOffset>),
     Any(Value), // just use Value for any
 }
@@ -172,6 +175,22 @@ fn unknown_field<'a, E: Error>(field: &'a str, expected: Vec<&'a str>) -> E {
     }
 }
 
+/// Shameless kinda copied from serde::de::Error::unknown_variant because they only take static strings.
+fn unknown_variant<'a, E: Error>(field: &'a str, expected: Vec<&'a str>) -> E {
+    if expected.is_empty() {
+        Error::custom(format_args!(
+            "unknown variant `{}`, there are no variants",
+            field
+        ))
+    } else {
+        Error::custom(format_args!(
+            "unknown variant `{}`, expected one of: {}",
+            field,
+            expected.into_iter().join(", ")
+        ))
+    }
+}
+
 impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
     type Value = BTreeMap<String, ConjureValue>;
 
@@ -263,15 +282,18 @@ impl<'de: 'a, 'a> Visitor<'de> for SetVisitor<'a> {
         formatter.write_str("a sequence")
     }
 
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where
-        A: SeqAccess<'de>, {
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
         let mut values = BTreeSet::new();
 
         while let Some(value) = seq.next_element_seed(self.item_type)? {
             if self.fail_on_duplicates && values.contains(&value) {
                 return Err(Error::custom(format_args!(
                     "Set contained duplicates: {}",
-                    serde_json::ser::to_string(&value).unwrap())))
+                    serde_json::ser::to_string(&value).unwrap()
+                )));
             }
             values.insert(value);
         }
@@ -293,8 +315,8 @@ impl<'de: 'a, 'a> Visitor<'de> for MapVisitor<'a> {
     }
 
     fn visit_map<A>(self, mut items: A) -> Result<Self::Value, A::Error>
-        where
-            A: MapAccess<'de>,
+    where
+        A: MapAccess<'de>,
     {
         let mut result = BTreeMap::new();
         while let Some(key) = items.next_key_seed(self.key_type)? {
@@ -304,8 +326,8 @@ impl<'de: 'a, 'a> Visitor<'de> for MapVisitor<'a> {
                     return Err(serde::de::Error::custom(format_args!(
                         "duplicate field `{}`",
                         serde_json::ser::to_string(entry.key()).unwrap()
-                    )))
-                },
+                    )));
+                }
                 btree_map::Entry::Vacant(entry) => {
                     entry.insert(value);
                 }
@@ -319,8 +341,8 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
     type Value = ConjurePrimitiveValue;
 
     fn deserialize<D>(self, de: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         let out = match *self {
             PrimitiveType::Safelong => ConjurePrimitiveValue::Safelong(de.deser()?),
@@ -361,19 +383,30 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
             }
             List(ListType { item_type }) => {
                 ConjureValue::List(deserializer.deserialize_seq(SeqVisitor(&item_type))?)
-            },
+            }
             Set(SetType { ref item_type }) => {
                 ConjureValue::Set(deserializer.deserialize_seq(SetVisitor {
                     item_type,
                     fail_on_duplicates: false,
                 })?)
-            },
-            Map(MapType { ref key_type, ref value_type }) => {
-                ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
-                    key_type,
-                    value_type,
-                })?)
-            },
+            }
+            Map(MapType {
+                ref key_type,
+                ref value_type,
+            }) => ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
+                key_type,
+                value_type,
+            })?),
+            Enum(EnumDefinition { values }) => {
+                let ident = String::deserialize(deserializer)?;
+                if values.iter().find(|&x| x.value == ident.as_str()).is_none() {
+                    return Err(unknown_variant(
+                        ident.as_str(),
+                        values.iter().map(|vdef| &*vdef.value).collect(),
+                    ));
+                }
+                ConjureValue::Enum(ident)
+            }
             _ => unimplemented!(),
         })
     }
