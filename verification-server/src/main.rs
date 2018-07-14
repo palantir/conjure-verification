@@ -39,6 +39,7 @@ extern crate route_recognizer;
 extern crate scheduled_thread_pool;
 extern crate serde;
 extern crate serde_conjure;
+#[cfg_attr(test, macro_use)]
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;

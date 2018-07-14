@@ -23,17 +23,18 @@ use itertools::Itertools;
 use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::SeqAccess;
+use serde::de::Unexpected;
 use serde::de::Visitor;
 use serde::private::de::size_hint;
 use serde::Deserialize;
 use serde::{self, Deserializer};
+use serde_conjure::UnionTypeField;
 use serde_json;
 use serde_value::Value;
 use std::collections::btree_map;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::error::Error as StdError;
 use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
@@ -337,6 +338,109 @@ impl<'de: 'a, 'a> Visitor<'de> for MapVisitor<'a> {
     }
 }
 
+// Union stuff
+
+pub enum UnionField<'a> {
+    Type,
+    Data(&'a FieldDefinition<ResolvedType>),
+}
+
+impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition<ResolvedType> {
+    type Value = UnionField<'a>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct UnionFieldVisitor<'a>(&'a Vec<FieldDefinition<ResolvedType>>);
+
+        impl<'de: 'a, 'a> Visitor<'de> for UnionFieldVisitor<'a> {
+            type Value = UnionField<'a>;
+
+            fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                fmt.write_str("field name")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<UnionField<'a>, E>
+            where
+                E: Error,
+            {
+                match value {
+                    "type" => Ok(UnionField::Type),
+                    _ => Ok(UnionField::Data(self.0
+                        .iter()
+                        .find(|fd| fd.field_name == value)
+                        .ok_or_else(|| {
+                            unknown_variant(
+                                value,
+                                self.0.iter().map(|fd| fd.field_name.as_str()).collect(),
+                            )
+                        })?)),
+                }
+            }
+        }
+
+        deserializer.deserialize_str(UnionFieldVisitor(&self.union))
+    }
+}
+
+struct UnionVisitor<'a>(&'a UnionDefinition<ResolvedType>);
+
+impl<'de: 'a, 'a> Visitor<'de> for UnionVisitor<'a> {
+    type Value = ConjureUnionValue;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("map")
+    }
+
+    fn visit_map<A>(self, mut items: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        match items.next_key_seed(self.0)? {
+            Some(UnionField::Type) => {
+                let variant: String = items.next_value()?;
+                let key = items.next_key_seed(self.0)?;
+                match key {
+                    Some(UnionField::Data(FieldDefinition { field_name, type_ })) => {
+                        if *field_name != variant {
+                            return Err(Error::invalid_value(
+                                Unexpected::Str(&field_name),
+                                &variant.as_ref(),
+                            ));
+                        }
+                        Ok(ConjureUnionValue {
+                            field_name: variant,
+                            value: items.next_value_seed(type_)?.into(),
+                        })
+                    }
+                    Some(UnionField::Type) | None => {
+                        Err(Error::custom(format_args!("missing field `{}`", variant)))
+                    }
+                }
+            }
+            Some(UnionField::Data(FieldDefinition { field_name, type_ })) => {
+                let value = items.next_value_seed(type_)?.into();
+                if let None = items.next_key::<UnionTypeField>()? {
+                    return Err(Error::missing_field("type"));
+                }
+                let variant: String = items.next_value()?;
+                if *field_name != variant {
+                    return Err(Error::invalid_value(
+                        Unexpected::Str(&variant),
+                        &field_name.as_ref(),
+                    ));
+                }
+                Ok(ConjureUnionValue {
+                    field_name: variant,
+                    value,
+                })
+            }
+            None => Err(Error::missing_field("type")),
+        }
+    }
+}
+
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
     type Value = ConjurePrimitiveValue;
 
@@ -407,7 +511,9 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 }
                 ConjureValue::Enum(ident)
             }
-            _ => unimplemented!(),
+            Union(union_definition) => {
+                ConjureValue::Union(deserializer.deserialize_map(UnionVisitor(&union_definition))?)
+            }
         })
     }
 }
@@ -500,6 +606,61 @@ mod test {
 
         // Fails on missing required field
         assert!(from_str(&type_, r#"{}"#).is_err());
+    }
+
+    #[test]
+    fn deser_union() {
+        let double_type = || ResolvedType::Primitive(PrimitiveType::Double);
+        let type_ = ResolvedType::Union(UnionDefinition {
+            union: vec![
+                FieldDefinition {
+                    field_name: "foo".to_string(),
+                    type_: double_type(),
+                },
+                FieldDefinition {
+                    field_name: "bar".to_string(),
+                    type_: ResolvedType::Optional(OptionalType {
+                        item_type: ResolvedType::Primitive(PrimitiveType::String).into(),
+                    }),
+                },
+            ],
+        });
+
+        assert_eq!(
+            type_
+                .deserialize(&json!({ "type": "foo", "foo": 123 }))
+                .unwrap(),
+            ConjureValue::Union(ConjureUnionValue {
+                field_name: "foo".into(),
+                value: ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)).into(),
+            })
+        );
+
+        assert_eq!(
+            type_
+                .deserialize(&json!({ "foo": 123, "type": "foo" }))
+                .unwrap(),
+            ConjureValue::Union(ConjureUnionValue {
+                field_name: "foo".into(),
+                value: ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)).into(),
+            })
+        );
+
+        assert_eq!(
+            type_
+                .deserialize(&json!({ "type": "bar", "bar": null }))
+                .unwrap(),
+            ConjureValue::Union(ConjureUnionValue {
+                field_name: "bar".into(),
+                value: ConjureValue::Optional(None).into(),
+            })
+        );
+
+        assert!(type_.deserialize(&json!({ "type": "bar" })).is_err());
+        assert!(type_.deserialize(&json!({ "type": "unknown" })).is_err());
+        assert!(type_.deserialize(&json!({})).is_err());
+        assert!(type_.deserialize(&json!({ "foo": 123 })).is_err());
+        assert!(type_.deserialize(&json!({ "bar": 123 })).is_err());
     }
 
     /// Testing that we can use serde_plain::Deserializer with our DeserializeSeed implementation.
