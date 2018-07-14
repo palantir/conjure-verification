@@ -69,6 +69,7 @@ jobs:
           if [[ "${CIRCLE_BRANCH}" == "develop" || "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
             docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
             docker push palantirtechnologies/conjure-verification-server:$(git describe --tags --always --first-parent)
+            docker push palantirtechnologies/conjure-verification-server:latest
           fi
 
   cargo-build-osx:
