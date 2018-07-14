@@ -34,8 +34,9 @@ use std::error::Error as StdError;
 use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
 use uuid::Uuid;
+use std::collections::BTreeSet;
 
-#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ConjurePrimitiveValue {
     String(String),
     Integer(i32),
@@ -58,7 +59,7 @@ impl ConjurePrimitiveValue {
     }
 }
 
-#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ConjureValue {
     Primitive(ConjurePrimitiveValue),
     // complex
@@ -68,12 +69,11 @@ pub enum ConjureValue {
     Union(ConjureUnionValue),
     // anonymous
     List(Vec<ConjureValue>),
-    // TODO(dsanduleac): implement these cases after ConjureValue can be Eq
-    Set(Value), // BTreeSet<ConjureValue>),
-    Map(Value), // BTreeMap<ConjurePrimitiveValue, ConjureValue>),
+    Set(BTreeSet<ConjureValue>),
+    Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
 }
 
-#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct ConjureUnionValue {
     pub field_name: String,
     pub value: Box<ConjureValue>,
