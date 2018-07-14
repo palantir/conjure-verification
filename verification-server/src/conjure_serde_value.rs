@@ -279,6 +279,30 @@ impl<'de: 'a, 'a> Visitor<'de> for SetVisitor<'a> {
     }
 }
 
+impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
+    type Value = ConjurePrimitiveValue;
+
+    fn deserialize<D>(self, de: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        let out = match *self {
+            PrimitiveType::Safelong => ConjurePrimitiveValue::Safelong(de.deser()?),
+            PrimitiveType::Integer => ConjurePrimitiveValue::Integer(de.deser()?),
+            PrimitiveType::Double => ConjurePrimitiveValue::Double(de.deser()?),
+            PrimitiveType::String => ConjurePrimitiveValue::String(de.deser()?),
+            PrimitiveType::Binary => ConjurePrimitiveValue::Binary(de.deser()?),
+            PrimitiveType::Boolean => ConjurePrimitiveValue::Boolean(de.deser()?),
+            PrimitiveType::Uuid => ConjurePrimitiveValue::Uuid(de.deser()?),
+            PrimitiveType::Rid => ConjurePrimitiveValue::Rid(de.deser()?),
+            PrimitiveType::Bearertoken => ConjurePrimitiveValue::Bearertoken(de.deser()?),
+            PrimitiveType::Datetime => ConjurePrimitiveValue::Datetime(de.deser()?),
+            PrimitiveType::Any => ConjurePrimitiveValue::Any(de.deser()?),
+        };
+        Ok(out)
+    }
+}
+
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     type Value = ConjureValue;
 
@@ -286,26 +310,8 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     where
         D: Deserializer<'de>,
     {
-        let deser_primitive =
-            |de: D, pt: &PrimitiveType| -> Result<ConjurePrimitiveValue, D::Error> {
-                let out = match *pt {
-                    PrimitiveType::Safelong => ConjurePrimitiveValue::Safelong(de.deser()?),
-                    PrimitiveType::Integer => ConjurePrimitiveValue::Integer(de.deser()?),
-                    PrimitiveType::Double => ConjurePrimitiveValue::Double(de.deser()?),
-                    PrimitiveType::String => ConjurePrimitiveValue::String(de.deser()?),
-                    PrimitiveType::Binary => ConjurePrimitiveValue::Binary(de.deser()?),
-                    PrimitiveType::Boolean => ConjurePrimitiveValue::Boolean(de.deser()?),
-                    PrimitiveType::Uuid => ConjurePrimitiveValue::Uuid(de.deser()?),
-                    PrimitiveType::Rid => ConjurePrimitiveValue::Rid(de.deser()?),
-                    PrimitiveType::Bearertoken => ConjurePrimitiveValue::Bearertoken(de.deser()?),
-                    PrimitiveType::Datetime => ConjurePrimitiveValue::Datetime(de.deser()?),
-                    PrimitiveType::Any => ConjurePrimitiveValue::Any(de.deser()?),
-                };
-                Ok(out)
-            };
-
         Ok(match self {
-            Primitive(p) => ConjureValue::Primitive(deser_primitive(deserializer, p)?),
+            Primitive(p) => ConjureValue::Primitive(p.deserialize(deserializer)?),
             Optional(OptionalType { item_type }) => ConjureValue::Optional(
                 deserializer
                     .deserialize_option(OptionVisitor(&item_type))?
