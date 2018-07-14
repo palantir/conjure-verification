@@ -16,6 +16,7 @@ pub use serde::de::DeserializeSeed;
 
 use chrono::DateTime;
 use chrono::FixedOffset;
+use conjure::safe_double::SafeDouble;
 use core::fmt;
 use ir::*;
 use itertools::Itertools;
@@ -38,7 +39,7 @@ use uuid::Uuid;
 pub enum ConjurePrimitiveValue {
     String(String),
     Integer(i32),
-    Double(f64),
+    Double(SafeDouble),
     Boolean(bool),
     /// Integer with value ranging from -2^53 - 1 to 2^53 - 1 // TODO enforce?
     Safelong(i64),
@@ -48,6 +49,13 @@ pub enum ConjurePrimitiveValue {
     Bearertoken(String), // TODO
     Datetime(DateTime<FixedOffset>),
     Any(Value), // just use Value for any
+}
+
+impl ConjurePrimitiveValue {
+    /// Convenience method. Panics if `d` is `NaN`.
+    pub fn double(d: f64) -> ConjurePrimitiveValue {
+        ConjurePrimitiveValue::Double(SafeDouble::new(d).unwrap())
+    }
 }
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd)]
@@ -298,7 +306,7 @@ mod test {
         let type_ = ResolvedType::Primitive(PrimitiveType::Double);
         assert_eq!(
             from_str(&type_, "123").unwrap(),
-            ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0))
+            ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0))
         );
         assert!(from_str(&type_, "").is_err());
         assert!(from_str(&type_, "null").is_err());
@@ -312,7 +320,7 @@ mod test {
         assert_eq!(
             from_str(&type_, "123").unwrap(),
             ConjureValue::Optional(Some(
-                ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)).into()
+                ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)).into()
             ))
         );
         assert_eq!(
@@ -343,7 +351,7 @@ mod test {
         assert_eq!(
             from_str(&type_, r#"{"foo": 123}"#).unwrap(),
             ConjureValue::Object(btreemap!(
-                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)),
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)),
                 "bar" => ConjureValue::Optional(None)
             ))
         );
@@ -355,7 +363,7 @@ mod test {
         assert_eq!(
             from_str(&type_, r#"{"bar": null, "foo": 123}"#).unwrap(),
             ConjureValue::Object(btreemap!(
-                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)),
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)),
                 "bar" => ConjureValue::Optional(None)
             ))
         );
@@ -364,9 +372,9 @@ mod test {
         assert_eq!(
             from_str(&type_, r#"{"bar": 555, "foo": 123}"#).unwrap(),
             ConjureValue::Object(btreemap!(
-                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0)),
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)),
                 "bar" => ConjureValue::Optional(Some(
-                    ConjureValue::Primitive(ConjurePrimitiveValue::Double(555.0)).into()))
+                    ConjureValue::Primitive(ConjurePrimitiveValue::double(555.0)).into()))
             ))
         );
 
@@ -384,7 +392,7 @@ mod test {
         let typ = ResolvedType::Primitive(PrimitiveType::Double);
         assert_eq!(
             typ.deserialize(de).unwrap(),
-            ConjureValue::Primitive(ConjurePrimitiveValue::Double(123.0))
+            ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0))
         );
     }
 }
