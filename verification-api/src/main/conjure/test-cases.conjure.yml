@@ -21,3 +21,14 @@ types:
         fields:
           positive: list<string> # json strings
           negative: list<string>
+
+      IgnoredTestCases:
+        fields:
+          client: IgnoredClientTestCases
+
+      IgnoredClientTestCases:
+        fields:
+          autoDeserialize: map<EndpointName, set<string>>
+          singleHeaderService: map<EndpointName, set<string>>
+          singlePathParamService: map<EndpointName, set<string>>
+          singleQueryParamService: map<EndpointName, set<string>>

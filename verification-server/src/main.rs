@@ -74,13 +74,29 @@ mod test_spec;
 
 fn main() {
     pretty_env_logger::init();
-    let test_cases = read_test_cases();
+
     let port = match env::var("PORT") {
         Ok(port) => port.parse().unwrap(),
         Err(VarError::NotPresent) => 8000,
-        Err(e) => Err(e).unwrap(),
+        e @ Err(_) => e.unwrap(),
     };
 
+    let args = &env::args().collect::<Vec<String>>()[..];
+    if args.len() != 2 {
+        eprintln!("Usage: {} <test-cases.json>", args[0]);
+        process::exit(1);
+    }
+
+    if args[1].eq("--help") {
+        eprintln!("Usage: {} <test-cases.json>", args[0]);
+        process::exit(0);
+    }
+
+    // Read the test file.
+    let path: &str = &args[1];
+    let f = File::open(Path::new(path)).unwrap();
+    let test_cases: TestCases = test_spec::from_json_file(f).unwrap();
+  
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
@@ -91,23 +107,9 @@ fn main() {
     start_server(router, port);
 }
 
-fn read_test_cases() -> TestCases {
-    let args = &env::args().collect::<Vec<String>>()[..];
-    let path = &(match args {
-        [_, path] => path.clone(),
-        _ => {
-            eprintln!("Usage: {} <test-cases.json>", args[0]);
-            process::exit(1);
-        }
-    });
-
-    // Read the test file.
-    let f = File::open(Path::new(path)).unwrap();
-    test_spec::from_json_file(f).unwrap()
-}
-
-fn start_server(router: Router, port: u16) {
-    let addr = SocketAddr::new("127.0.0.1".parse().unwrap(), port);
+fn start_server(router: Router) {
+    // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
+    let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);
 
     let router = Arc::new(router);
 
