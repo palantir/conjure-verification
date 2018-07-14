@@ -19,6 +19,7 @@ use chrono::FixedOffset;
 use core::fmt;
 use ir::*;
 use itertools::Itertools;
+use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::Visitor;
 use serde::Deserialize;
@@ -143,6 +144,22 @@ impl<'a> ObjectVisitor<'a> {
     }
 }
 
+/// Shameless kinda copied from serde::de::Error::unknown_field because they only take static strings.
+fn unknown_field<'a, E: Error>(field: &'a str, expected: Vec<&'a str>) -> E {
+    if expected.is_empty() {
+        Error::custom(format_args!(
+            "unknown field `{}`, there are no fields",
+            field
+        ))
+    } else {
+        Error::custom(format_args!(
+            "unknown field `{}`, expected one of: {}",
+            field,
+            expected.into_iter().join(", ")
+        ))
+    }
+}
+
 impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
     type Value = BTreeMap<String, ConjureValue>;
 
@@ -154,7 +171,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
     where
         A: MapAccess<'de>,
     {
-        //        let known_fields: Vec<String> = self.map.keys().map(|s| s.to_string()).collect();
+        let known_fields = self.map.keys().cloned().collect();
         let mut result = BTreeMap::new();
         // Note: must deserialize String, not &str, because `de::Deserializer<'de> for
         // ::serde_json::value::Value` calls `visit_string` on our visitor, and the visitor used by
@@ -170,10 +187,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
                     )));
                 }
             } else if !self.skip_unknown {
-                return Err(serde::de::Error::unknown_field(
-                    &key.to_string(),
-                    &[], /*&known_fields*/
-                ));
+                return Err(unknown_field(&key.to_string(), known_fields));
             }
         }
         // Handle missing *required* fields (filter out fields which were optional)
