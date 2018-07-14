@@ -78,7 +78,7 @@ fn main() {
     let port = match env::var("PORT") {
         Ok(port) => port.parse().unwrap(),
         Err(VarError::NotPresent) => 8000,
-        e @ Err(_) => e.unwrap(),
+        Err(e) => Err(e).unwrap(),
     };
 
     let args = &env::args().collect::<Vec<String>>()[..];
@@ -107,7 +107,7 @@ fn main() {
     start_server(router, port);
 }
 
-fn start_server(router: Router) {
+fn start_server(router: Router, port: u16) {
     // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
     let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);
 
