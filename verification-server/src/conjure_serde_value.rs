@@ -21,7 +21,9 @@ use ir::*;
 use itertools::Itertools;
 use serde::de::Error;
 use serde::de::MapAccess;
+use serde::de::SeqAccess;
 use serde::de::Visitor;
+use serde::private::de::size_hint;
 use serde::Deserialize;
 use serde::{self, Deserializer};
 use serde_value::Value;
@@ -216,6 +218,29 @@ impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
     }
 }
 
+struct SeqVisitor<'a>(&'a ResolvedType);
+
+impl<'de: 'a, 'a> Visitor<'de> for SeqVisitor<'a> {
+    type Value = Vec<ConjureValue>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("list")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        let mut values = Vec::with_capacity(size_hint::cautious(seq.size_hint()));
+
+        while let Some(value) = seq.next_element_seed(self.0)? {
+            values.push(value);
+        }
+
+        Ok(values)
+    }
+}
+
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     type Value = ConjureValue;
 
@@ -253,6 +278,9 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 ConjureValue::Object(
                     deserializer.deserialize_map(ObjectVisitor::new(&fields, false))?
                 )
+            }
+            List(ListType { item_type }) => {
+                ConjureValue::List(deserializer.deserialize_seq(SeqVisitor(&item_type))?)
             }
             _ => unimplemented!(),
         })
