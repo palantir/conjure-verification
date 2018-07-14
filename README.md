@@ -9,7 +9,7 @@ Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github
 A docker image containing the server along with embedded `test-cases.json` and `verification-api.json` are published to: https://hub.docker.com/r/palantirtechnologies/conjure-verification-server/.
 
 ```
-$ docker run -p 8000:8000 docker.io/palantirtechnologies/conjure-verification-server:latest
+$ docker run -p 8000:8000 palantirtechnologies/conjure-verification-server:latest
 Listening on http://0.0.0.0:8000
 
 # in another terminal:
