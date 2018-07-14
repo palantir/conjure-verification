@@ -13,6 +13,7 @@
 // limitations under the License.
 use conjure_serde_value::ConjureValue;
 use serde_json;
+use std::fmt::Display;
 use test_spec::EndpointName;
 
 #[derive(ErrorType)]
@@ -40,6 +41,8 @@ pub enum VerificationError {
         request_body_raw: String,
         #[error_type(safe)]
         request_body_conjure: String,
+        #[error_type(safe)]
+        cause: String,
     },
     #[error_type(code = "InvalidArgument")]
     ParamValidationFailure {
@@ -51,6 +54,8 @@ pub enum VerificationError {
         request_param_conjure: String,
         #[error_type(safe)]
         request_param_raw: String,
+        #[error_type(safe)]
+        cause: String,
     },
     #[error_type(code = "InvalidArgument")]
     IndexOutOfBounds {
@@ -64,13 +69,17 @@ pub enum VerificationError {
 }
 
 impl VerificationError {
-    pub fn param_validation_failure(
+    pub fn param_validation_failure<E>(
         expected_param_str: &str,
         expected_param: &ConjureValue,
         // Option because it might be undefined
         request_param_str: Option<String>,
         request_param: Option<&ConjureValue>,
-    ) -> VerificationError {
+        cause: E,
+    ) -> VerificationError
+    where
+        E: Display,
+    {
         VerificationError::ParamValidationFailure {
             expected_param_conjure: serde_json::ser::to_string(expected_param).unwrap(),
             expected_param_raw: expected_param_str.to_string(),
@@ -78,16 +87,21 @@ impl VerificationError {
                 .map(|rp| serde_json::ser::to_string(rp).unwrap())
                 .unwrap_or_else(|| "<undefined>".to_string()),
             request_param_raw: request_param_str.unwrap_or_else(|| "<undefined>".to_string()),
+            cause: format!("{}", cause),
         }
     }
 
-    pub fn confirmation_failure(
+    pub fn confirmation_failure<E>(
         expected_body_str: &str,
         expected_body: &ConjureValue,
         request_body_str: serde_json::Value,
         // Option because it might be un-parseable as ConjureValue
         request_body: Option<&ConjureValue>,
-    ) -> VerificationError {
+        cause: E,
+    ) -> VerificationError
+    where
+        E: Display,
+    {
         VerificationError::ConfirmationFailure {
             expected_body_conjure: serde_json::ser::to_string(expected_body).unwrap(),
             expected_body_raw: expected_body_str.to_string(),
@@ -95,6 +109,7 @@ impl VerificationError {
                 .map(|rp| serde_json::ser::to_string(rp).unwrap())
                 .unwrap_or_else(|| "<undefined>".to_string()),
             request_body_raw: request_body_str.to_string(),
+            cause: format!("{}", cause),
         }
     }
 }

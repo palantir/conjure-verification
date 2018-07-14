@@ -94,6 +94,7 @@ impl SpecTestResource {
                 .map(|str| {
                     let de = serde_plain::Deserializer::from_str(&str);
                     conjure_type.deserialize(de).map_err(|e| {
+                        let error_message = format!("{}", e);
                         Error::new_safe(
                             e,
                             VerificationError::param_validation_failure(
@@ -101,19 +102,22 @@ impl SpecTestResource {
                                 &expected_param,
                                 Some(str.clone()),
                                 None,
+                                error_message,
                             ),
                         )
                     })
                 })
                 .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
             if param != expected_param {
+                let error = "Param didn't match expected value";
                 return Err(Error::new_safe(
-                    "Param didn't match expected value",
+                    error,
                     VerificationError::param_validation_failure(
                         expected_param_str,
                         &expected_param,
                         param_str,
                         Some(&param),
+                        error,
                     ),
                 ));
             }
@@ -196,6 +200,7 @@ impl SpecTestResource {
             .map_err(Error::internal_safe)?;
         let request_body_value: serde_json::Value = request.body()?;
         let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {
+            let error_message = format!("{}", e);
             Error::new_safe(
                 e,
                 VerificationError::confirmation_failure(
@@ -203,18 +208,21 @@ impl SpecTestResource {
                     &expected_body,
                     request_body_value.clone(),
                     None,
+                    error_message,
                 ),
             )
         })?;
         // Compare request_body with what the test case says we sent
         if request_body != expected_body {
+            let error = "Body didn't match expected Conjure value";
             return Err(Error::new_safe(
-                "Body didn't match expected Conjure value",
+                error,
                 VerificationError::confirmation_failure(
                     &expected_body_str,
                     &expected_body,
                     request_body_value,
                     Some(&request_body),
+                    error,
                 ),
             ));
         }
