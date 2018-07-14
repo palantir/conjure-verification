@@ -96,7 +96,7 @@ fn main() {
     let path: &str = &args[1];
     let f = File::open(Path::new(path)).unwrap();
     let test_cases: TestCases = test_spec::from_json_file(f).unwrap();
-  
+
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
