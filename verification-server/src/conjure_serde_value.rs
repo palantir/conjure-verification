@@ -27,6 +27,7 @@ use serde::de::Visitor;
 use serde::private::de::size_hint;
 use serde::Deserialize;
 use serde::{self, Deserializer};
+use serde_json;
 use serde_value::Value;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -249,6 +250,35 @@ impl<'de: 'a, 'a> Visitor<'de> for SeqVisitor<'a> {
     }
 }
 
+struct SetVisitor<'a> {
+    item_type: &'a ResolvedType,
+    fail_on_duplicates: bool,
+}
+
+impl<'de: 'a, 'a> Visitor<'de> for SetVisitor<'a> {
+    type Value = BTreeSet<ConjureValue>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a sequence")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where
+        A: SeqAccess<'de>, {
+        let mut values = BTreeSet::new();
+
+        while let Some(value) = seq.next_element_seed(self.item_type)? {
+            if self.fail_on_duplicates && values.contains(&value) {
+                return Err(Error::custom(format_args!(
+                    "Set contained duplicates: {}",
+                    serde_json::ser::to_string(&value).unwrap())))
+            }
+            values.insert(value);
+        }
+
+        Ok(values)
+    }
+}
+
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     type Value = ConjureValue;
 
@@ -289,7 +319,13 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
             }
             List(ListType { item_type }) => {
                 ConjureValue::List(deserializer.deserialize_seq(SeqVisitor(&item_type))?)
-            }
+            },
+            Set(SetType { ref item_type }) => {
+                ConjureValue::Set(deserializer.deserialize_seq(SetVisitor {
+                    item_type,
+                    fail_on_duplicates: false,
+                })?)
+            },
             _ => unimplemented!(),
         })
     }
