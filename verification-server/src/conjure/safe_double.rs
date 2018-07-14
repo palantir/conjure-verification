@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use serde::de::Error;
 use serde::Deserialize;
 use serde::Deserializer;
-use serde::de::Error;
-use std::str::FromStr;
-use std::error::{Error as StdError};
-use std::fmt::{self, Display};
 use std::cmp::Ordering;
+use std::error::Error as StdError;
+use std::fmt::{self, Display};
 use std::num::ParseFloatError;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct NaNNotAllowedError;
@@ -51,8 +51,10 @@ impl SafeDouble {
 }
 
 impl<'de> Deserialize<'de> for SafeDouble {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where
-        D: Deserializer<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         let num = f64::deserialize(deserializer)?;
         SafeDouble::new(num).map_err(|e| Error::custom(e))
     }
@@ -72,7 +74,7 @@ impl FromStr for SafeDouble {
     }
 }
 
-impl Eq for SafeDouble { }
+impl Eq for SafeDouble {}
 
 impl Ord for SafeDouble {
     fn cmp(&self, other: &Self) -> Ordering {
