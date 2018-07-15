@@ -54,7 +54,9 @@ use resource::SpecTestResource;
 use router::Binder;
 use router::Router;
 use std::env;
+use std::env::VarError;
 use std::fs::File;
+use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
@@ -72,6 +74,12 @@ mod test_spec;
 
 fn main() {
     pretty_env_logger::init();
+
+    let port = match env::var("PORT") {
+        Ok(port) => port.parse().unwrap(),
+        Err(VarError::NotPresent) => 8000,
+        Err(e) => Err(e).unwrap(),
+    };
 
     let args = &env::args().collect::<Vec<String>>()[..];
     if args.len() != 2 {
@@ -96,12 +104,12 @@ fn main() {
     );
     let router = builder.build();
 
-    start_server(router);
+    start_server(router, port);
 }
 
-fn start_server(router: Router) {
+fn start_server(router: Router, port: u16) {
     // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
-    let addr = "0.0.0.0:8000".parse().unwrap();
+    let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);
 
     let router = Arc::new(router);
 
