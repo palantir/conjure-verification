@@ -381,9 +381,9 @@ impl OrErr<(), Error> for bool {
 #[cfg(test)]
 mod test {
     use super::*;
+    use conjure::ir;
     use hyper::HeaderMap;
     use hyper::Method;
-    use ir;
     use mime::APPLICATION_JSON;
     use register_resource;
     use router;

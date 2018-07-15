@@ -20,9 +20,9 @@
 //! [SpecTestResource]: ../resource/struct.SpecTestResource.html
 //! [Conjure IR]: ../ir/struct.Conjure.html
 
-use ir;
-use ir::Conjure;
-use ir::ServiceName;
+use conjure::ir;
+use conjure::ir::Conjure;
+use conjure::ir::ServiceName;
 use std::collections::HashMap;
 use test_spec::EndpointName;
 use type_resolution::resolve_type;
