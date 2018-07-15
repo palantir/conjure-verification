@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use bytes::Bytes;
+use conjure::type_resolution::ResolvedType;
 use conjure::value::*;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
@@ -35,7 +36,6 @@ use std::string::ToString;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
 use test_spec::TestIndex;
-use type_resolution::ResolvedType;
 use DynamicResource;
 
 pub struct SpecTestResource {

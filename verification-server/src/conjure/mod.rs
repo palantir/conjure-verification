@@ -13,4 +13,5 @@
 // limitations under the License.
 
 pub mod ir;
+pub mod type_resolution;
 pub mod value;

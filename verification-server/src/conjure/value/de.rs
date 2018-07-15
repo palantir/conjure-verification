@@ -16,6 +16,8 @@ pub use serde::de::DeserializeSeed;
 
 use super::*;
 use conjure::ir::*;
+use conjure::type_resolution::ResolvedType;
+use conjure::type_resolution::ResolvedType::*;
 use core::fmt;
 use itertools::Itertools;
 use serde::de::Error;
@@ -33,8 +35,6 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::error::Error as StdError;
-use type_resolution::ResolvedType;
-use type_resolution::ResolvedType::*;
 
 /// Allows you to deserialize a given type without having to type it.
 trait DeserQuick<'de> {

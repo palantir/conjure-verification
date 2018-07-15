@@ -82,7 +82,6 @@ mod router;
 mod serde_json_2;
 mod test_spec;
 mod type_mapping;
-mod type_resolution;
 
 fn main() {
     pretty_env_logger::init();

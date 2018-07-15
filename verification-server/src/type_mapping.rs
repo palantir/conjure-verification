@@ -23,10 +23,10 @@
 use conjure::ir;
 use conjure::ir::Conjure;
 use conjure::ir::ServiceName;
+use conjure::type_resolution::resolve_type;
+use conjure::type_resolution::ResolvedType;
 use std::collections::HashMap;
 use test_spec::EndpointName;
-use type_resolution::resolve_type;
-use type_resolution::ResolvedType;
 
 const PACKAGE: &'static str = "com.palantir.conjure.verification";
 
