@@ -48,7 +48,7 @@ jobs:
     - *SAVE_REGISTRY
     - persist_to_workspace:
         root: .
-        paths: [ ./target/release/ ]
+        paths: [ ./target/release/conjure-verification-server ]
 
   publish-docker:
     docker:
@@ -103,7 +103,7 @@ jobs:
     - *SAVE_REGISTRY
     - persist_to_workspace:
         root: .
-        paths: [ ./target/x86_64-apple-darwin ]
+        paths: [ ./target/x86_64-apple-darwin/release/conjure-verification-server ]
     - store_artifacts:
         path: ./target/x86_64-apple-darwin/release/conjure-verification-server
 

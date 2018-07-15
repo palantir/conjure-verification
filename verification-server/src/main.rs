@@ -62,7 +62,9 @@ use resource::SpecTestResource;
 use router::Binder;
 use router::Router;
 use std::env;
+use std::env::VarError;
 use std::fs::File;
+use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
@@ -95,6 +97,12 @@ fn main() {
         process::exit(1);
     }
 
+    let port = match env::var("PORT") {
+        Ok(port) => port.parse().unwrap(),
+        Err(VarError::NotPresent) => 8000,
+        Err(e) => Err(e).unwrap(),
+    };
+
     // Read the test cases file.
     let test_cases_path: &str = &args[1];
     let test_cases = File::open(Path::new(test_cases_path)).unwrap();
@@ -115,16 +123,16 @@ fn main() {
     );
     let router = builder.build();
 
-    start_server(router);
+    start_server(router, port);
 }
 
 fn print_usage(arg0: &String) {
     eprintln!("Usage: {} <test-cases.json> <verification-api.json>", arg0);
 }
 
-fn start_server(router: Router) {
+fn start_server(router: Router, port: u16) {
     // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
-    let addr = "0.0.0.0:8000".parse().unwrap();
+    let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);
 
     let router = Arc::new(router);
 
