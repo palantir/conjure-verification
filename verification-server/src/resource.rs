@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use bytes::Bytes;
-use conjure_serde_value::*;
+use conjure::value::*;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
 use conjure_verification_http::request::Request;

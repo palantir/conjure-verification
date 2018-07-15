@@ -11,7 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use conjure_serde_value::ConjureValue;
+
+use conjure::value::ConjureValue;
 use serde_json;
 use std::fmt::Display;
 use test_spec::EndpointName;

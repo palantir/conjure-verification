@@ -14,9 +14,6 @@
 
 pub use serde::de::DeserializeSeed;
 
-use chrono::DateTime;
-use chrono::FixedOffset;
-use conjure::safe_double::SafeDouble;
 use core::fmt;
 use ir::*;
 use itertools::Itertools;
@@ -30,7 +27,6 @@ use serde::Deserialize;
 use serde::{self, Deserializer};
 use serde_conjure::UnionTypeField;
 use serde_json;
-use serde_value::Value;
 use std::collections::btree_map;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -38,70 +34,25 @@ use std::collections::HashMap;
 use std::error::Error as StdError;
 use type_resolution::ResolvedType;
 use type_resolution::ResolvedType::*;
-use uuid::Uuid;
-
-#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
-pub enum ConjurePrimitiveValue {
-    String(String),
-    Integer(i32),
-    Double(SafeDouble),
-    Boolean(bool),
-    /// Integer with value ranging from -2^53 - 1 to 2^53 - 1 // TODO enforce?
-    Safelong(i64),
-    Binary(Vec<u8>),
-    Uuid(Uuid),
-    // TODO(dsanduleac): own type
-    Rid(String),
-    // TODO(dsanduleac): own type
-    Bearertoken(String),
-    Datetime(DateTime<FixedOffset>),
-    Any(Value), // just use Value for any
-}
-
-impl ConjurePrimitiveValue {
-    /// Convenience method. Panics if `d` is `NaN`.
-    pub fn double(d: f64) -> ConjurePrimitiveValue {
-        ConjurePrimitiveValue::Double(SafeDouble::new(d).unwrap())
-    }
-}
-
-#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
-pub enum ConjureValue {
-    Primitive(ConjurePrimitiveValue),
-    // complex
-    Optional(Option<Box<ConjureValue>>),
-    Object(BTreeMap<String, ConjureValue>),
-    Enum(String),
-    Union(ConjureUnionValue),
-    // anonymous
-    List(Vec<ConjureValue>),
-    Set(BTreeSet<ConjureValue>),
-    Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
-}
-
-#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
-pub struct ConjureUnionValue {
-    pub field_name: String,
-    pub value: Box<ConjureValue>,
-}
+use super::*;
 
 /// Allows you to deserialize a given type without having to type it.
 trait DeserQuick<'de> {
     type Error;
     fn deser<T>(self) -> Result<T, Self::Error>
-    where
-        T: Deserialize<'de>;
+        where
+            T: Deserialize<'de>;
 }
 
 impl<'de, D> DeserQuick<'de> for D
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
     type Error = D::Error;
 
     fn deser<T>(self) -> Result<T, Self::Error>
-    where
-        T: Deserialize<'de>,
+        where
+            T: Deserialize<'de>,
     {
         T::deserialize(self)
     }
@@ -120,24 +71,24 @@ impl<'de: 'a, 'a> Visitor<'de> for OptionVisitor<'a> {
 
     #[inline]
     fn visit_none<E>(self) -> Result<Self::Value, E>
-    where
-        E: StdError,
+        where
+            E: StdError,
     {
         Ok(None)
     }
 
     #[inline]
     fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         self.0.deserialize(deserializer).map(Some)
     }
 
     #[inline]
     fn visit_unit<E>(self) -> Result<Self::Value, E>
-    where
-        E: StdError,
+        where
+            E: StdError,
     {
         Ok(None)
     }
@@ -200,8 +151,8 @@ impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
     }
 
     fn visit_map<A>(mut self, mut items: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
+        where
+            A: MapAccess<'de>,
     {
         let known_fields = self.map.keys().cloned().collect();
         let mut result = BTreeMap::new();
@@ -258,8 +209,8 @@ impl<'de: 'a, 'a> Visitor<'de> for SeqVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
+        where
+            A: SeqAccess<'de>,
     {
         let mut values = Vec::with_capacity(size_hint::cautious(seq.size_hint()));
 
@@ -284,8 +235,8 @@ impl<'de: 'a, 'a> Visitor<'de> for SetVisitor<'a> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
+        where
+            A: SeqAccess<'de>,
     {
         let mut values = BTreeSet::new();
 
@@ -316,8 +267,8 @@ impl<'de: 'a, 'a> Visitor<'de> for MapVisitor<'a> {
     }
 
     fn visit_map<A>(self, mut items: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
+        where
+            A: MapAccess<'de>,
     {
         let mut result = BTreeMap::new();
         while let Some(key) = items.next_key_seed(self.key_type)? {
@@ -349,8 +300,8 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition<ResolvedType> {
     type Value = UnionField<'a>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         struct UnionFieldVisitor<'a>(&'a Vec<FieldDefinition<ResolvedType>>);
 
@@ -362,8 +313,8 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition<ResolvedType> {
             }
 
             fn visit_str<E>(self, value: &str) -> Result<UnionField<'a>, E>
-            where
-                E: Error,
+                where
+                    E: Error,
             {
                 match value {
                     "type" => Ok(UnionField::Type),
@@ -394,8 +345,8 @@ impl<'de: 'a, 'a> Visitor<'de> for UnionVisitor<'a> {
     }
 
     fn visit_map<A>(self, mut items: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
+        where
+            A: MapAccess<'de>,
     {
         match items.next_key_seed(self.0)? {
             Some(UnionField::Type) => {
@@ -445,8 +396,8 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
     type Value = ConjurePrimitiveValue;
 
     fn deserialize<D>(self, de: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         let out = match *self {
             PrimitiveType::Safelong => ConjurePrimitiveValue::Safelong(de.deser()?),
@@ -469,8 +420,8 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     type Value = ConjureValue;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         Ok(match self {
             Primitive(p) => ConjureValue::Primitive(p.deserialize(deserializer)?),
@@ -495,9 +446,9 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 })?)
             }
             Map(MapType {
-                ref key_type,
-                ref value_type,
-            }) => ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
+                    ref key_type,
+                    ref value_type,
+                }) => ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
                 key_type,
                 value_type,
             })?),
