@@ -22,30 +22,29 @@ use std::num::ParseFloatError;
 use std::str::FromStr;
 
 #[derive(Debug)]
-pub struct NaNNotAllowedError;
+pub struct NotFiniteError(f64);
 
-impl StdError for NaNNotAllowedError {
-    fn description(&self) -> &str {
-        "NaN is a valid SafeDouble"
-    }
-}
+impl StdError for NotFiniteError {}
 
-impl Display for NaNNotAllowedError {
+impl Display for NotFiniteError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.description())
+        f.write_fmt(format_args!(
+            "Only finite numbers are valid SafeDouble. Got: {}",
+            self.0
+        ))
     }
 }
 
-/// Double without NaN.
+/// Represents an `f64` without NAN / INFINITY / NEG_INFINITY.
 #[derive(Serialize, Debug, PartialEq, PartialOrd, Display)]
 pub struct SafeDouble(f64);
 
 impl SafeDouble {
-    pub fn new(v: f64) -> Result<SafeDouble, NaNNotAllowedError> {
-        if v.is_nan() {
-            Err(NaNNotAllowedError)
-        } else {
+    pub fn new(v: f64) -> Result<SafeDouble, NotFiniteError> {
+        if v.is_finite() {
             Ok(SafeDouble(v))
+        } else {
+            Err(NotFiniteError(v))
         }
     }
 }
@@ -63,7 +62,7 @@ impl<'de> Deserialize<'de> for SafeDouble {
 #[derive(Debug)]
 pub enum ParseError {
     Num(ParseFloatError),
-    SafeDouble(NaNNotAllowedError),
+    SafeDouble(NotFiniteError),
 }
 
 impl FromStr for SafeDouble {
