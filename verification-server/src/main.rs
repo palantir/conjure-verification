@@ -24,6 +24,7 @@ extern crate log;
 #[macro_use]
 extern crate conjure_verification_error_derive;
 
+extern crate base64;
 extern crate bytes;
 extern crate chrono;
 extern crate conjure_verification_error;

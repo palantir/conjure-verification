@@ -33,7 +33,7 @@ pub enum ConjurePrimitiveValue {
     Boolean(bool),
     /// Integer with value ranging from -2^53 - 1 to 2^53 - 1 // TODO enforce?
     Safelong(i64),
-    Binary(Vec<u8>),
+    Binary(Binary),
     Uuid(Uuid),
     // TODO(dsanduleac): own type
     Rid(String),
@@ -69,3 +69,7 @@ pub struct ConjureUnionValue {
     pub field_name: String,
     pub value: Box<ConjureValue>,
 }
+
+/// Deserialized only from a base-64 encoded string.
+#[derive(Serialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
+pub struct Binary(Vec<u8>);

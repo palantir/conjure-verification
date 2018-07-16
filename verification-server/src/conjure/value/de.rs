@@ -469,6 +469,34 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     }
 }
 
+impl<'de> Deserialize<'de> for Binary {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct BinaryVisitor;
+
+        impl<'de> Visitor<'de> for BinaryVisitor {
+            type Value = Binary;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a base64-encoded string")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                let decoded = ::base64::decode(v)
+                    .map_err(|e| Error::custom(format_args!("Couldn't decode base64: {}", e)))?;
+                Ok(Binary(decoded))
+            }
+        }
+
+        deserializer.deserialize_str(BinaryVisitor)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

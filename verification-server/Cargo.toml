@@ -12,6 +12,7 @@ serde-conjure = { path = "../serde-conjure" }
 serde-conjure-derive = { path = "../serde-conjure-derive" }
 
 bytes = "0.4"
+base64 = "0.9"
 derive_more = "0.11"
 uuid = { version = "0.6", features = ["v4", "serde"] }
 either = "1.5"
