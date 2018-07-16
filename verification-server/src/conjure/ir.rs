@@ -27,10 +27,10 @@ pub struct Conjure {
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub enum TypeDefinition {
-    Object(TypeDefinitionBody<ObjectDefinition<Type>>),
-    Alias(TypeDefinitionBody<AliasDefinition<Type>>),
-    Enum(TypeDefinitionBody<EnumDefinition>),
-    Union(TypeDefinitionBody<UnionDefinition<Type>>),
+    Object(ObjectDefinition<Type>),
+    Alias(AliasDefinition<Type>),
+    Enum(EnumDefinition),
+    Union(UnionDefinition<Type>),
 }
 
 impl TypeDefinition {
@@ -44,26 +44,21 @@ impl TypeDefinition {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct TypeDefinitionBody<T> {
-    pub type_name: TypeName,
-    #[serde(flatten)]
-    pub definition: T,
-}
-
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct ObjectDefinition<Inner> {
+    pub type_name: TypeName,
     pub fields: Vec<FieldDefinition<Inner>>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct AliasDefinition<Inner> {
+    pub type_name: TypeName,
     pub alias: Box<Inner>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct EnumDefinition {
+    pub type_name: TypeName,
     pub values: Vec<EnumValueDefinition>,
 }
 
@@ -74,6 +69,7 @@ pub struct EnumValueDefinition {
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub struct UnionDefinition<Inner> {
+    pub type_name: TypeName,
     pub union: Vec<FieldDefinition<Inner>>,
 }
 

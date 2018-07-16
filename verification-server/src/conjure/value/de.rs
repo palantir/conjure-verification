@@ -430,7 +430,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                     .deserialize_option(OptionVisitor(&item_type))?
                     .map(Box::new),
             ),
-            Object(ObjectDefinition { fields }) => {
+            Object(ObjectDefinition { fields, .. }) => {
                 // TODO(dsanduleac): bubble up the skip_unknown (it's false for servers)
                 ConjureValue::Object(
                     deserializer.deserialize_map(ObjectVisitor::new(&fields, false))?
@@ -452,7 +452,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 key_type,
                 value_type,
             })?),
-            Enum(EnumDefinition { values }) => {
+            Enum(EnumDefinition { values, .. }) => {
                 let ident = String::deserialize(deserializer)?;
                 if values.iter().find(|&x| x.value == ident.as_str()).is_none() {
                     return Err(unknown_variant(
@@ -535,6 +535,10 @@ mod test {
     fn test_object_optional_fields() {
         let double_type = || ResolvedType::Primitive(PrimitiveType::Double);
         let type_ = ResolvedType::Object(ObjectDefinition {
+            type_name: TypeName {
+                name: "Name".to_string(),
+                package: "com.palantir.package".to_string(),
+            },
             fields: vec![
                 FieldDefinition {
                     field_name: "foo".to_string(),
@@ -591,6 +595,10 @@ mod test {
     fn deser_union() {
         let double_type = || ResolvedType::Primitive(PrimitiveType::Double);
         let type_ = ResolvedType::Union(UnionDefinition {
+            type_name: TypeName {
+                name: "Name".to_string(),
+                package: "com.palantir.package".to_string(),
+            },
             union: vec![
                 FieldDefinition {
                     field_name: "foo".to_string(),

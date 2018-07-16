@@ -591,6 +591,7 @@ mod test {
         );
         let param_types = hashmap![
             EndpointName::new("foo") => ResolvedType::Object(ir::ObjectDefinition {
+                type_name: ir::TypeName { name: "Name".to_string(), package: "com.palantir.package".to_string() },
                 fields: vec![
                     field_definition(
                         "heyo",

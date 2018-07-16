@@ -74,18 +74,18 @@ fn resolve_field_definition(
 
 fn resolve_type_definition(types: &Vec<TypeDefinition>, t: &TypeDefinition) -> ResolvedType {
     match t {
-        TypeDefinition::Alias(alias) => resolve_type(types, &alias.definition.alias),
-        TypeDefinition::Enum(enum_) => ResolvedType::Enum(enum_.definition.clone()),
+        TypeDefinition::Alias(alias) => resolve_type(types, &alias.alias),
+        TypeDefinition::Enum(enum_) => ResolvedType::Enum(enum_.clone()),
         TypeDefinition::Object(obj) => ResolvedType::Object(ObjectDefinition {
-            fields: obj.definition
-                .fields
+            type_name: obj.type_name.clone(),
+            fields: obj.fields
                 .iter()
                 .map(|defn| resolve_field_definition(types, defn))
                 .collect(),
         }),
         TypeDefinition::Union(union) => ResolvedType::Union(UnionDefinition {
+            type_name: union.type_name.clone(),
             union: union
-                .definition
                 .union
                 .iter()
                 .map(|defn| resolve_field_definition(types, defn))
