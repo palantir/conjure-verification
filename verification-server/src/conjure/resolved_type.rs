@@ -14,14 +14,17 @@
 
 use conjure::ir::*;
 
+/// Similar to the conjure::ir::Type, but doesn't have a `Reference` variant.
+/// Instead, these are inlined.
 #[derive(Debug)]
 pub enum ResolvedType {
-    Primitive(PrimitiveType),
-    // declared types
+    // named types
     Object(ObjectDefinition<ResolvedType>),
     Enum(EnumDefinition),
     Union(UnionDefinition<ResolvedType>),
-    // anonymous wrapper types
+
+    // anonymous types
+    Primitive(PrimitiveType),
     Optional(OptionalType<ResolvedType>),
     List(ListType<ResolvedType>),
     Set(SetType<ResolvedType>),
