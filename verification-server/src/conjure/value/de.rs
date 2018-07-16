@@ -55,13 +55,13 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
             Primitive(p) => ConjureValue::Primitive(p.deserialize(deserializer)?),
             Optional(OptionalType { item_type }) => ConjureValue::Optional(
                 deserializer
-                    .deserialize_option(OptionVisitor(&item_type))?
+                    .deserialize_option(ConjureOptionVisitor(&item_type))?
                     .map(Box::new),
             ),
             Object(ObjectDefinition { fields, .. }) => {
                 // TODO(dsanduleac): bubble up the skip_unknown (it's false for servers)
                 ConjureValue::Object(
-                    deserializer.deserialize_map(ObjectVisitor::new(&fields, false))?
+                    deserializer.deserialize_map(ConjureObjectVisitor::new(&fields, false))?
                 )
             }
             List(ListType { item_type }) => {
@@ -76,7 +76,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
             Map(MapType {
                 ref key_type,
                 ref value_type,
-            }) => ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
+            }) => ConjureValue::Map(deserializer.deserialize_map(ConjureMapVisitor {
                 key_type,
                 value_type,
             })?),
@@ -90,9 +90,9 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 }
                 ConjureValue::Enum(ident)
             }
-            Union(union_definition) => {
-                ConjureValue::Union(deserializer.deserialize_map(UnionVisitor(&union_definition))?)
-            }
+            Union(union_definition) => ConjureValue::Union(
+                deserializer.deserialize_map(ConjureUnionVisitor(&union_definition))?
+            ),
         })
     }
 }
@@ -121,9 +121,9 @@ where
 
 // Visitors!!!
 
-struct OptionVisitor<'a>(&'a ResolvedType);
+struct ConjureOptionVisitor<'a>(&'a ResolvedType);
 
-impl<'de: 'a, 'a> Visitor<'de> for OptionVisitor<'a> {
+impl<'de: 'a, 'a> Visitor<'de> for ConjureOptionVisitor<'a> {
     type Value = Option<ConjureValue>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -155,14 +155,17 @@ impl<'de: 'a, 'a> Visitor<'de> for OptionVisitor<'a> {
     }
 }
 
-struct ObjectVisitor<'a> {
+struct ConjureObjectVisitor<'a> {
     map: HashMap<&'a str, &'a ResolvedType>,
     skip_unknown: bool,
 }
 
-impl<'a> ObjectVisitor<'a> {
-    fn new(fields: &'a Vec<FieldDefinition<ResolvedType>>, skip_unknown: bool) -> ObjectVisitor {
-        ObjectVisitor {
+impl<'a> ConjureObjectVisitor<'a> {
+    fn new(
+        fields: &'a Vec<FieldDefinition<ResolvedType>>,
+        skip_unknown: bool,
+    ) -> ConjureObjectVisitor {
+        ConjureObjectVisitor {
             map: fields
                 .iter()
                 .map(|FieldDefinition { field_name, type_ }| (&**field_name, type_))
@@ -204,7 +207,7 @@ fn unknown_variant<'a, E: Error>(field: &'a str, expected: Vec<&'a str>) -> E {
     }
 }
 
-impl<'de: 'a, 'a> Visitor<'de> for ObjectVisitor<'a> {
+impl<'de: 'a, 'a> Visitor<'de> for ConjureObjectVisitor<'a> {
     type Value = BTreeMap<String, ConjureValue>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -315,12 +318,12 @@ impl<'de: 'a, 'a> Visitor<'de> for SetVisitor<'a> {
     }
 }
 
-struct MapVisitor<'a> {
+struct ConjureMapVisitor<'a> {
     key_type: &'a PrimitiveType,
     value_type: &'a ResolvedType,
 }
 
-impl<'de: 'a, 'a> Visitor<'de> for MapVisitor<'a> {
+impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
     type Value = BTreeMap<ConjurePrimitiveValue, ConjureValue>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -396,9 +399,9 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition<ResolvedType> {
     }
 }
 
-struct UnionVisitor<'a>(&'a UnionDefinition<ResolvedType>);
+struct ConjureUnionVisitor<'a>(&'a UnionDefinition<ResolvedType>);
 
-impl<'de: 'a, 'a> Visitor<'de> for UnionVisitor<'a> {
+impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
     type Value = ConjureUnionValue;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
