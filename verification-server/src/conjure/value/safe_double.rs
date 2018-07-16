@@ -12,28 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! SafeDouble is just a wrapper around f64 but without NaN (because this is not orderable).
+//! We also ban Infinity because it can't be represented as a JSON number.
+
 use serde::de::Error;
 use serde::Deserialize;
 use serde::Deserializer;
 use std::cmp::Ordering;
 use std::error::Error as StdError;
 use std::fmt::{self, Display};
-use std::num::ParseFloatError;
-use std::str::FromStr;
-
-#[derive(Debug)]
-pub struct NotFiniteError(f64);
-
-impl StdError for NotFiniteError {}
-
-impl Display for NotFiniteError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_fmt(format_args!(
-            "Only finite numbers are valid SafeDouble. Got: {}",
-            self.0
-        ))
-    }
-}
 
 /// Represents an `f64` without NAN / INFINITY / NEG_INFINITY.
 #[derive(Serialize, Debug, PartialEq, PartialOrd, Display)]
@@ -49,6 +36,28 @@ impl SafeDouble {
     }
 }
 
+impl Eq for SafeDouble {}
+
+impl Ord for SafeDouble {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
+#[derive(Debug)]
+pub struct NotFiniteError(f64);
+
+impl StdError for NotFiniteError {}
+
+impl Display for NotFiniteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_fmt(format_args!(
+            "Only finite numbers are valid SafeDouble. Got: {}",
+            self.0
+        ))
+    }
+}
+
 impl<'de> Deserialize<'de> for SafeDouble {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -56,27 +65,5 @@ impl<'de> Deserialize<'de> for SafeDouble {
     {
         let num = f64::deserialize(deserializer)?;
         SafeDouble::new(num).map_err(|e| Error::custom(e))
-    }
-}
-
-#[derive(Debug)]
-pub enum ParseError {
-    Num(ParseFloatError),
-    SafeDouble(NotFiniteError),
-}
-
-impl FromStr for SafeDouble {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
-        SafeDouble::new(s.parse().map_err(ParseError::Num)?).map_err(ParseError::SafeDouble)
-    }
-}
-
-impl Eq for SafeDouble {}
-
-impl Ord for SafeDouble {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
     }
 }

@@ -50,7 +50,7 @@ pub enum ConjurePrimitiveValue {
 }
 
 impl ConjurePrimitiveValue {
-    /// Convenience method. Panics if `d` is `NaN`.
+    /// Convenience method. Panics if `d` is `NaN` or positive/negative `Infinity`.
     pub fn double(d: f64) -> ConjurePrimitiveValue {
         ConjurePrimitiveValue::Double(SafeDouble::new(d).unwrap())
     }
