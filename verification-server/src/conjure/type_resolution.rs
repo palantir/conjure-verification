@@ -12,20 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use conjure::ir::*;
-
-#[derive(Debug)]
-pub enum ResolvedType {
-    Primitive(PrimitiveType),
-    // declared types
-    Object(ObjectDefinition<ResolvedType>),
-    Enum(EnumDefinition),
-    Union(UnionDefinition<ResolvedType>),
-    // anonymous wrapper types
-    Optional(OptionalType<ResolvedType>),
-    List(ListType<ResolvedType>),
-    Set(SetType<ResolvedType>),
-    Map(MapType<PrimitiveType, ResolvedType>),
-}
+use conjure::resolved_type::ResolvedType;
 
 /// Recursively resolve references and aliases to get to the real types.
 pub fn resolve_type(types: &Vec<TypeDefinition>, t: &Type) -> ResolvedType {

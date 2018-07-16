@@ -16,8 +16,8 @@ pub use serde::de::DeserializeSeed;
 
 use super::*;
 use conjure::ir::*;
-use conjure::type_resolution::ResolvedType;
-use conjure::type_resolution::ResolvedType::*;
+use conjure::resolved_type::ResolvedType;
+use conjure::resolved_type::ResolvedType::*;
 use core::fmt;
 use itertools::Itertools;
 use serde::de::Error;

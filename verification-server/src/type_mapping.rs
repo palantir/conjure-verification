@@ -23,8 +23,8 @@
 use conjure::ir;
 use conjure::ir::Conjure;
 use conjure::ir::ServiceName;
+use conjure::resolved_type::ResolvedType;
 use conjure::type_resolution::resolve_type;
-use conjure::type_resolution::ResolvedType;
 use std::collections::HashMap;
 use test_spec::EndpointName;
 

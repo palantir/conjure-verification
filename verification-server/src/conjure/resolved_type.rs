@@ -12,7 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod ir;
-pub mod resolved_type;
-pub mod type_resolution;
-pub mod value;
+use conjure::ir::*;
+
+#[derive(Debug)]
+pub enum ResolvedType {
+    Primitive(PrimitiveType),
+    // declared types
+    Object(ObjectDefinition<ResolvedType>),
+    Enum(EnumDefinition),
+    Union(UnionDefinition<ResolvedType>),
+    // anonymous wrapper types
+    Optional(OptionalType<ResolvedType>),
+    List(ListType<ResolvedType>),
+    Set(SetType<ResolvedType>),
+    Map(MapType<PrimitiveType, ResolvedType>),
+}
