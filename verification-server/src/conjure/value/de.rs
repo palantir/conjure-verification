@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! This file providers trait implementations so that you can convert a
+//!
+//!     conjure::resolved_type::ResolvedType into a conjure::value::ConjureValue
+//!
+//! Note, there is no internal mutability here, we just use DeserializeSeed to pass information into
+//! the deserialization process (contextual deserialization) instead of the usual context-free
+//! deserialization.
+
 pub use serde::de::DeserializeSeed;
 
 use super::*;
@@ -35,6 +43,59 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::error::Error as StdError;
+
+impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
+    type Value = ConjureValue;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(match self {
+            Primitive(p) => ConjureValue::Primitive(p.deserialize(deserializer)?),
+            Optional(OptionalType { item_type }) => ConjureValue::Optional(
+                deserializer
+                    .deserialize_option(OptionVisitor(&item_type))?
+                    .map(Box::new),
+            ),
+            Object(ObjectDefinition { fields, .. }) => {
+                // TODO(dsanduleac): bubble up the skip_unknown (it's false for servers)
+                ConjureValue::Object(
+                    deserializer.deserialize_map(ObjectVisitor::new(&fields, false))?
+                )
+            }
+            List(ListType { item_type }) => {
+                ConjureValue::List(deserializer.deserialize_seq(SeqVisitor(&item_type))?)
+            }
+            Set(SetType { ref item_type }) => {
+                ConjureValue::Set(deserializer.deserialize_seq(SetVisitor {
+                    item_type,
+                    fail_on_duplicates: false,
+                })?)
+            }
+            Map(MapType {
+                ref key_type,
+                ref value_type,
+            }) => ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
+                key_type,
+                value_type,
+            })?),
+            Enum(EnumDefinition { values, .. }) => {
+                let ident = String::deserialize(deserializer)?;
+                if values.iter().find(|&x| x.value == ident.as_str()).is_none() {
+                    return Err(unknown_variant(
+                        ident.as_str(),
+                        values.iter().map(|vdef| &*vdef.value).collect(),
+                    ));
+                }
+                ConjureValue::Enum(ident)
+            }
+            Union(union_definition) => {
+                ConjureValue::Union(deserializer.deserialize_map(UnionVisitor(&union_definition))?)
+            }
+        })
+    }
+}
 
 /// Allows you to deserialize a given type without having to type it.
 trait DeserQuick<'de> {
@@ -413,59 +474,6 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
             PrimitiveType::Any => ConjurePrimitiveValue::Any(de.deser()?),
         };
         Ok(out)
-    }
-}
-
-impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
-    type Value = ConjureValue;
-
-    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(match self {
-            Primitive(p) => ConjureValue::Primitive(p.deserialize(deserializer)?),
-            Optional(OptionalType { item_type }) => ConjureValue::Optional(
-                deserializer
-                    .deserialize_option(OptionVisitor(&item_type))?
-                    .map(Box::new),
-            ),
-            Object(ObjectDefinition { fields, .. }) => {
-                // TODO(dsanduleac): bubble up the skip_unknown (it's false for servers)
-                ConjureValue::Object(
-                    deserializer.deserialize_map(ObjectVisitor::new(&fields, false))?
-                )
-            }
-            List(ListType { item_type }) => {
-                ConjureValue::List(deserializer.deserialize_seq(SeqVisitor(&item_type))?)
-            }
-            Set(SetType { ref item_type }) => {
-                ConjureValue::Set(deserializer.deserialize_seq(SetVisitor {
-                    item_type,
-                    fail_on_duplicates: false,
-                })?)
-            }
-            Map(MapType {
-                ref key_type,
-                ref value_type,
-            }) => ConjureValue::Map(deserializer.deserialize_map(MapVisitor {
-                key_type,
-                value_type,
-            })?),
-            Enum(EnumDefinition { values, .. }) => {
-                let ident = String::deserialize(deserializer)?;
-                if values.iter().find(|&x| x.value == ident.as_str()).is_none() {
-                    return Err(unknown_variant(
-                        ident.as_str(),
-                        values.iter().map(|vdef| &*vdef.value).collect(),
-                    ));
-                }
-                ConjureValue::Enum(ident)
-            }
-            Union(union_definition) => {
-                ConjureValue::Union(deserializer.deserialize_map(UnionVisitor(&union_definition))?)
-            }
-        })
     }
 }
 
