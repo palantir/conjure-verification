@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! These types are sufficient to deserialize [Conjure's IR][ir], apart from 'errors'.
+//! Long-term, we intend these to live in a standalone conjure-rust project.
+//!
+//! [ir]: https://github.com/palantir/conjure/blob/develop/docs/intermediate_representation.md
+
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub struct Conjure {
     pub types: Vec<TypeDefinition>,
