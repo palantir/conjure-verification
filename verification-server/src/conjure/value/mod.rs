@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Similar to serde_json::value::Value, this represents a runtime type hierarchy for anonymous
+//! objects deserialized from Conjure JSON.
+//!
+//! This is not expected to be used outside the conjure-verification project because users would
+//! have real, named Conjure-generated types to deserialize into.
+
 pub use serde::de::DeserializeSeed;
 
 use self::safe_double::SafeDouble;
