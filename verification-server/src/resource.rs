@@ -27,9 +27,9 @@ use errors::*;
 use http::status::StatusCode;
 use http::Method;
 use hyper::header::HeaderValue;
+use more_serde_json;
 use raw_json::RawJson;
 use serde_json;
-use serde_json_2;
 use serde_plain;
 use std::collections::HashMap;
 use std::string::ToString;
@@ -87,7 +87,7 @@ impl SpecTestResource {
                     )
                 })
             }?;
-            let expected_param = serde_json_2::from_str(conjure_type, expected_param_str)
+            let expected_param = more_serde_json::from_str(conjure_type, expected_param_str)
                 .map_err(Error::internal_safe)?;
             let param = param_str
                 .as_ref()
@@ -196,7 +196,7 @@ impl SpecTestResource {
                 )
             })
         }?.to_string();
-        let expected_body = serde_json_2::from_str(conjure_type, &*expected_body_str)
+        let expected_body = more_serde_json::from_str(conjure_type, &*expected_body_str)
             .map_err(Error::internal_safe)?;
         let request_body_value: serde_json::Value = request.body()?;
         let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {

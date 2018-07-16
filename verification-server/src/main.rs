@@ -77,10 +77,10 @@ mod conjure;
 mod error_handling;
 mod errors;
 mod handler;
+mod more_serde_json;
 mod raw_json;
 mod resource;
 mod router;
-mod serde_json_2;
 mod test_spec;
 mod type_mapping;
 

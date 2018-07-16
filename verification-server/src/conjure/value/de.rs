@@ -500,7 +500,7 @@ impl<'de> Deserialize<'de> for Binary {
 #[cfg(test)]
 mod test {
     use super::*;
-    use serde_json_2::*;
+    use more_serde_json::from_str;
     use serde_plain;
 
     #[test]

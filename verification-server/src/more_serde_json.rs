@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Two helpers adapted from serde_json to allow us to do contextual deserialization into our
+//! conjure::value::ConjureValue type, where serde_json only provides helpers to do
+//! context-free deserializing.
+//!
+//! This could in theory be contributed upstream.
+
 use serde::de::DeserializeSeed;
 use serde_json;
 
