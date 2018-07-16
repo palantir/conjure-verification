@@ -11,6 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+//! Converts named and anonymous Conjure Types into ResolvedTypes (which no longer contain
+//! references/aliases).
+
 use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
 
