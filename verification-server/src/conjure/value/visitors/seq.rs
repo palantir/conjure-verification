@@ -17,8 +17,12 @@ use conjure::value::*;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
 use serde::private::de::size_hint;
+use serde::Deserializer;
+use std::error::Error;
 use std::fmt;
 
+/// This visitor also supports being visited as an option using `Deserializer::deserialize_option`,
+/// whereby it will return a default.
 pub struct ConjureSeqVisitor<'a>(pub &'a ResolvedType);
 
 impl<'de: 'a, 'a> Visitor<'de> for ConjureSeqVisitor<'a> {
@@ -26,6 +30,20 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureSeqVisitor<'a> {
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("list")
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        Ok(vec![])
+    }
+
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_seq(self)
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>

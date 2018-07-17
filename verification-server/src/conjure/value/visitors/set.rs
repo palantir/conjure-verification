@@ -22,7 +22,10 @@ use serde::de::SeqAccess;
 use serde::de::Visitor;
 use serde_json;
 use std::collections::BTreeSet;
+use serde::Deserializer;
 
+/// This visitor also supports being visited as an option using `Deserializer::deserialize_option`,
+/// whereby it will return a default.
 pub struct ConjureSetVisitor<'a> {
     pub item_type: &'a ResolvedType,
     pub fail_on_duplicates: bool,
@@ -33,6 +36,20 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureSetVisitor<'a> {
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a sequence")
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E>
+        where
+            E: Error,
+    {
+        Ok(BTreeSet::new())
+    }
+
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        deserializer.deserialize_seq(self)
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
