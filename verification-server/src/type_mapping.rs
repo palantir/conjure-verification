@@ -30,31 +30,9 @@ use test_spec::EndpointName;
 
 const PACKAGE: &'static str = "com.palantir.conjure.verification";
 
-fn service_name(s: &str) -> ServiceName {
-    ServiceName {
-        name: s.into(),
-        package: PACKAGE.into(),
-    }
-}
-
-fn type_of_non_index_arg(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
-    &endpoint_def
-        .args
-        .iter()
-        .find(|arg| arg.arg_name != "index")
-        .unwrap()
-        .type_
-}
-
-fn return_type(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
-    (&endpoint_def.returns).as_ref().unwrap()
-}
-
-type TypeForEndpoint = fn(&ir::EndpointDefinition) -> &ir::Type;
-
 pub fn resolve_types(ir: &Conjure) -> Box<HashMap<EndpointName, ResolvedType>> {
     // Services whose endpoints we care about, and how to extract the type we care about.
-    let mut services: HashMap<ServiceName, TypeForEndpoint> = HashMap::new();
+    let mut services: HashMap<ServiceName, TypeForEndpointFn> = HashMap::new();
     services.insert(service_name("AutoDeserializeService"), return_type);
     services.insert(service_name("SingleHeaderService"), type_of_non_index_arg);
     services.insert(
@@ -85,3 +63,25 @@ pub fn resolve_types(ir: &Conjure) -> Box<HashMap<EndpointName, ResolvedType>> {
         });
     param_types
 }
+
+fn service_name(s: &str) -> ServiceName {
+    ServiceName {
+        name: s.into(),
+        package: PACKAGE.into(),
+    }
+}
+
+fn type_of_non_index_arg(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
+    &endpoint_def
+        .args
+        .iter()
+        .find(|arg| arg.arg_name != "index")
+        .unwrap()
+        .type_
+}
+
+fn return_type(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
+    (&endpoint_def.returns).as_ref().unwrap()
+}
+
+type TypeForEndpointFn = fn(&ir::EndpointDefinition) -> &ir::Type;
