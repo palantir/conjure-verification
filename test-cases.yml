@@ -56,13 +56,13 @@ client:
         - '{"value":13}'
         - '{"value":123e5}'
         - '{"value":123e-5}'
+        - '{"value":"NaN"}'
       negative:
         - '{"value":null}'
         - '{}'
         - '{"value":"1.23"}'
         - '{"value":"nan"}'
         - '{"value":nan}'
-        - '{"value":"NaN"}'
     receiveIntegerExample:
       positive:
         - '{"value":-2147483648}'
@@ -203,13 +203,12 @@ client:
       positive:
         - '10'
         - '10.0'
+      # TODO: NaN, Infinity
       negative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
-        - '"NaN"'
-        - '"nan"'
     receiveIntegerAliasExample:
       positive:
         - '0'
