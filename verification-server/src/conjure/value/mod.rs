@@ -30,6 +30,7 @@ use uuid::Uuid;
 
 pub mod de;
 pub mod safe_double;
+mod util;
 mod visitors;
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]

@@ -20,7 +20,6 @@
 //! the deserialization process (contextual deserialization) instead of the usual context-free
 //! deserialization.
 
-use conjure::ir::PrimitiveType;
 use conjure::resolved_type::ResolvedType;
 use conjure::value::*;
 use core::fmt;

@@ -12,7 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod object;
-pub mod option;
-pub mod set;
-pub mod union;
+use itertools::Itertools;
+use serde::de::Error;
+
+/// Shameless kinda copied from serde::de::Error::unknown_variant because they only take static strings.
+pub fn unknown_variant<'a, E: Error>(field: &'a str, expected: Vec<&'a str>) -> E {
+    if expected.is_empty() {
+        Error::custom(format_args!(
+            "unknown variant `{}`, there are no variants",
+            field
+        ))
+    } else {
+        Error::custom(format_args!(
+            "unknown variant `{}`, expected one of: {}",
+            field,
+            expected.into_iter().join(", ")
+        ))
+    }
+}
