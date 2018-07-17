@@ -28,6 +28,7 @@ use conjure::resolved_type::ResolvedType;
 use conjure::resolved_type::ResolvedType::*;
 use conjure::value::visitors::object::ConjureObjectVisitor;
 use conjure::value::visitors::option::ConjureOptionVisitor;
+use conjure::value::visitors::set::ConjureSetVisitor;
 use core::fmt;
 use itertools::Itertools;
 use serde::de::Error;
@@ -70,7 +71,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 ConjureValue::List(deserializer.deserialize_seq(SeqVisitor(&item_type))?)
             }
             Set(SetType { ref item_type }) => {
-                ConjureValue::Set(deserializer.deserialize_seq(SetVisitor {
+                ConjureValue::Set(deserializer.deserialize_seq(ConjureSetVisitor {
                     item_type,
                     fail_on_duplicates: false,
                 })?)
@@ -156,38 +157,6 @@ impl<'de: 'a, 'a> Visitor<'de> for SeqVisitor<'a> {
 
         while let Some(value) = seq.next_element_seed(self.0)? {
             values.push(value);
-        }
-
-        Ok(values)
-    }
-}
-
-struct SetVisitor<'a> {
-    item_type: &'a ResolvedType,
-    fail_on_duplicates: bool,
-}
-
-impl<'de: 'a, 'a> Visitor<'de> for SetVisitor<'a> {
-    type Value = BTreeSet<ConjureValue>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a sequence")
-    }
-
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
-    {
-        let mut values = BTreeSet::new();
-
-        while let Some(value) = seq.next_element_seed(self.item_type)? {
-            if self.fail_on_duplicates && values.contains(&value) {
-                return Err(Error::custom(format_args!(
-                    "Set contained duplicates: {}",
-                    serde_json::ser::to_string(&value).unwrap()
-                )));
-            }
-            values.insert(value);
         }
 
         Ok(values)
