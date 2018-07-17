@@ -26,6 +26,7 @@ use super::*;
 use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
 use conjure::resolved_type::ResolvedType::*;
+use conjure::value::visitors::option::ConjureOptionVisitor;
 use core::fmt;
 use itertools::Itertools;
 use serde::de::Error;
@@ -120,40 +121,6 @@ where
 }
 
 // Visitors!!!
-
-struct ConjureOptionVisitor<'a>(&'a ResolvedType);
-
-impl<'de: 'a, 'a> Visitor<'de> for ConjureOptionVisitor<'a> {
-    type Value = Option<ConjureValue>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("option")
-    }
-
-    #[inline]
-    fn visit_none<E>(self) -> Result<Self::Value, E>
-    where
-        E: StdError,
-    {
-        Ok(None)
-    }
-
-    #[inline]
-    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        self.0.deserialize(deserializer).map(Some)
-    }
-
-    #[inline]
-    fn visit_unit<E>(self) -> Result<Self::Value, E>
-    where
-        E: StdError,
-    {
-        Ok(None)
-    }
-}
 
 struct ConjureObjectVisitor<'a> {
     map: HashMap<&'a str, &'a ResolvedType>,
