@@ -262,6 +262,69 @@ mod test {
     }
 
     #[test]
+    fn test_object_collection_fields() {
+        let double_type = || ResolvedType::Primitive(PrimitiveType::Double);
+        let type_ = ResolvedType::Object(ObjectDefinition {
+            type_name: TypeName {
+                name: "Name".to_string(),
+                package: "com.palantir.package".to_string(),
+            },
+            fields: vec![
+                FieldDefinition {
+                    field_name: "foo".to_string(),
+                    type_: double_type(),
+                },
+                FieldDefinition {
+                    field_name: "list".to_string(),
+                    type_: ResolvedType::List(ListType {
+                        item_type: ResolvedType::Primitive(PrimitiveType::Integer).into(),
+                    }),
+                },
+                FieldDefinition {
+                    field_name: "set".to_string(),
+                    type_: ResolvedType::Set(SetType {
+                        item_type: ResolvedType::Primitive(PrimitiveType::Integer).into(),
+                    }),
+                },
+                FieldDefinition {
+                    field_name: "map".to_string(),
+                    type_: ResolvedType::Map(MapType {
+                        key_type: PrimitiveType::String.into(),
+                        value_type: ResolvedType::Primitive(PrimitiveType::Integer).into(),
+                    }),
+                },
+            ],
+        });
+
+        // Accepts missing collection fields
+        assert_eq!(
+            from_str(&type_, r#"{"foo": 123}"#).unwrap(),
+            ConjureValue::Object(btreemap!(
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)),
+                "list" => ConjureValue::List(Default::default()),
+                "set" => ConjureValue::Set(Default::default()),
+                "map" => ConjureValue::Map(Default::default())
+            ))
+        );
+
+        // Does not tolerate null for collection field
+        assert!(
+            from_str(&type_, r#"{list": null, "foo": 123}"#).is_err());
+
+        // Deserializes present collection fields
+        let int_value = |v| ConjureValue::Primitive(ConjurePrimitiveValue::Integer(v));
+        assert_eq!(
+            from_str(&type_, r#"{"list": [1, 2, 3], "foo": 123}"#).unwrap(),
+            ConjureValue::Object(btreemap!(
+                "foo" => ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)),
+                "list" => ConjureValue::List(vec![1, 2, 3].into_iter().map(int_value).collect()),
+                "set" => ConjureValue::Set(Default::default()),
+                "map" => ConjureValue::Map(Default::default())
+            ))
+        );
+    }
+
+    #[test]
     fn deser_union() {
         let double_type = || ResolvedType::Primitive(PrimitiveType::Double);
         let type_ = ResolvedType::Union(UnionDefinition {
