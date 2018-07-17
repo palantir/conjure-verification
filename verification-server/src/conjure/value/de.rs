@@ -32,22 +32,16 @@ use conjure::value::visitors::option::ConjureOptionVisitor;
 use conjure::value::visitors::set::ConjureSetVisitor;
 use conjure::value::visitors::union::ConjureUnionVisitor;
 use core::fmt;
-use itertools::Itertools;
 use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::SeqAccess;
-use serde::de::Unexpected;
 use serde::de::Visitor;
 use serde::private::de::size_hint;
 use serde::Deserialize;
 use serde::{self, Deserializer};
-use serde_conjure::UnionTypeField;
 use serde_json;
 use std::collections::btree_map;
 use std::collections::BTreeMap;
-use std::collections::BTreeSet;
-use std::collections::HashMap;
-use std::error::Error as StdError;
 
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     type Value = ConjureValue;
