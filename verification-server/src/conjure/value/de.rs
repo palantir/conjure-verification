@@ -30,13 +30,12 @@ use conjure::value::util::unknown_variant;
 use conjure::value::visitors::map::ConjureMapVisitor;
 use conjure::value::visitors::object::ConjureObjectVisitor;
 use conjure::value::visitors::option::ConjureOptionVisitor;
+use conjure::value::visitors::seq::ConjureSeqVisitor;
 use conjure::value::visitors::set::ConjureSetVisitor;
 use conjure::value::visitors::union::ConjureUnionVisitor;
 use core::fmt;
 use serde::de::Error;
-use serde::de::SeqAccess;
 use serde::de::Visitor;
-use serde::private::de::size_hint;
 use serde::Deserialize;
 use serde::Deserializer;
 
@@ -61,7 +60,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 )
             }
             List(ListType { item_type }) => {
-                ConjureValue::List(deserializer.deserialize_seq(SeqVisitor(&item_type))?)
+                ConjureValue::List(deserializer.deserialize_seq(ConjureSeqVisitor(&item_type))?)
             }
             Set(SetType { ref item_type }) => {
                 ConjureValue::Set(deserializer.deserialize_seq(ConjureSetVisitor {
@@ -112,31 +111,6 @@ where
         T: Deserialize<'de>,
     {
         T::deserialize(self)
-    }
-}
-
-// Visitors!!!
-
-struct SeqVisitor<'a>(&'a ResolvedType);
-
-impl<'de: 'a, 'a> Visitor<'de> for SeqVisitor<'a> {
-    type Value = Vec<ConjureValue>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("list")
-    }
-
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
-    {
-        let mut values = Vec::with_capacity(size_hint::cautious(seq.size_hint()));
-
-        while let Some(value) = seq.next_element_seed(self.0)? {
-            values.push(value);
-        }
-
-        Ok(values)
     }
 }
 

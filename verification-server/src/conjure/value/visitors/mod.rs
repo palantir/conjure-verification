@@ -15,5 +15,6 @@
 pub mod map;
 pub mod object;
 pub mod option;
+pub mod seq;
 pub mod set;
 pub mod union;
