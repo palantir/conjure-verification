@@ -92,28 +92,6 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     }
 }
 
-/// Allows you to deserialize a given type without having to type it.
-trait DeserQuick<'de> {
-    type Error;
-    fn deser<T>(self) -> Result<T, Self::Error>
-    where
-        T: Deserialize<'de>;
-}
-
-impl<'de, D> DeserQuick<'de> for D
-where
-    D: Deserializer<'de>,
-{
-    type Error = D::Error;
-
-    fn deser<T>(self) -> Result<T, Self::Error>
-    where
-        T: Deserialize<'de>,
-    {
-        T::deserialize(self)
-    }
-}
-
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
     type Value = ConjurePrimitiveValue;
 
@@ -138,6 +116,29 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
     }
 }
 
+/// Allows you to deserialize a given type without having to type it.
+trait DeserQuick<'de> {
+    type Error;
+    fn deser<T>(self) -> Result<T, Self::Error>
+    where
+        T: Deserialize<'de>;
+}
+
+impl<'de, D> DeserQuick<'de> for D
+where
+    D: Deserializer<'de>,
+{
+    type Error = D::Error;
+
+    fn deser<T>(self) -> Result<T, Self::Error>
+    where
+        T: Deserialize<'de>,
+    {
+        T::deserialize(self)
+    }
+}
+
+/// We don't need DeserializeSeed for Binary because it is a primitive conjure type.
 impl<'de> Deserialize<'de> for Binary {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
