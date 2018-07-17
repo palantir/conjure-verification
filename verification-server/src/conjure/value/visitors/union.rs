@@ -25,50 +25,6 @@ use serde::Deserializer;
 use serde_conjure::UnionTypeField;
 use std::fmt;
 
-pub enum UnionField<'a> {
-    Type,
-    Data(&'a FieldDefinition<ResolvedType>),
-}
-
-impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition<ResolvedType> {
-    type Value = UnionField<'a>;
-
-    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct UnionFieldVisitor<'a>(&'a Vec<FieldDefinition<ResolvedType>>);
-
-        impl<'de: 'a, 'a> Visitor<'de> for UnionFieldVisitor<'a> {
-            type Value = UnionField<'a>;
-
-            fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-                fmt.write_str("field name")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<UnionField<'a>, E>
-            where
-                E: Error,
-            {
-                match value {
-                    "type" => Ok(UnionField::Type),
-                    _ => Ok(UnionField::Data(self.0
-                        .iter()
-                        .find(|fd| fd.field_name == value)
-                        .ok_or_else(|| {
-                            unknown_variant(
-                                value,
-                                self.0.iter().map(|fd| fd.field_name.as_str()).collect(),
-                            )
-                        })?)),
-                }
-            }
-        }
-
-        deserializer.deserialize_str(UnionFieldVisitor(&self.union))
-    }
-}
-
 pub struct ConjureUnionVisitor<'a>(pub &'a UnionDefinition<ResolvedType>);
 
 impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
@@ -123,5 +79,49 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
             }
             None => Err(Error::missing_field("type")),
         }
+    }
+}
+
+pub enum UnionField<'a> {
+    Type,
+    Data(&'a FieldDefinition<ResolvedType>),
+}
+
+impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition<ResolvedType> {
+    type Value = UnionField<'a>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct UnionFieldVisitor<'a>(&'a Vec<FieldDefinition<ResolvedType>>);
+
+        impl<'de: 'a, 'a> Visitor<'de> for UnionFieldVisitor<'a> {
+            type Value = UnionField<'a>;
+
+            fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                fmt.write_str("field name")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<UnionField<'a>, E>
+            where
+                E: Error,
+            {
+                match value {
+                    "type" => Ok(UnionField::Type),
+                    _ => Ok(UnionField::Data(self.0
+                        .iter()
+                        .find(|fd| fd.field_name == value)
+                        .ok_or_else(|| {
+                            unknown_variant(
+                                value,
+                                self.0.iter().map(|fd| fd.field_name.as_str()).collect(),
+                            )
+                        })?)),
+                }
+            }
+        }
+
+        deserializer.deserialize_str(UnionFieldVisitor(&self.union))
     }
 }
