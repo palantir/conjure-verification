@@ -48,7 +48,6 @@ client:
         - '{"value":1523040070}'
         - '{"value":"2017-01-02T03:04:05.0000000000Z"}'
         - '{"value":"2017-01-02T04:04:05.000000000+01:00[Europe/Berlin]"}'
-        - '{"value":"2017-01-02T04:04:05.000000000+01:00[Europe/Berlin][Another/Zone]"}'
     receiveDoubleExample:
       positive:
         - '{"value":1.23}'
