@@ -14,29 +14,15 @@
 
 pub use serde::de::DeserializeSeed;
 
-use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
-use conjure::resolved_type::ResolvedType::*;
-use conjure::value::visitors::object::ConjureObjectVisitor;
-use conjure::value::visitors::option::ConjureOptionVisitor;
 use conjure::value::*;
 use core::fmt;
-use itertools::Itertools;
 use serde::de::Error;
-use serde::de::MapAccess;
 use serde::de::SeqAccess;
-use serde::de::Unexpected;
 use serde::de::Visitor;
-use serde::private::de::size_hint;
-use serde::Deserialize;
-use serde::{self, Deserializer};
-use serde_conjure::UnionTypeField;
+use serde::Deserializer;
 use serde_json;
-use std::collections::btree_map;
-use std::collections::BTreeMap;
 use std::collections::BTreeSet;
-use std::collections::HashMap;
-use std::error::Error as StdError;
 
 pub struct ConjureSetVisitor<'a> {
     pub item_type: &'a ResolvedType,

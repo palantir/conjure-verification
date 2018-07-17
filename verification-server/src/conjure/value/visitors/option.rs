@@ -26,7 +26,6 @@ use conjure::value::*;
 use core::fmt;
 pub use serde::de::DeserializeSeed;
 use serde::de::Visitor;
-use serde::Deserialize;
 use serde::Deserializer;
 use std::error::Error as StdError;
 
