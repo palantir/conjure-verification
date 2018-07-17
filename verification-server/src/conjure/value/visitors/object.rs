@@ -20,10 +20,10 @@ use conjure::resolved_type::ResolvedType::*;
 use conjure::value::*;
 use core::fmt;
 use itertools::Itertools;
+use serde;
 use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::Visitor;
-use serde;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 

@@ -27,21 +27,18 @@ use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
 use conjure::resolved_type::ResolvedType::*;
 use conjure::value::util::unknown_variant;
+use conjure::value::visitors::map::ConjureMapVisitor;
 use conjure::value::visitors::object::ConjureObjectVisitor;
 use conjure::value::visitors::option::ConjureOptionVisitor;
 use conjure::value::visitors::set::ConjureSetVisitor;
 use conjure::value::visitors::union::ConjureUnionVisitor;
 use core::fmt;
 use serde::de::Error;
-use serde::de::MapAccess;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
 use serde::private::de::size_hint;
 use serde::Deserialize;
-use serde::{self, Deserializer};
-use serde_json;
-use std::collections::btree_map;
-use std::collections::BTreeMap;
+use serde::Deserializer;
 
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     type Value = ConjureValue;
@@ -140,41 +137,6 @@ impl<'de: 'a, 'a> Visitor<'de> for SeqVisitor<'a> {
         }
 
         Ok(values)
-    }
-}
-
-struct ConjureMapVisitor<'a> {
-    key_type: &'a PrimitiveType,
-    value_type: &'a ResolvedType,
-}
-
-impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
-    type Value = BTreeMap<ConjurePrimitiveValue, ConjureValue>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("map")
-    }
-
-    fn visit_map<A>(self, mut items: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
-    {
-        let mut result = BTreeMap::new();
-        while let Some(key) = items.next_key_seed(self.key_type)? {
-            let value = items.next_value_seed(self.value_type)?;
-            match result.entry(key) {
-                btree_map::Entry::Occupied(entry) => {
-                    return Err(serde::de::Error::custom(format_args!(
-                        "duplicate field `{}`",
-                        serde_json::ser::to_string(entry.key()).unwrap()
-                    )));
-                }
-                btree_map::Entry::Vacant(entry) => {
-                    entry.insert(value);
-                }
-            }
-        }
-        Ok(result)
     }
 }
 
