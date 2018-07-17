@@ -23,6 +23,8 @@ extern crate serde_conjure_derive;
 extern crate log;
 #[macro_use]
 extern crate conjure_verification_error_derive;
+#[macro_use]
+extern crate serde;
 
 extern crate base64;
 extern crate bytes;
@@ -38,7 +40,6 @@ extern crate mime;
 extern crate pretty_env_logger;
 extern crate route_recognizer;
 extern crate scheduled_thread_pool;
-extern crate serde;
 extern crate serde_conjure;
 #[cfg_attr(test, macro_use)]
 extern crate serde_json;

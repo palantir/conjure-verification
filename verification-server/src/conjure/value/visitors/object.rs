@@ -26,6 +26,8 @@ use serde::de::MapAccess;
 use serde::de::Visitor;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use serde::Deserializer;
+use std::marker::PhantomData;
 
 pub struct ConjureObjectVisitor<'a> {
     pub map: HashMap<&'a str, &'a ResolvedType>,
@@ -77,27 +79,14 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureObjectVisitor<'a> {
                 return Err(unknown_field(&key.to_string(), known_fields));
             }
         }
-        // Handle missing *required* fields (filter out fields which were optional)
-        if !self.map.is_empty() {
-            let keys = self.map
-                .iter()
-                .filter_map(|(k, v)| match v {
-                    Optional(_) => None,
-                    _ => Some(k),
-                })
-                .map(|k| format!("`{}`", k))
-                .join(", ");
-            if keys.is_empty() {
-                // Only optional fields. Set their values to None
-                for (k, _) in self.map.into_iter() {
-                    result.insert(k.to_string(), ConjureValue::Optional(None));
-                }
-            } else {
-                return Err(serde::de::Error::custom(format_args!(
-                    "missing fields: {}",
-                    keys
-                )));
-            }
+        // Handle missing fields.
+        for (field_name, field_type) in self.map {
+            let deserializer = MissingFieldDeserializer(field_name, PhantomData);
+            // This will succeed with an appropriate default value if the field type defines such
+            // a default value (namely - its visitor accepts `visit_none` to indicate an explicit
+            // value was missing), or otherwise fail with a 'missing field' error.
+            let value = field_type.deserialize(deserializer)?;
+            result.insert(field_name.to_string(), value);
         }
         Ok(result)
     }
@@ -116,5 +105,42 @@ fn unknown_field<'a, E: Error>(field: &'a str, expected: Vec<&'a str>) -> E {
             field,
             expected.into_iter().join(", ")
         ))
+    }
+}
+
+/// A Deserializer for a specific field whose value was not present in the map.
+///
+/// When asked to deserialize an option, seq or map, it will `visit_none` on the visitor (because we
+/// expect the Conjure visitors to handle these cases with default values), but will fail with a
+/// missing field exception otherwise.
+struct MissingFieldDeserializer<'a, E>(&'a str, PhantomData<E>);
+
+impl<'de : 'a, 'a, E> Deserializer<'de> for MissingFieldDeserializer<'a, E> where E : Error {
+    type Error = E;
+
+    fn deserialize_any<V>(self, _: V) -> Result<V::Value, Self::Error> where
+        V: Visitor<'de> {
+        Err(Error::custom(format_args!("Missing field: {}", self.0)))
+    }
+
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error> where
+        V: Visitor<'de> {
+        visitor.visit_none()
+    }
+
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error> where
+        V: Visitor<'de> {
+        visitor.visit_none()
+    }
+
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error> where
+        V: Visitor<'de> {
+        visitor.visit_none()
+    }
+
+    forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+        bytes byte_buf unit unit_struct newtype_struct tuple enum
+        tuple_struct struct identifier ignored_any
     }
 }
