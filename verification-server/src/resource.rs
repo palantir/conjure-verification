@@ -87,8 +87,8 @@ impl SpecTestResource {
                     )
                 })
             }?;
-            let expected_param = more_serde_json::from_str(conjure_type, expected_param_str)
-                .map_err(Error::internal_safe)?;
+            let expected_param =
+                deserialize_expected_value(conjure_type, expected_param_str, &endpoint, index)?;
             let param = param_str
                 .as_ref()
                 .map(|str| {
@@ -196,8 +196,8 @@ impl SpecTestResource {
                 )
             })
         }?.to_string();
-        let expected_body = more_serde_json::from_str(conjure_type, &*expected_body_str)
-            .map_err(Error::internal_safe)?;
+        let expected_body =
+            deserialize_expected_value(conjure_type, expected_body_str.as_ref(), &endpoint, index)?;
         let request_body_value: serde_json::Value = request.body()?;
         let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {
             let error_message = format!("{}", e);
@@ -228,6 +228,20 @@ impl SpecTestResource {
         }
         Ok(NoContent)
     }
+}
+
+fn deserialize_expected_value(
+    conjure_type: &ResolvedType,
+    raw: &str,
+    endpoint: &EndpointName,
+    index: usize,
+) -> Result<ConjureValue> {
+    more_serde_json::from_str(conjure_type, raw).map_err(|e| {
+        Error::internal_safe(e)
+            .with_safe_param("endpoint", endpoint.to_string())
+            .with_safe_param("index", index)
+            .with_safe_param("expected_raw", raw.clone())
+    })
 }
 
 impl Resource for SpecTestResource {
