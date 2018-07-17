@@ -65,7 +65,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
             Set(SetType { ref item_type }) => {
                 ConjureValue::Set(deserializer.deserialize_seq(ConjureSetVisitor {
                     item_type,
-                    fail_on_duplicates: false,
+                    fail_on_duplicates: true,
                 })?)
             }
             Map(MapType {
