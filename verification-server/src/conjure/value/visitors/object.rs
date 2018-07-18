@@ -29,7 +29,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 pub struct ConjureObjectVisitor<'a> {
-    pub map: HashMap<&'a str, &'a ResolvedType>,
+    pub remaining_fields: HashMap<&'a str, &'a ResolvedType>,
     pub skip_unknown: bool,
 }
 
@@ -39,7 +39,7 @@ impl<'a> ConjureObjectVisitor<'a> {
         skip_unknown: bool,
     ) -> ConjureObjectVisitor {
         ConjureObjectVisitor {
-            map: fields
+            remaining_fields: fields
                 .iter()
                 .map(|FieldDefinition { field_name, type_ }| (&**field_name, type_))
                 .collect(),
@@ -59,13 +59,13 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureObjectVisitor<'a> {
     where
         A: MapAccess<'de>,
     {
-        let known_fields = self.map.keys().cloned().collect();
+        let known_fields = self.remaining_fields.keys().cloned().collect();
         let mut result = BTreeMap::new();
         // Note: must deserialize String, not &str, because `de::Deserializer<'de> for
         // ::serde_json::value::Value` calls `visit_string` on our visitor, and the visitor used by
         // `de::Deserialize for String` (::serde::de::impls::StrVisitor) can't handle that.
         while let Some(key) = items.next_key::<String>()? {
-            let field_type = self.map.remove(key.as_str());
+            let field_type = self.remaining_fields.remove(key.as_str());
             if let Some(field_type) = field_type {
                 let value = items.next_value_seed(field_type)?;
                 if let Some(_) = result.insert(key.to_string(), value) {
@@ -79,7 +79,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureObjectVisitor<'a> {
             }
         }
         // Handle missing fields.
-        for (field_name, field_type) in self.map {
+        for (field_name, field_type) in self.remaining_fields {
             let deserializer = MissingFieldDeserializer(field_name, PhantomData);
             // This will succeed with an appropriate default value if the field type defines such
             // a default value (namely - its visitor accepts `visit_none` to indicate an explicit
