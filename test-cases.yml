@@ -188,6 +188,15 @@ client:
       negative:
         - '{"value":{}}'
         - '{"value":[]}'
+    receiveLongOptionalExample:
+      positive:
+        - '{}'
+        - '{"someLongName":null}'
+        - '{"someLongName":""}'
+        - '{"someLongName":"foo"}'
+      negative:
+        - '{"someLongName":{}}'
+        - '{"someLongName":[]}'
 
     # complex aliases
     receiveStringAliasExample:

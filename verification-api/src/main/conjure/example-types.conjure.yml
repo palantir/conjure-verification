@@ -47,6 +47,8 @@ types:
       #     uuids: map<UuidAliasExample, ManyFieldExample>
 
       OptionalExample: { fields: { value: optional<string> } }
+      LongOptionalExample: { fields: { someLongName: optional<string> } }
+
       # PrimitiveOptionalsExample:
       #   fields:
       #     num: optional<double>
