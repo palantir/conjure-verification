@@ -95,9 +95,6 @@ impl SpecTestResource {
             let param = param_str
                 .as_ref()
                 .map(|str| {
-                    // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
-                    // deserializer uses, so we special case that type, knowing that this case only
-                    // supports primitive types anyway.
                     let handle_err = |e: Box<StdError + Sync + Send>| {
                         let error_message = format!("{}", e);
                         Error::new_safe(
@@ -112,6 +109,9 @@ impl SpecTestResource {
                         )
                     };
 
+                    // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
+                    // deserializer uses, so we special case that type, knowing that this case only
+                    // supports primitive types anyway.
                     if let ResolvedType::Primitive(PrimitiveType::Double) = conjure_type {
                         Ok(ConjureValue::Primitive(ConjurePrimitiveValue::Double(
                             str.parse::<ConjureDouble>()
