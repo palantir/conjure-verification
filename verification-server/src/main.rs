@@ -11,40 +11,50 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-extern crate bytes;
 #[macro_use]
 extern crate futures;
-extern crate http;
-extern crate hyper;
 #[macro_use]
 extern crate derive_more;
-extern crate mime;
-extern crate route_recognizer;
-extern crate scheduled_thread_pool;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate serde_conjure_derive;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate conjure_verification_error_derive;
+#[macro_use]
+extern crate serde;
+
+extern crate base64;
+extern crate bytes;
+extern crate chrono;
 extern crate conjure_verification_error;
 extern crate conjure_verification_http;
 extern crate core;
 extern crate flate2;
+extern crate http;
+extern crate hyper;
 extern crate itertools;
-extern crate lazy_static;
+extern crate mime;
 extern crate pretty_env_logger;
+extern crate route_recognizer;
+extern crate scheduled_thread_pool;
+extern crate serde_conjure;
+#[cfg_attr(test, macro_use)]
 extern crate serde_json;
+extern crate serde_plain;
 extern crate serde_value;
 extern crate serde_yaml;
 extern crate tokio_threadpool;
 extern crate typed_headers;
 extern crate url;
+extern crate uuid;
 
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate conjure_verification_error_derive;
 extern crate either;
 extern crate tokio;
 
+use conjure::ir::Conjure;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
 use futures::{future, Future};
@@ -64,16 +74,29 @@ use test_spec::TestCases;
 
 #[macro_use]
 mod macros;
+mod conjure;
 mod error_handling;
 mod errors;
 mod handler;
+mod more_serde_json;
 mod raw_json;
 mod resource;
 mod router;
 mod test_spec;
+mod type_mapping;
 
 fn main() {
     pretty_env_logger::init();
+    let args = &env::args().collect::<Vec<_>>()[..];
+    if args.iter().any(|x| x == "--help") {
+        print_usage(&args[0]);
+        process::exit(0);
+    }
+
+    if args.len() != 3 {
+        print_usage(&args[0]);
+        process::exit(1);
+    }
 
     let port = match env::var("PORT") {
         Ok(port) => port.parse().unwrap(),
@@ -81,30 +104,31 @@ fn main() {
         Err(e) => Err(e).unwrap(),
     };
 
-    let args = &env::args().collect::<Vec<String>>()[..];
-    if args.len() != 2 {
-        eprintln!("Usage: {} <test-cases.json>", args[0]);
-        process::exit(1);
-    }
+    // Read the test cases file.
+    let test_cases_path: &str = &args[1];
+    let test_cases = File::open(Path::new(test_cases_path)).unwrap();
+    let test_cases: Box<TestCases> = Box::new(test_spec::from_json_file(test_cases).unwrap());
 
-    if args[1].eq("--help") {
-        eprintln!("Usage: {} <test-cases.json>", args[0]);
-        process::exit(0);
-    }
-
-    // Read the test file.
-    let path: &str = &args[1];
-    let f = File::open(Path::new(path)).unwrap();
-    let test_cases: TestCases = test_spec::from_json_file(f).unwrap();
+    // Read the conjure IR.
+    let ir_path: &str = &args[2];
+    let ir = File::open(Path::new(ir_path)).unwrap();
+    let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
-        &Arc::new(SpecTestResource::new(test_cases.client)),
+        &Arc::new(SpecTestResource::new(
+            test_cases.client.into(),
+            type_mapping::resolve_types(&ir),
+        )),
     );
     let router = builder.build();
 
     start_server(router, port);
+}
+
+fn print_usage(arg0: &String) {
+    eprintln!("Usage: {} <test-cases.json> <verification-api.json>", arg0);
 }
 
 fn start_server(router: Router, port: u16) {

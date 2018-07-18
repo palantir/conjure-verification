@@ -21,6 +21,14 @@ macro_rules! hashmap {
     }}
 }
 
+macro_rules! btreemap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::BTreeMap::new();
+         $( map.insert($key.into(), $val.into()); )*
+         map
+    }}
+}
+
 macro_rules! either {
     ($value:expr, $pattern:pat => $result:expr) => {
         match $value {
