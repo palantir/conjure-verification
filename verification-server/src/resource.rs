@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use bytes::Bytes;
+use conjure::ir::PrimitiveType;
+use conjure::resolved_type::ResolvedType;
+use conjure::value::double::ConjureDouble;
+use conjure::value::*;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
 use conjure_verification_http::request::Request;
@@ -25,10 +29,12 @@ use errors::*;
 use http::status::StatusCode;
 use http::Method;
 use hyper::header::HeaderValue;
+use more_serde_json;
 use raw_json::RawJson;
 use serde_json;
-use serde_json::Value;
+use serde_plain;
 use std::collections::HashMap;
+use std::error::Error as StdError;
 use std::string::ToString;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
@@ -37,51 +43,43 @@ use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ClientTestCases>,
+    param_types: Box<HashMap<EndpointName, ResolvedType>>,
 }
 
+type ParamTypes = HashMap<EndpointName, ResolvedType>;
+
 impl SpecTestResource {
-    pub fn new(test_cases: ClientTestCases) -> SpecTestResource {
+    pub fn new(test_cases: Box<ClientTestCases>, param_types: Box<ParamTypes>) -> SpecTestResource {
         SpecTestResource {
-            test_cases: Box::new(test_cases),
+            test_cases,
+            param_types,
         }
     }
 
-    fn decode_json_as_param_string(json: &str) -> Result<Option<String>> {
-        let value: Value = serde_json::from_str(json).map_err(Error::internal_safe)?;
-        let result = match value {
-            Value::Bool(bool) => Some(bool.to_string()),
-            Value::Number(number) => Some(number.to_string()),
-            Value::String(string) => Some(string),
-            Value::Null => None,
-            v => {
-                Err(Error::internal_safe("Not supported").with_safe_param("value", v.to_string()))?
-            }
-        };
-        Ok(result)
-    }
-
     /// Create a test that validates that some param from the request is as expected.
-    /// The comparison is done on strings.
-    /// Converting the test case JSON to the actual expected value is done by
-    /// [decode_json_as_param_string].
+    /// The comparison is done by deserializing both sides to [ConjureValue], the test case json
+    /// using /// deser_json, and the param value using deser_plain.
     fn create_param_test<F, G>(
         endpoint: EndpointName,
         get_param: F,
         get_cases: G,
     ) -> impl Fn(&SpecTestResource, &mut Request) -> Result<NoContent> + Sync
     where
+        // TODO return Result<Option<&str>>
         F: Fn(&mut Request) -> Result<Option<String>> + Sync + Send,
         G: Fn(&ClientTestCases) -> &HashMap<EndpointName, Vec<String>> + Sync + Send,
     {
         move |resource: &SpecTestResource, request: &mut Request| -> Result<_> {
             let index = SpecTestResource::parse_index(request)?;
-            let param = get_param(request)?;
+            let param_str = get_param(request)?;
             let validate =
                 |request: &mut Request| SpecTestResource::assert_no_request_body(request);
 
             validate(request)?;
-            let test_cases = test_cases_for_endpoint(get_cases(&resource.test_cases), &endpoint)?;
-            let expected_param = {
+
+            let conjure_type = get_endpoint(&resource.param_types, &endpoint)?;
+            let test_cases = get_endpoint(get_cases(&resource.test_cases), &endpoint)?;
+            let expected_param_str: &str = {
                 test_cases.get(index).ok_or_else(|| {
                     Error::new_safe(
                         "Index out of bounds",
@@ -92,11 +90,52 @@ impl SpecTestResource {
                     )
                 })
             }?;
-            let expected_param = SpecTestResource::decode_json_as_param_string(expected_param)?;
+            let expected_param =
+                deserialize_expected_value(conjure_type, expected_param_str, &endpoint, index)?;
+            let param = param_str
+                .as_ref()
+                .map(|str| {
+                    let handle_err = |e: Box<StdError + Sync + Send>| {
+                        let error_message = format!("{}", e);
+                        Error::new_safe(
+                            e,
+                            VerificationError::param_validation_failure(
+                                expected_param_str,
+                                &expected_param,
+                                Some(str.clone()),
+                                None,
+                                error_message,
+                            ),
+                        )
+                    };
+
+                    // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
+                    // deserializer uses, so we special case that type, knowing that this case only
+                    // supports primitive types anyway.
+                    if let ResolvedType::Primitive(PrimitiveType::Double) = conjure_type {
+                        Ok(ConjureValue::Primitive(ConjurePrimitiveValue::Double(
+                            str.parse::<ConjureDouble>()
+                                .map_err(|e| handle_err(e.into()))?,
+                        )))
+                    } else {
+                        let de = serde_plain::Deserializer::from_str(&str);
+                        conjure_type
+                            .deserialize(de)
+                            .map_err(|e| handle_err(e.into()))
+                    }
+                })
+                .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
             if param != expected_param {
+                let error = "Param didn't match expected value";
                 return Err(Error::new_safe(
-                    "Param didn't match expected value",
-                    VerificationError::param_validation_failure(expected_param, param),
+                    error,
+                    VerificationError::param_validation_failure(
+                        expected_param_str,
+                        &expected_param,
+                        param_str,
+                        Some(&param),
+                        error,
+                    ),
                 ));
             }
             Ok(NoContent)
@@ -136,7 +175,7 @@ impl SpecTestResource {
 
             validate(request)?;
 
-            let cases = test_cases_for_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
+            let cases = get_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
             let reply: Bytes = cases
                 .index(&index)?
                 .map_left(|case| case.0)
@@ -154,14 +193,16 @@ impl SpecTestResource {
             .parse()
             .map_err(|err| Error::new_safe(err, Code::InvalidArgument))
     }
+
     /// Returns a `VerificationError::ConfirmationFailure` if the result is not what was expected.
     fn confirm(&self, request: &mut Request) -> Result<NoContent> {
         let index: usize = SpecTestResource::parse_index(request)?;
         let endpoint = EndpointName::new(request.path_param("endpoint"));
 
-        let expected_body = {
+        let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
+        let expected_body_str = {
             let positive_cases =
-                &test_cases_for_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
+                &get_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
             positive_cases.get(index).ok_or_else(|| {
                 Error::new_safe(
                     "Index out of bounds",
@@ -172,22 +213,52 @@ impl SpecTestResource {
                 )
             })
         }?.to_string();
-        let expected_body_value: Value =
-            serde_json::from_str(&*expected_body).map_err(Error::internal_safe)?;
-        let request_body_value: Value = request.body()?;
+        let expected_body =
+            deserialize_expected_value(conjure_type, expected_body_str.as_ref(), &endpoint, index)?;
+        let request_body_value: serde_json::Value = request.body()?;
+        let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {
+            let error_message = format!("{}", e);
+            Error::new_safe(
+                e,
+                VerificationError::confirmation_failure(
+                    &expected_body_str,
+                    &expected_body,
+                    request_body_value.clone(),
+                    None,
+                    error_message,
+                ),
+            )
+        })?;
         // Compare request_body with what the test case says we sent
-        if request_body_value != expected_body_value {
+        if request_body != expected_body {
+            let error = "Body didn't match expected Conjure value";
             return Err(Error::new_safe(
-                "Body didn't match expected JSON value",
-                VerificationError::ConfirmationFailure {
-                    expected_body,
-                    request_body: serde_json::to_string(&request_body_value)
-                        .map_err(|e| Error::new_safe(e, Code::CustomClient))?,
-                },
+                error,
+                VerificationError::confirmation_failure(
+                    &expected_body_str,
+                    &expected_body,
+                    request_body_value,
+                    Some(&request_body),
+                    error,
+                ),
             ));
         }
         Ok(NoContent)
     }
+}
+
+fn deserialize_expected_value(
+    conjure_type: &ResolvedType,
+    raw: &str,
+    endpoint: &EndpointName,
+    index: usize,
+) -> Result<ConjureValue> {
+    more_serde_json::from_str(conjure_type, raw).map_err(|e| {
+        Error::internal_safe(e)
+            .with_safe_param("endpoint", endpoint.to_string())
+            .with_safe_param("index", index)
+            .with_safe_param("expected_raw", raw.clone())
+    })
 }
 
 impl Resource for SpecTestResource {
@@ -310,7 +381,7 @@ impl DynamicResource for SpecTestResource {
     }
 }
 
-fn test_cases_for_endpoint<'a, V>(
+fn get_endpoint<'a, V>(
     map: &'a HashMap<EndpointName, V>,
     endpoint: &EndpointName,
 ) -> Result<&'a V> {
@@ -341,6 +412,7 @@ impl OrErr<(), Error> for bool {
 #[cfg(test)]
 mod test {
     use super::*;
+    use conjure::ir;
     use hyper::HeaderMap;
     use hyper::Method;
     use mime::APPLICATION_JSON;
@@ -350,7 +422,7 @@ mod test {
     use router::Router;
     use std::collections::HashMap;
     use std::sync::Arc;
-    use test_spec::*;
+    use test_spec::{EndpointName, PositiveAndNegativeTestCases};
     use typed_headers::{ContentType, HeaderMapExt};
 
     /// This exists because `Request` takes references only so it can't be used as a builder.
@@ -377,12 +449,30 @@ mod test {
 
     #[test]
     fn test_header() {
-        let router = setup_routes(|cases| {
+        let router = setup_routes(|cases, types| {
             cases.single_header_service = hashmap!(
                 EndpointName::new("string") => vec!["\"yo\"".into()],
                 EndpointName::new("int") => vec!["-1234".into()],
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
+            );
+            types.insert(
+                EndpointName::new("string"),
+                ResolvedType::Primitive(ir::PrimitiveType::String),
+            );
+            types.insert(
+                EndpointName::new("int"),
+                ResolvedType::Primitive(ir::PrimitiveType::Integer),
+            );
+            types.insert(
+                EndpointName::new("bool"),
+                ResolvedType::Primitive(ir::PrimitiveType::Boolean),
+            );
+            types.insert(
+                EndpointName::new("opt"),
+                ResolvedType::Optional(ir::OptionalType {
+                    item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
+                }),
             );
         });
         let header_name: &'static str = "Some-Header";
@@ -400,12 +490,30 @@ mod test {
 
     #[test]
     fn test_query() {
-        let router = setup_routes(|cases| {
+        let router = setup_routes(|cases, types| {
             cases.single_query_param_service = hashmap!(
                 EndpointName::new("string") => vec!["\"yo\"".into()],
                 EndpointName::new("int") => vec!["-1234".into()],
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
+            );
+            types.insert(
+                EndpointName::new("string"),
+                ResolvedType::Primitive(ir::PrimitiveType::String),
+            );
+            types.insert(
+                EndpointName::new("int"),
+                ResolvedType::Primitive(ir::PrimitiveType::Integer),
+            );
+            types.insert(
+                EndpointName::new("bool"),
+                ResolvedType::Primitive(ir::PrimitiveType::Boolean),
+            );
+            types.insert(
+                EndpointName::new("opt"),
+                ResolvedType::Optional(ir::OptionalType {
+                    item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
+                }),
             );
         });
         send_request(&router, Method::POST, "/string/0", 0, |req| {
@@ -481,11 +589,25 @@ mod test {
         }
     }
 
+    fn field_definition(
+        field_name: &str,
+        type_: ResolvedType,
+    ) -> ir::FieldDefinition<ResolvedType> {
+        ir::FieldDefinition {
+            field_name: field_name.into(),
+            type_,
+        }
+    }
+
     /// Sets up a router handling the desired client test cases.
-    fn setup_routes(f: impl FnOnce(&mut ClientTestCases)) -> Router {
+    fn setup_routes<F>(f: F) -> Router
+    where
+        F: FnOnce(&mut ClientTestCases, &mut ParamTypes),
+    {
         let mut test_cases = ClientTestCases::default();
-        f(&mut test_cases);
-        let (router, _) = create_resource(test_cases);
+        let mut param_types = HashMap::default();
+        f(&mut test_cases, &mut param_types);
+        let (router, _) = create_resource(test_cases, param_types);
         router
     }
 
@@ -498,13 +620,30 @@ mod test {
                 negative: vec![],
             }
         );
-        let (router, resource) = create_resource(test_cases);
+        let param_types = hashmap![
+            EndpointName::new("foo") => ResolvedType::Object(ir::ObjectDefinition {
+                type_name: ir::TypeName { name: "Name".to_string(), package: "com.palantir.package".to_string() },
+                fields: vec![
+                    field_definition(
+                        "heyo",
+                        ResolvedType::Primitive(ir::PrimitiveType::Integer)
+                    )
+                ]
+            })
+        ];
+        let (router, resource) = create_resource(test_cases, param_types);
         (expected_body, router, resource)
     }
 
-    fn create_resource(test_cases: ClientTestCases) -> (Router, Arc<SpecTestResource>) {
+    fn create_resource(
+        test_cases: ClientTestCases,
+        param_types: ParamTypes,
+    ) -> (Router, Arc<SpecTestResource>) {
         let mut builder = router::Router::builder();
-        let resource = Arc::new(SpecTestResource::new(test_cases));
+        let resource = Arc::new(SpecTestResource::new(
+            Box::new(test_cases),
+            Box::new(param_types),
+        ));
         register_resource(&mut builder, &resource);
         (builder.build(), resource)
     }
