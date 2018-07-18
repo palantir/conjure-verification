@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use bytes::Bytes;
+use conjure::ir::PrimitiveType;
 use conjure::resolved_type::ResolvedType;
+use conjure::value::double::ConjureDouble;
 use conjure::value::*;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
@@ -32,6 +34,7 @@ use raw_json::RawJson;
 use serde_json;
 use serde_plain;
 use std::collections::HashMap;
+use std::error::Error as StdError;
 use std::string::ToString;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
@@ -92,8 +95,10 @@ impl SpecTestResource {
             let param = param_str
                 .as_ref()
                 .map(|str| {
-                    let de = serde_plain::Deserializer::from_str(&str);
-                    conjure_type.deserialize(de).map_err(|e| {
+                    // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
+                    // deserializer uses, so we special case that type, knowing that this case only
+                    // supports primitive types anyway.
+                    let handle_err = |e: Box<StdError + Sync + Send>| {
                         let error_message = format!("{}", e);
                         Error::new_safe(
                             e,
@@ -105,7 +110,19 @@ impl SpecTestResource {
                                 error_message,
                             ),
                         )
-                    })
+                    };
+
+                    if let ResolvedType::Primitive(PrimitiveType::Double) = conjure_type {
+                        Ok(ConjureValue::Primitive(ConjurePrimitiveValue::Double(
+                            str.parse::<ConjureDouble>()
+                                .map_err(|e| handle_err(e.into()))?,
+                        )))
+                    } else {
+                        let de = serde_plain::Deserializer::from_str(&str);
+                        conjure_type
+                            .deserialize(de)
+                            .map_err(|e| handle_err(e.into()))
+                    }
                 })
                 .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
             if param != expected_param {

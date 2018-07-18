@@ -20,7 +20,7 @@
 
 pub use serde::de::DeserializeSeed;
 
-use self::safe_double::SafeDouble;
+use self::double::ConjureDouble;
 use chrono::DateTime;
 use chrono::FixedOffset;
 use serde_value::Value;
@@ -29,7 +29,7 @@ use std::collections::BTreeSet;
 use uuid::Uuid;
 
 pub mod de;
-pub mod safe_double;
+pub mod double;
 mod util;
 mod visitors;
 
@@ -37,7 +37,7 @@ mod visitors;
 pub enum ConjurePrimitiveValue {
     String(String),
     Integer(i32),
-    Double(SafeDouble),
+    Double(ConjureDouble),
     Boolean(bool),
     /// Integer with value ranging from -2^53 - 1 to 2^53 - 1 // TODO enforce?
     Safelong(i64),
@@ -52,9 +52,9 @@ pub enum ConjurePrimitiveValue {
 }
 
 impl ConjurePrimitiveValue {
-    /// Convenience method. Panics if `d` is `NaN` or positive/negative `Infinity`.
+    /// Convenience method.
     pub fn double(d: f64) -> ConjurePrimitiveValue {
-        ConjurePrimitiveValue::Double(SafeDouble::new(d).unwrap())
+        ConjurePrimitiveValue::Double(ConjureDouble::new(d))
     }
 }
 
