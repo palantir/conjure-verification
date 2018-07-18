@@ -28,10 +28,10 @@ use std::str::FromStr;
 /// Represents a finite `f64` or NaN / NegativeInfinity / PositiveInfinity.
 #[derive(Serialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ConjureDouble {
-    NaN,
     NegativeInfinity,
     Finite(FiniteDouble),
     PositiveInfinity,
+    NaN,
 }
 
 /// Represents a finite `f64` (which cannot be NaN / NegativeInfinity / PositiveInfinity).
@@ -70,8 +70,8 @@ impl Display for ConjureDouble {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             ConjureDouble::NaN => f.write_str("NaN"),
-            ConjureDouble::NegativeInfinity => f.write_str("NegativeInfinity"),
-            ConjureDouble::PositiveInfinity => f.write_str("PositiveInfinity"),
+            ConjureDouble::NegativeInfinity => f.write_str("-Infinity"),
+            ConjureDouble::PositiveInfinity => f.write_str("Infinity"),
             ConjureDouble::Finite(ref fd) => f.write_fmt(format_args!("{}", fd.0)),
         }
     }
@@ -95,7 +95,9 @@ impl<'de> Deserialize<'de> for ConjureDouble {
         #[derive(Deserialize)]
         enum LiteralValue {
             NaN,
+            #[serde(rename = "Infinity")]
             PositiveInfinity,
+            #[serde(rename = "-Infinity")]
             NegativeInfinity,
         }
 
@@ -159,8 +161,8 @@ impl FromStr for ConjureDouble {
     fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
         Ok(match s {
             "NaN" => ConjureDouble::NaN,
-            "PositiveInfinity" => ConjureDouble::PositiveInfinity,
-            "NegativeInfinity" => ConjureDouble::NegativeInfinity,
+            "Infinity" => ConjureDouble::PositiveInfinity,
+            "-Infinity" => ConjureDouble::NegativeInfinity,
             _ => ConjureDouble::new(s.parse()?),
         })
     }
@@ -175,10 +177,10 @@ mod test {
         let des: ConjureDouble = ::serde_json::from_str(r#""NaN""#).unwrap();
         assert_eq!(des, ConjureDouble::NaN);
 
-        let des: ConjureDouble = ::serde_json::from_str(r#""PositiveInfinity""#).unwrap();
+        let des: ConjureDouble = ::serde_json::from_str(r#""Infinity""#).unwrap();
         assert_eq!(des, ConjureDouble::PositiveInfinity);
 
-        let des: ConjureDouble = ::serde_json::from_str(r#""NegativeInfinity""#).unwrap();
+        let des: ConjureDouble = ::serde_json::from_str(r#""-Infinity""#).unwrap();
         assert_eq!(des, ConjureDouble::NegativeInfinity);
 
         let des: ConjureDouble = ::serde_json::from_str("-0").unwrap();
@@ -190,10 +192,10 @@ mod test {
         let des: ConjureDouble = "NaN".parse().unwrap();
         assert_eq!(des, ConjureDouble::NaN);
 
-        let des: ConjureDouble = "PositiveInfinity".parse().unwrap();
+        let des: ConjureDouble = "Infinity".parse().unwrap();
         assert_eq!(des, ConjureDouble::PositiveInfinity);
 
-        let des: ConjureDouble = "NegativeInfinity".parse().unwrap();
+        let des: ConjureDouble = "-Infinity".parse().unwrap();
         assert_eq!(des, ConjureDouble::NegativeInfinity);
 
         let des: ConjureDouble = "-0".parse().unwrap();

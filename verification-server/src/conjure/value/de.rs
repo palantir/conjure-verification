@@ -171,7 +171,6 @@ impl<'de> Deserialize<'de> for Binary {
 mod test {
     use super::*;
     use more_serde_json::from_str;
-    use serde_plain;
 
     #[test]
     fn test_double() {
@@ -380,16 +379,5 @@ mod test {
         assert!(type_.deserialize(&json!({})).is_err());
         assert!(type_.deserialize(&json!({ "foo": 123 })).is_err());
         assert!(type_.deserialize(&json!({ "bar": 123 })).is_err());
-    }
-
-    /// Testing that we can use serde_plain::Deserializer with our DeserializeSeed implementation.
-    #[test]
-    fn deser_from_string() {
-        let de = serde_plain::Deserializer::from_str("123");
-        let typ = ResolvedType::Primitive(PrimitiveType::Double);
-        assert_eq!(
-            typ.deserialize(de).unwrap(),
-            ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0))
-        );
     }
 }
