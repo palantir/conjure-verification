@@ -114,6 +114,11 @@ services:
         returns: examples.OptionalExample
         args: { index: integer }
 
+      receiveLongOptionalExample:
+        http: GET /receiveLongOptionalExample/{index}
+        returns: examples.LongOptionalExample
+        args: { index: integer }
+
       # complex alias
       receiveStringAliasExample:
         http: GET /receiveStringAliasExample/{index}
