@@ -472,13 +472,21 @@ impl Display for Error {
             .chain(self.unsafe_params().iter())
             .map(|(key, value)| format!("{}: {}", key, value))
             .join(", ");
+        let is_backtrace = ::std::env::var("RUST_BACKTRACE")
+            .map(|v| v == "1" || v == "full")
+            .unwrap_or(false);
         f.write_fmt(format_args!(
-            "{} ({}, id: {}) ({})\nCaused by: {}",
+            "{} ({}, id: {}) ({})\nCaused by: {}{}",
             self.0.name,
             self.0.code,
             self.0.id.to_string(),
             params,
             self.0.cause,
+            if is_backtrace {
+                format!("\n{:?}", self.0.backtraces)
+            } else {
+                "".to_owned()
+            },
         ))?;
         Ok(())
     }
