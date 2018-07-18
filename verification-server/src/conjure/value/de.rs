@@ -308,8 +308,7 @@ mod test {
         );
 
         // Does not tolerate null for collection field
-        assert!(
-            from_str(&type_, r#"{list": null, "foo": 123}"#).is_err());
+        assert!(from_str(&type_, r#"{list": null, "foo": 123}"#).is_err());
 
         // Deserializes present collection fields
         let int_value = |v| ConjureValue::Primitive(ConjurePrimitiveValue::Integer(v));

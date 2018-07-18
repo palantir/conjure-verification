@@ -23,9 +23,9 @@ use serde;
 use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::Visitor;
+use serde::Deserializer;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use serde::Deserializer;
 use std::marker::PhantomData;
 
 pub struct ConjureObjectVisitor<'a> {
@@ -114,26 +114,37 @@ fn unknown_field<'a, E: Error>(field: &'a str, expected: Vec<&'a str>) -> E {
 /// missing field exception otherwise.
 struct MissingFieldDeserializer<'a, E>(&'a str, PhantomData<E>);
 
-impl<'de : 'a, 'a, E> Deserializer<'de> for MissingFieldDeserializer<'a, E> where E : Error {
+impl<'de: 'a, 'a, E> Deserializer<'de> for MissingFieldDeserializer<'a, E>
+where
+    E: Error,
+{
     type Error = E;
 
-    fn deserialize_any<V>(self, _: V) -> Result<V::Value, Self::Error> where
-        V: Visitor<'de> {
+    fn deserialize_any<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         Err(Error::custom(format_args!("Missing field: {}", self.0)))
     }
 
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error> where
-        V: Visitor<'de> {
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         visitor.visit_none()
     }
 
-    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error> where
-        V: Visitor<'de> {
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         visitor.visit_none()
     }
 
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error> where
-        V: Visitor<'de> {
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
         visitor.visit_none()
     }
 

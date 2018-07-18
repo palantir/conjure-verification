@@ -17,13 +17,13 @@ use conjure::resolved_type::ResolvedType;
 use conjure::value::*;
 use core::fmt;
 use serde;
+use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::Visitor;
-use serde::de::Error;
+use serde::Deserializer;
 use serde_json;
 use std::collections::btree_map;
 use std::collections::BTreeMap;
-use serde::Deserializer;
 
 /// This visitor also supports being visited as an option using `Deserializer::deserialize_option`,
 /// whereby it will return a default.
@@ -40,15 +40,15 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
     }
 
     fn visit_none<E>(self) -> Result<Self::Value, E>
-        where
-            E: Error,
+    where
+        E: Error,
     {
         Ok(BTreeMap::new())
     }
 
     fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_map(self)
     }

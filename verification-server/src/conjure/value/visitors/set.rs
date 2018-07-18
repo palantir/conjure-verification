@@ -20,9 +20,9 @@ use core::fmt;
 use serde::de::Error;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
+use serde::Deserializer;
 use serde_json;
 use std::collections::BTreeSet;
-use serde::Deserializer;
 
 /// This visitor also supports being visited as an option using `Deserializer::deserialize_option`,
 /// whereby it will return a default.
@@ -39,15 +39,15 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureSetVisitor<'a> {
     }
 
     fn visit_none<E>(self) -> Result<Self::Value, E>
-        where
-            E: Error,
+    where
+        E: Error,
     {
         Ok(BTreeSet::new())
     }
 
     fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_seq(self)
     }

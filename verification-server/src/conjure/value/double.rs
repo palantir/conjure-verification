@@ -22,8 +22,8 @@ use serde::Deserialize;
 use serde::Deserializer;
 use std::cmp::Ordering;
 use std::fmt::{self, Display};
-use std::str::FromStr;
 use std::num::ParseFloatError;
+use std::str::FromStr;
 
 /// Represents a finite `f64` or NaN / NegativeInfinity / PositiveInfinity.
 #[derive(Serialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
@@ -111,13 +111,17 @@ impl<'de> Deserialize<'de> for ConjureDouble {
                 )
             }
 
-            fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E> where
-                E: Error, {
+            fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
                 self.visit_f64(v as f64)
             }
 
-            fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E> where
-                E: Error, {
+            fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
                 self.visit_f64(v as f64)
             }
 
@@ -157,7 +161,7 @@ impl FromStr for ConjureDouble {
             "NaN" => ConjureDouble::NaN,
             "PositiveInfinity" => ConjureDouble::PositiveInfinity,
             "NegativeInfinity" => ConjureDouble::NegativeInfinity,
-            _ => ConjureDouble::new(s.parse()?)
+            _ => ConjureDouble::new(s.parse()?),
         })
     }
 }
