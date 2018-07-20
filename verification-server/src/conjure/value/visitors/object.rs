@@ -14,7 +14,7 @@
 
 pub use serde::de::DeserializeSeed;
 
-use conjure::ir::*;
+use conjure::resolved_type::FieldDefinition;
 use conjure::resolved_type::ResolvedType;
 use conjure::value::*;
 use core::fmt;
@@ -34,10 +34,7 @@ pub struct ConjureObjectVisitor<'a> {
 }
 
 impl<'a> ConjureObjectVisitor<'a> {
-    pub fn new(
-        fields: &'a Vec<FieldDefinition<ResolvedType>>,
-        skip_unknown: bool,
-    ) -> ConjureObjectVisitor {
+    pub fn new(fields: &'a Vec<FieldDefinition>, skip_unknown: bool) -> ConjureObjectVisitor {
         ConjureObjectVisitor {
             remaining_fields: fields
                 .iter()
