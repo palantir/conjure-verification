@@ -129,3 +129,22 @@ types:
           if: integer # some 'bad' member names!
           new: integer
           interface: integer
+
+      # Recursive definition
+      Expression:
+        docs: A mathematical expression.
+        union:
+          add:
+            type: AddExpression
+          divide:
+            type: DivisionExpression
+          number:
+            type: integer
+      AddExpression:
+        docs: Adds mathematical expressions together.
+        alias: list<Expression>
+      DivisionExpression:
+        docs: Divides a 'dividend' expression by another 'divisor' expression.
+        fields:
+          dividend: Expression
+          divisor: Expression
