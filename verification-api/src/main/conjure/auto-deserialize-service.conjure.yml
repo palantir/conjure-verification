@@ -1,6 +1,7 @@
 types:
   conjure-imports:
     examples: example-types.conjure.yml
+    calculator: calculator.conjure.yml
 
 services:
   AutoDeserializeConfirmService:
@@ -175,3 +176,8 @@ services:
       #   http: GET /receiveBinaryAliasExample/{index}
       #   returns: examples.BinaryAliasExample
       #   args: { index: integer }
+
+      receiveExpression:
+        http: POST /receiveExpression/{index}
+        returns: calculator.Expression
+        args: { index: integer }
