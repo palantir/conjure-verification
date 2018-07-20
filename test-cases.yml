@@ -52,10 +52,13 @@ client:
       positive:
         - '{"value":1.23}'
         - '{"value":0.0}'
+        - '{"value":-0.0}'
         - '{"value":13}'
         - '{"value":123e5}'
         - '{"value":123e-5}'
         - '{"value":"NaN"}'
+        - '{"value":"Infinity"}'
+        - '{"value":"-Infinity"}'
       negative:
         - '{"value":null}'
         - '{}'
