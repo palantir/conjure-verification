@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::ir::*;
-use conjure::resolved_type::ResolvedType;
+use conjure::resolved_type::FieldDefinition;
+use conjure::resolved_type::UnionDefinition;
 use conjure::value::util::unknown_variant;
 use conjure::value::*;
 use serde::de::DeserializeSeed;
@@ -25,7 +25,7 @@ use serde::Deserializer;
 use serde_conjure::UnionTypeField;
 use std::fmt;
 
-pub struct ConjureUnionVisitor<'a>(pub &'a UnionDefinition<ResolvedType>);
+pub struct ConjureUnionVisitor<'a>(pub &'a UnionDefinition);
 
 impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
     type Value = ConjureUnionValue;
@@ -84,17 +84,17 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
 
 pub enum UnionField<'a> {
     Type,
-    Data(&'a FieldDefinition<ResolvedType>),
+    Data(&'a FieldDefinition),
 }
 
-impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition<ResolvedType> {
+impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition {
     type Value = UnionField<'a>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: Deserializer<'de>,
     {
-        struct UnionFieldVisitor<'a>(&'a Vec<FieldDefinition<ResolvedType>>);
+        struct UnionFieldVisitor<'a>(&'a Vec<FieldDefinition>);
 
         impl<'de: 'a, 'a> Visitor<'de> for UnionFieldVisitor<'a> {
             type Value = UnionField<'a>;

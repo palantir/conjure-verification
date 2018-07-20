@@ -27,10 +27,10 @@ pub struct Conjure {
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub enum TypeDefinition {
-    Object(ObjectDefinition<Type>),
-    Alias(AliasDefinition<Type>),
+    Object(ObjectDefinition),
+    Alias(AliasDefinition),
     Enum(EnumDefinition),
-    Union(UnionDefinition<Type>),
+    Union(UnionDefinition),
 }
 
 impl TypeDefinition {
@@ -45,15 +45,15 @@ impl TypeDefinition {
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
-pub struct ObjectDefinition<Inner> {
+pub struct ObjectDefinition {
     pub type_name: TypeName,
-    pub fields: Vec<FieldDefinition<Inner>>,
+    pub fields: Vec<FieldDefinition>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
-pub struct AliasDefinition<Inner> {
+pub struct AliasDefinition {
     pub type_name: TypeName,
-    pub alias: Box<Inner>,
+    pub alias: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
@@ -68,38 +68,30 @@ pub struct EnumValueDefinition {
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
-pub struct UnionDefinition<Inner> {
+pub struct UnionDefinition {
     pub type_name: TypeName,
-    pub union: Vec<FieldDefinition<Inner>>,
+    pub union: Vec<FieldDefinition>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
 pub enum Type {
     Reference(TypeName),
     Primitive(PrimitiveType),
-    Optional(OptionalType<Type>),
-    List(ListType<Type>),
-    Set(SetType<Type>),
-    Map(MapType<Type, Type>),
+    Optional(OptionalType),
+    List(ListType),
+    Set(SetType),
+    Map(MapType),
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, Eq, PartialEq)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TypeName {
     pub name: String,
     pub package: String,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
-pub struct OptionalType<Inner> {
-    pub item_type: Box<Inner>,
-}
-
-impl<Inner> OptionalType<Inner> {
-    pub fn new(t: Inner) -> OptionalType<Inner> {
-        OptionalType {
-            item_type: t.into(),
-        }
-    }
+pub struct OptionalType {
+    pub item_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
@@ -118,25 +110,25 @@ pub enum PrimitiveType {
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
-pub struct ListType<Inner> {
-    pub item_type: Box<Inner>,
+pub struct ListType {
+    pub item_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
-pub struct SetType<Inner> {
-    pub item_type: Box<Inner>,
+pub struct SetType {
+    pub item_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
-pub struct MapType<Key, Value> {
-    pub key_type: Box<Key>,
-    pub value_type: Box<Value>,
+pub struct MapType {
+    pub key_type: Box<Type>,
+    pub value_type: Box<Type>,
 }
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
-pub struct FieldDefinition<Inner> {
+pub struct FieldDefinition {
     pub field_name: String,
-    pub type_: Inner,
+    pub type_: Box<Type>,
 }
 
 // Services

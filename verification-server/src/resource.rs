@@ -413,6 +413,9 @@ impl OrErr<(), Error> for bool {
 mod test {
     use super::*;
     use conjure::ir;
+    use conjure::resolved_type::FieldDefinition;
+    use conjure::resolved_type::ObjectDefinition;
+    use conjure::resolved_type::OptionalType;
     use hyper::HeaderMap;
     use hyper::Method;
     use mime::APPLICATION_JSON;
@@ -470,7 +473,7 @@ mod test {
             );
             types.insert(
                 EndpointName::new("opt"),
-                ResolvedType::Optional(ir::OptionalType {
+                ResolvedType::Optional(OptionalType {
                     item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
                 }),
             );
@@ -511,7 +514,7 @@ mod test {
             );
             types.insert(
                 EndpointName::new("opt"),
-                ResolvedType::Optional(ir::OptionalType {
+                ResolvedType::Optional(OptionalType {
                     item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
                 }),
             );
@@ -589,11 +592,8 @@ mod test {
         }
     }
 
-    fn field_definition(
-        field_name: &str,
-        type_: ResolvedType,
-    ) -> ir::FieldDefinition<ResolvedType> {
-        ir::FieldDefinition {
+    fn field_definition(field_name: &str, type_: ResolvedType) -> FieldDefinition {
+        FieldDefinition {
             field_name: field_name.into(),
             type_,
         }
@@ -621,7 +621,7 @@ mod test {
             }
         );
         let param_types = hashmap![
-            EndpointName::new("foo") => ResolvedType::Object(ir::ObjectDefinition {
+            EndpointName::new("foo") => ResolvedType::Object(ObjectDefinition {
                 type_name: ir::TypeName { name: "Name".to_string(), package: "com.palantir.package".to_string() },
                 fields: vec![
                     field_definition(

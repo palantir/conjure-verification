@@ -15,8 +15,11 @@
 //! Converts named and anonymous Conjure Types into ResolvedTypes (which no longer contain
 //! references/aliases).
 
-use conjure::ir::*;
+use conjure::ir;
+use conjure::ir::Type;
+use conjure::ir::TypeDefinition;
 use conjure::resolved_type::ResolvedType;
+use conjure::resolved_type::*;
 
 /// Recursively resolve references and aliases to get to the real types.
 pub fn resolve_type(types: &Vec<TypeDefinition>, t: &Type) -> ResolvedType {
@@ -36,7 +39,7 @@ pub fn resolve_type(types: &Vec<TypeDefinition>, t: &Type) -> ResolvedType {
         Type::Set(inner) => ResolvedType::Set(SetType {
             item_type: resolve_type(types, &inner.item_type).into(),
         }),
-        Type::Map(MapType {
+        Type::Map(ir::MapType {
             key_type,
             value_type,
         }) => ResolvedType::Map(MapType {
@@ -51,9 +54,9 @@ pub fn resolve_type(types: &Vec<TypeDefinition>, t: &Type) -> ResolvedType {
 
 fn resolve_field_definition(
     types: &Vec<TypeDefinition>,
-    field_def: &FieldDefinition<Type>,
-) -> FieldDefinition<ResolvedType> {
-    let &FieldDefinition {
+    field_def: &ir::FieldDefinition,
+) -> FieldDefinition {
+    let &ir::FieldDefinition {
         ref field_name,
         ref type_,
     } = field_def;

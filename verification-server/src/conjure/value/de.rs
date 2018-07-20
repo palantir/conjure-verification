@@ -23,9 +23,10 @@
 pub use serde::de::DeserializeSeed;
 
 use super::*;
-use conjure::ir::*;
-use conjure::resolved_type::ResolvedType;
+use conjure::ir::EnumDefinition;
+use conjure::ir::PrimitiveType;
 use conjure::resolved_type::ResolvedType::*;
+use conjure::resolved_type::*;
 use conjure::value::util::unknown_variant;
 use conjure::value::visitors::map::ConjureMapVisitor;
 use conjure::value::visitors::object::ConjureObjectVisitor;
@@ -170,6 +171,7 @@ impl<'de> Deserialize<'de> for Binary {
 #[cfg(test)]
 mod test {
     use super::*;
+    use conjure::ir::TypeName;
     use more_serde_json::from_str;
 
     #[test]
