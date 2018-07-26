@@ -437,14 +437,14 @@ client:
       - '0'
       - '9007199254740991'
     queryParamString:
-      - 'null'
-      - '"hello"'
-    queryParamOptionalString:
       - '""'
       - '"hello"'
     queryParamUuid:
       - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
       - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
+    queryParamOptionalString:
+      - 'null'
+      - '"foo"'
     queryParamAliasString:
       - '""'
       - '"hello"'
