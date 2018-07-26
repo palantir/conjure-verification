@@ -437,6 +437,9 @@ client:
       - '0'
       - '9007199254740991'
     queryParamString:
+      - 'null'
+      - '"hello"'
+    queryParamOptionalString:
       - '""'
       - '"hello"'
     queryParamUuid:
