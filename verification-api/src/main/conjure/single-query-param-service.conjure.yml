@@ -136,14 +136,14 @@ services:
       #       param-type: query
       #       param-id: foo
 
-      # queryParamOptionalString:
-      #   http: POST /queryParamOptionalString/{index}
-      #   args:
-      #     index: integer
-      #     someQuery:
-      #       type: optional<string>
-      #       param-type: query
-      #       param-id: foo
+      queryParamOptionalString:
+        http: POST /queryParamOptionalString/{index}
+        args:
+          index: integer
+          someQuery:
+            type: optional<string>
+            param-type: query
+            param-id: foo
 
       queryParamAliasString:
         http: POST /queryParamAliasString/{index}
