@@ -333,6 +333,18 @@ client:
     #     - '{}'
     #     - '[]'
     #     - '""'
+    receiveKebabCaseObjectExample:
+      positive:
+      - '{"kebab-cased-field":1}'
+      negative:
+      - '{"kebabCasedField":1}'
+      - '{"kebab_cased_field":1}'
+    receiveSnakeCaseObjectExample:
+      positive:
+      - '{"snake_cased_field":1}'
+      negative:
+      - '{"snakeCasedField":1}'
+      - '{"snake-cased-field":1}'
 
   # single-header-service.conjure.yml
   singleHeaderService:

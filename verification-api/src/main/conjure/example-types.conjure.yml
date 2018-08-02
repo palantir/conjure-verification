@@ -116,6 +116,14 @@ types:
             type: StringAliasExample
             docs: docs for alias field
 
+      KebabCaseObjectExample:
+        fields:
+          kebab-cased-field: integer
+
+      SnakeCaseObjectExample:
+        fields:
+          snake_cased_field: integer
+
       # complex union
       Union:
         docs: A type which can either be a StringExample, a set of strings, or an integer.

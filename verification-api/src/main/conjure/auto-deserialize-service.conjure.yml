@@ -175,3 +175,13 @@ services:
       #   http: GET /receiveBinaryAliasExample/{index}
       #   returns: examples.BinaryAliasExample
       #   args: { index: integer }
+
+      receiveKebabCaseObjectExample:
+        http: GET /receiveKebabCaseObjectExample/{index}
+        returns: examples.KebabCaseObjectExample
+        args: { index: integer }
+
+      receiveSnakeCaseObjectExample:
+        http: GET /receiveSnakeCaseObjectExample/{index}
+        returns: examples.SnakeCaseObjectExample
+        args: { index: integer }
