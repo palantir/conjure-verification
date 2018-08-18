@@ -1,6 +1,6 @@
 # conjure-verification
 
-Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github.com/palantir/conjure/pull/35)
+Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github.com/palantir/conjure/blob/develop/docs/rfc/004-consistent-wire-format-test-cases.md)
 
 [test-cases.yml](./test-cases.yml) contains a variety of positive and negative tests.  It refers to various Conjure-defined services defined in the API project.
 
