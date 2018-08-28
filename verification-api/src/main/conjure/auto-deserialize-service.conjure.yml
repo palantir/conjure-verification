@@ -1,6 +1,7 @@
 types:
   conjure-imports:
     examples: example-types.conjure.yml
+    testCases: test-cases.conjure.yml
 
 services:
   AutoDeserializeConfirmService:
@@ -17,7 +18,7 @@ services:
           to verify that it has been serialized and deserialized properly.
         args:
           endpoint:
-            type: string
+            type: testCases.EndpointName
             docs: The name of the endpoint where the automatic test case request was made.
           index:
             type: integer
