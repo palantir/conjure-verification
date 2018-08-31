@@ -188,6 +188,7 @@ client:
         - '{"value":null}'
         - '{"value":""}'
         - '{"value":"foo"}'
+        - 'null'
       negative:
         - '{"value":{}}'
         - '{"value":[]}'
@@ -197,6 +198,7 @@ client:
         - '{"someLongName":null}'
         - '{"someLongName":""}'
         - '{"someLongName":"foo"}'
+        - 'null'
       negative:
         - '{"someLongName":{}}'
         - '{"someLongName":[]}'
