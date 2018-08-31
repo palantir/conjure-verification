@@ -203,6 +203,7 @@ client:
     receiveRawOptionalExample:
       positive:
         - 'null'
+        - '1'
       negative:
         - '"not an integer"'
 
