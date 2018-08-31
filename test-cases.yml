@@ -188,7 +188,6 @@ client:
         - '{"value":null}'
         - '{"value":""}'
         - '{"value":"foo"}'
-        - 'null'
       negative:
         - '{"value":{}}'
         - '{"value":[]}'
@@ -198,10 +197,14 @@ client:
         - '{"someLongName":null}'
         - '{"someLongName":""}'
         - '{"someLongName":"foo"}'
-        - 'null'
       negative:
         - '{"someLongName":{}}'
         - '{"someLongName":[]}'
+    receiveRawOptionalExample:
+      positive:
+        - 'null'
+      negative:
+        - '"not an integer"'
 
     # complex aliases
     receiveStringAliasExample:
