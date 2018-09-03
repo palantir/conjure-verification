@@ -200,6 +200,12 @@ client:
       negative:
         - '{"someLongName":{}}'
         - '{"someLongName":[]}'
+    receiveRawOptionalExample:
+      positive:
+        - 'null'
+        - '1'
+      negative:
+        - '"not an integer"'
 
     # complex aliases
     receiveStringAliasExample:

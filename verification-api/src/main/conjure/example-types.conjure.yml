@@ -49,6 +49,8 @@ types:
       OptionalExample: { fields: { value: optional<string> } }
       LongOptionalExample: { fields: { someLongName: optional<string> } }
 
+      RawOptionalExample: { alias: optional<integer> }
+
       # PrimitiveOptionalsExample:
       #   fields:
       #     num: optional<double>

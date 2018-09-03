@@ -58,7 +58,7 @@ impl SpecTestResource {
 
     /// Create a test that validates that some param from the request is as expected.
     /// The comparison is done by deserializing both sides to [ConjureValue], the test case json
-    /// using /// deser_json, and the param value using deser_plain.
+    /// using deser_json, and the param value using deser_plain.
     fn create_param_test<F, G>(
         endpoint: EndpointName,
         get_param: F,
@@ -183,7 +183,11 @@ impl SpecTestResource {
                 .into_inner()
                 .into();
 
-            RawJson { data: reply }.into_response(request)
+            if reply == Bytes::from("null") {
+                NoContent.into_response(request)
+            } else {
+                RawJson { data: reply }.into_response(request)
+            }
         }
     }
 
