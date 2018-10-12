@@ -220,12 +220,19 @@ client:
       positive:
         - '10'
         - '10.0'
-      # TODO: NaN, Infinity
+        - '"NaN"'
+        - '"Infinity"'
+        - '"-Infinity"'
       negative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
+        - '"nan"'
+        - '"NAN"'
+        - '"infinity"'
+        - '"-infinity"'
+        - '"+Infinity"'
     receiveIntegerAliasExample:
       positive:
         - '0'
