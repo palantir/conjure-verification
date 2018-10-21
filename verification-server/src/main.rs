@@ -18,13 +18,11 @@ extern crate derive_more;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate serde_conjure_derive;
-#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate conjure_verification_error_derive;
 #[macro_use]
-extern crate serde;
+extern crate conjure_verification_common;
 
 extern crate base64;
 extern crate bytes;
@@ -41,7 +39,7 @@ extern crate pretty_env_logger;
 extern crate route_recognizer;
 extern crate scheduled_thread_pool;
 extern crate serde_conjure;
-#[cfg_attr(test, macro_use)]
+#[cfg_attr(test)]
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
@@ -54,6 +52,10 @@ extern crate uuid;
 extern crate either;
 extern crate tokio;
 
+pub use conjure_verification_common::conjure;
+pub use conjure_verification_common::more_serde_json;
+//#[macro_use]
+//pub use conjure_verification_common::macros;
 use conjure::ir::Conjure;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
@@ -72,13 +74,9 @@ use std::process;
 use std::sync::Arc;
 use test_spec::TestCases;
 
-#[macro_use]
-mod macros;
-mod conjure;
 mod error_handling;
 mod errors;
 mod handler;
-mod more_serde_json;
 mod raw_json;
 mod resource;
 mod router;
