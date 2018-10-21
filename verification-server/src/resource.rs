@@ -227,7 +227,7 @@ impl SpecTestResource {
                 VerificationError::confirmation_failure(
                     &expected_body_str,
                     &expected_body,
-                    request_body_value.clone(),
+                    &request_body_value,
                     None,
                     error_message,
                 ),
@@ -241,7 +241,7 @@ impl SpecTestResource {
                 VerificationError::confirmation_failure(
                     &expected_body_str,
                     &expected_body,
-                    request_body_value,
+                    &request_body_value,
                     Some(&request_body),
                     error,
                 ),

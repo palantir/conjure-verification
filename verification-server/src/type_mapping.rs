@@ -28,7 +28,7 @@ use conjure::type_resolution::resolve_type;
 use std::collections::HashMap;
 use test_spec::EndpointName;
 
-const PACKAGE: &'static str = "com.palantir.conjure.verification";
+const PACKAGE: &str = "com.palantir.conjure.verification";
 
 pub fn resolve_types(ir: &Conjure) -> Box<HashMap<EndpointName, ResolvedType>> {
     // Services whose endpoints we care about, and how to extract the type we care about.

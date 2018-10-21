@@ -21,7 +21,7 @@ extern crate serde_derive;
 extern crate log;
 #[macro_use]
 extern crate conjure_verification_error_derive;
-#[macro_use]
+#[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
 
 extern crate base64;
