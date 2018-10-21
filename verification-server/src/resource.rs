@@ -179,8 +179,7 @@ impl SpecTestResource {
             validate(request)?;
 
             let cases = get_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
-            let reply: Bytes = cases
-                .index(&index)?
+            let reply: Bytes = get_test_case_at_index(cases, &index)?
                 .map_left(|case| case.0)
                 .map_right(|case| case.0)
                 .into_inner()
@@ -278,46 +277,37 @@ impl Resource for SpecTestResource {
     }
 }
 
-pub trait Indexable {
-    fn index(
-        &self,
-        index: &TestIndex,
-    ) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>>;
-}
-
 /// The full index among `PositiveAndNegativeTests` where positives start at index 0, and after them
 /// come the negative tests.
 #[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
 pub struct TestIndex(usize);
 
-impl Indexable for PositiveAndNegativeTestCases {
-    fn index(
-        self: &PositiveAndNegativeTestCases,
-        index: &TestIndex,
-    ) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>> {
-        let positives = self.positive.len();
-        let negatives = self.negative.len();
-        let index_out_of_bounds = || {
-            Error::new_safe(
-                "Index out of bounds",
-                VerificationError::IndexOutOfBounds {
-                    index: index.0,
-                    max_index: positives + negatives,
-                },
-            )
-        };
-        let is_negative_test = index.0 >= positives;
-        let result = if is_negative_test {
-            let test = self
-                .negative
-                .get(index.0 - positives)
-                .ok_or_else(index_out_of_bounds)?;
-            Right(test.clone().into())
-        } else {
-            Left(self.positive[index.0].clone().into())
-        };
-        Ok(result)
-    }
+fn get_test_case_at_index(
+    cases: &PositiveAndNegativeTestCases,
+    index: &TestIndex,
+) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>> {
+    let positives = cases.positive.len();
+    let negatives = cases.negative.len();
+    let index_out_of_bounds = || {
+        Error::new_safe(
+            "Index out of bounds",
+            VerificationError::IndexOutOfBounds {
+                index: index.0,
+                max_index: positives + negatives,
+            },
+        )
+    };
+    let is_negative_test = index.0 >= positives;
+    let result = if is_negative_test {
+        let test = cases
+            .negative
+            .get(index.0 - positives)
+            .ok_or_else(index_out_of_bounds)?;
+        Right(test.clone().into())
+    } else {
+        Left(cases.positive[index.0].clone().into())
+    };
+    Ok(result)
 }
 
 /// A trait that I derive automatically for things that have Route<T>, which allows binding a route
