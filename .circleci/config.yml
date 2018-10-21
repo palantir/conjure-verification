@@ -42,7 +42,7 @@ jobs:
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
     - run: rustup component add rustfmt-preview
-    - run: cargo fmt --all -- --write-mode check
+    - run: cargo fmt --all -- --check
     - run: cargo test && cargo build --release
     - *SAVE_DEPS
     - *SAVE_REGISTRY
