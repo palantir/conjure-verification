@@ -193,13 +193,14 @@ impl SyncHandler {
             size: 0,
         };
 
-        let response = self.response_inner(
-            &parts.headers,
-            &mut body,
-            &endpoint,
-            &path_params,
-            &query_params,
-        ).unwrap_or_else(|e| self.handler_error(&e));
+        let response = self
+            .response_inner(
+                &parts.headers,
+                &mut body,
+                &endpoint,
+                &path_params,
+                &query_params,
+            ).unwrap_or_else(|e| self.handler_error(&e));
 
         self.write_response(&parts.headers, response, body.size, sender, &response_size);
     }
