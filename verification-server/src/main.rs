@@ -39,7 +39,6 @@ extern crate pretty_env_logger;
 extern crate route_recognizer;
 extern crate scheduled_thread_pool;
 extern crate serde_conjure;
-#[cfg_attr(test)]
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
