@@ -25,6 +25,7 @@ extern crate base64;
 extern crate chrono;
 extern crate conjure_verification_error;
 extern crate core;
+extern crate either;
 extern crate itertools;
 extern crate serde_conjure;
 #[cfg_attr(test, macro_use)]
@@ -38,3 +39,5 @@ extern crate uuid;
 pub mod macros;
 pub mod conjure;
 pub mod more_serde_json;
+pub mod test_spec;
+pub mod type_mapping;

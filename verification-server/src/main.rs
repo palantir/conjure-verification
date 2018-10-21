@@ -16,8 +16,6 @@ extern crate futures;
 #[macro_use]
 extern crate derive_more;
 #[macro_use]
-extern crate serde_derive;
-#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate conjure_verification_error_derive;
@@ -30,6 +28,7 @@ extern crate chrono;
 extern crate conjure_verification_error;
 extern crate conjure_verification_http;
 extern crate core;
+extern crate either;
 extern crate flate2;
 extern crate http;
 extern crate hyper;
@@ -43,16 +42,16 @@ extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
 extern crate serde_yaml;
+extern crate tokio;
 extern crate tokio_threadpool;
 extern crate typed_headers;
 extern crate url;
 extern crate uuid;
 
-extern crate either;
-extern crate tokio;
-
-pub use conjure_verification_common::conjure;
-pub use conjure_verification_common::more_serde_json;
+use conjure_verification_common::conjure;
+use conjure_verification_common::more_serde_json;
+use conjure_verification_common::test_spec;
+use conjure_verification_common::type_mapping;
 //#[macro_use]
 //pub use conjure_verification_common::macros;
 use conjure::ir::Conjure;
@@ -79,8 +78,6 @@ mod handler;
 mod raw_json;
 mod resource;
 mod router;
-mod test_spec;
-mod type_mapping;
 
 fn main() {
     pretty_env_logger::init();

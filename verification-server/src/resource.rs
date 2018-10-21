@@ -25,6 +25,7 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use core;
+use either::{Either, Left, Right};
 use errors::*;
 use http::status::StatusCode;
 use http::Method;
@@ -36,9 +37,11 @@ use serde_plain;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::string::ToString;
+use test_spec::AutoDeserializeNegativeTest;
+use test_spec::AutoDeserializePositiveTest;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
-use test_spec::TestIndex;
+use test_spec::PositiveAndNegativeTestCases;
 use DynamicResource;
 
 pub struct SpecTestResource {
@@ -272,6 +275,48 @@ impl Resource for SpecTestResource {
     where
         R: Route<Self>,
     {
+    }
+}
+
+pub trait Indexable {
+    fn index(
+        &self,
+        index: &TestIndex,
+    ) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>>;
+}
+
+/// The full index among `PositiveAndNegativeTests` where positives start at index 0, and after them
+/// come the negative tests.
+#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
+pub struct TestIndex(usize);
+
+impl Indexable for PositiveAndNegativeTestCases {
+    fn index(
+        self: &PositiveAndNegativeTestCases,
+        index: &TestIndex,
+    ) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>> {
+        let positives = self.positive.len();
+        let negatives = self.negative.len();
+        let index_out_of_bounds = || {
+            Error::new_safe(
+                "Index out of bounds",
+                VerificationError::IndexOutOfBounds {
+                    index: index.0,
+                    max_index: positives + negatives,
+                },
+            )
+        };
+        let is_negative_test = index.0 >= positives;
+        let result = if is_negative_test {
+            let test = self
+                .negative
+                .get(index.0 - positives)
+                .ok_or_else(index_out_of_bounds)?;
+            Right(test.clone().into())
+        } else {
+            Left(self.positive[index.0].clone().into())
+        };
+        Ok(result)
     }
 }
 

@@ -11,11 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use conjure_verification_error::Error;
-use conjure_verification_error::Result;
 use core::result::Result as StdResult;
-use either::{Either, Left, Right};
-use errors::VerificationError;
 use serde_json;
 use serde_value::Value;
 use serde_yaml;
@@ -81,45 +77,11 @@ pub struct ExpectedRequest {
     value: Value,
 }
 
-/// The full index among `PositiveAndNegativeTests` where positives start at index 0, and after them
-/// come the negative tests.
-#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
-pub struct TestIndex(usize);
-
 #[derive(Deserialize, Debug, Eq, PartialEq, Clone, From)]
 pub struct AutoDeserializePositiveTest(pub String);
 
 #[derive(Deserialize, Debug, Eq, PartialEq, Clone, From)]
 pub struct AutoDeserializeNegativeTest(pub String);
-
-impl PositiveAndNegativeTestCases {
-    pub fn index(
-        &self,
-        index: &TestIndex,
-    ) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>> {
-        let positives = self.positive.len();
-        let negatives = self.negative.len();
-        let index_out_of_bounds = || {
-            Error::new_safe(
-                "Index out of bounds",
-                VerificationError::IndexOutOfBounds {
-                    index: index.0,
-                    max_index: positives + negatives,
-                },
-            )
-        };
-        let is_negative_test = index.0 >= positives;
-        let result = if is_negative_test {
-            let test = self.negative
-                .get(index.0 - positives)
-                .ok_or_else(index_out_of_bounds)?;
-            Right(test.clone().into())
-        } else {
-            Left(self.positive[index.0].clone().into())
-        };
-        Ok(result)
-    }
-}
 
 #[allow(dead_code)]
 pub fn from_yaml_file<R>(rdr: R) -> serde_yaml::Result<TestCases>
