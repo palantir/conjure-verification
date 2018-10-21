@@ -72,7 +72,8 @@ fn resolve_type_definition(types: &Vec<TypeDefinition>, t: &TypeDefinition) -> R
         TypeDefinition::Enum(enum_) => ResolvedType::Enum(enum_.clone()),
         TypeDefinition::Object(obj) => ResolvedType::Object(ObjectDefinition {
             type_name: obj.type_name.clone(),
-            fields: obj.fields
+            fields: obj
+                .fields
                 .iter()
                 .map(|defn| resolve_field_definition(types, defn))
                 .collect(),

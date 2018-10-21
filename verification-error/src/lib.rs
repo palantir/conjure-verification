@@ -416,7 +416,8 @@ impl Error {
             error_code: self.0.code.to_string(),
             error_name: self.0.name.clone(),
             error_instance_id: self.0.id.to_string(),
-            parameters: self.0
+            parameters: self
+                .0
                 .body_params
                 .iter()
                 .map(|(k, v)| (k.to_string(), v.to_string()))
@@ -467,7 +468,8 @@ impl SerializableError {
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        let params = self.safe_params()
+        let params = self
+            .safe_params()
             .iter()
             .chain(self.unsafe_params().iter())
             .map(|(key, value)| format!("{}: {}", key, value))

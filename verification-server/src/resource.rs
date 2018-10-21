@@ -123,8 +123,7 @@ impl SpecTestResource {
                             .deserialize(de)
                             .map_err(|e| handle_err(e.into()))
                     }
-                })
-                .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
+                }).unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
             if param != expected_param {
                 let error = "Param didn't match expected value";
                 return Err(Error::new_safe(
@@ -311,11 +310,7 @@ trait RouteWithOptions<T>: Route<T> {
     }
 }
 
-impl<T, X> RouteWithOptions<T> for X
-where
-    X: Route<T>,
-{
-}
+impl<T, X> RouteWithOptions<T> for X where X: Route<T> {}
 
 impl DynamicResource for SpecTestResource {
     fn register<R>(&self, router: &mut R)

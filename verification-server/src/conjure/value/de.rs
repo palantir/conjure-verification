@@ -57,7 +57,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
             Object(ObjectDefinition { fields, .. }) => {
                 // TODO(dsanduleac): bubble up the skip_unknown (it's false for servers)
                 ConjureValue::Object(
-                    deserializer.deserialize_map(ConjureObjectVisitor::new(&fields, false))?
+                    deserializer.deserialize_map(ConjureObjectVisitor::new(&fields, false))?,
                 )
             }
             List(ListType { item_type }) => {
@@ -87,7 +87,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 ConjureValue::Enum(ident)
             }
             Union(union_definition) => ConjureValue::Union(
-                deserializer.deserialize_map(ConjureUnionVisitor(&union_definition))?
+                deserializer.deserialize_map(ConjureUnionVisitor(&union_definition))?,
             ),
         })
     }
