@@ -33,7 +33,7 @@ jobs:
 
   cargo-build-linux:
     docker:
-    - image: circleci/rust:1.27
+    - image: circleci/rust:1.29.2
     environment:
       RUSTFLAGS: -D warnings
     steps:
@@ -78,7 +78,7 @@ jobs:
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
-      RUST_CHANNEL: 1.27.0
+      RUST_CHANNEL: 1.29.2
       TARGET: x86_64-apple-darwin
     steps:
     - checkout
