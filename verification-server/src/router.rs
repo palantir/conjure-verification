@@ -49,7 +49,7 @@ impl Router {
         Builder(HashMap::new())
     }
 
-    pub fn route(&self, method: Method, path: &str) -> RouteResult {
+    pub fn route(&self, method: &Method, path: &str) -> RouteResult {
         let path = path.trim_right_matches('/');
 
         let matches = match self.router.recognize(path) {

@@ -124,7 +124,7 @@ fn main() {
     start_server(router, port);
 }
 
-fn print_usage(arg0: &String) {
+fn print_usage(arg0: &str) {
     eprintln!("Usage: {} <test-cases.json> <verification-api.json>", arg0);
 }
 

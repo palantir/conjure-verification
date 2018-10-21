@@ -261,7 +261,7 @@ fn deserialize_expected_value(
         Error::internal_safe(e)
             .with_safe_param("endpoint", endpoint.to_string())
             .with_safe_param("index", index)
-            .with_safe_param("expected_raw", raw.clone())
+            .with_safe_param("expected_raw", raw)
     })
 }
 
@@ -558,7 +558,7 @@ mod test {
     }
 
     fn confirm_with(router: &Router, body: Vec<u8>, expected_error: Option<Code>) -> () {
-        if let RouteResult::Matched { endpoint, .. } = router.route(Method::POST, "/confirm/foo/0")
+        if let RouteResult::Matched { endpoint, .. } = router.route(&Method::POST, "/confirm/foo/0")
         {
             let mut builder = RequestBuilder::default();
             builder.path_params = hashmap!("index" => "0", "endpoint" => "foo");
@@ -584,7 +584,7 @@ mod test {
     where
         F: FnOnce(&mut RequestBuilder),
     {
-        if let RouteResult::Matched { endpoint, .. } = router.route(method, path) {
+        if let RouteResult::Matched { endpoint, .. } = router.route(&method, path) {
             let mut builder = RequestBuilder::default();
             f(&mut builder);
             builder

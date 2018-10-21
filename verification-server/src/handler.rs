@@ -67,7 +67,7 @@ impl HttpService {
 
     fn route(&self, request: &hyper::Request<hyper::Body>) -> RouteResult {
         let path = &request.uri().path();
-        self.router.route(request.method().clone(), path)
+        self.router.route(request.method(), path)
     }
 
     fn query_params(&self, uri: &Uri) -> HashMap<String, Vec<String>> {
