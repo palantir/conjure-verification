@@ -84,7 +84,8 @@ pub struct Builder(HashMap<Arc<str>, HashMap<Method, Endpoint>>);
 
 impl Builder {
     pub fn route(&mut self, method: Method, pattern: String, endpoint: Endpoint) -> &mut Endpoint {
-        match self.0
+        match self
+            .0
             .entry(pattern.into())
             .or_insert_with(HashMap::new)
             .entry(method)

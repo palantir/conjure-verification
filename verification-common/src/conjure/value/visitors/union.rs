@@ -109,15 +109,17 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition {
             {
                 match value {
                     "type" => Ok(UnionField::Type),
-                    _ => Ok(UnionField::Data(self.0
-                        .iter()
-                        .find(|fd| fd.field_name == value)
-                        .ok_or_else(|| {
-                            unknown_variant(
-                                value,
-                                self.0.iter().map(|fd| fd.field_name.as_str()).collect(),
-                            )
-                        })?)),
+                    _ => Ok(UnionField::Data(
+                        self.0
+                            .iter()
+                            .find(|fd| fd.field_name == value)
+                            .ok_or_else(|| {
+                                unknown_variant(
+                                    value,
+                                    self.0.iter().map(|fd| fd.field_name.as_str()).collect(),
+                                )
+                            })?,
+                    )),
                 }
             }
         }

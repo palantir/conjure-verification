@@ -290,7 +290,8 @@ fn deserialize_enum_body(ty_name: &Ident, e: &DataEnum) -> TokenStream {
         quote!(#name => _serde_conjure::serde::export::Result::Ok(#ty_name::#variant),)
     });
 
-    let names = e.variants
+    let names = e
+        .variants
         .iter()
         .map(|v| pascal_to_screaming(&v.ident.to_string()));
 
@@ -462,7 +463,8 @@ fn deserialize_union_body(
 }
 
 fn deserialize_union_variants(e: &DataEnum) -> TokenStream {
-    let names = e.variants
+    let names = e
+        .variants
         .iter()
         .map(|v| pascal_to_camel(&v.ident.to_string()));
 

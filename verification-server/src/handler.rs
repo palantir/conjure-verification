@@ -372,13 +372,14 @@ impl Service for HttpService {
         let maybe_path_params = self.path_params(&route);
         let response_size = Arc::new(AtomicUsize::new(0));
 
-        let f = self.response(
-            request,
-            route,
-            maybe_path_params,
-            query_params,
-            response_size,
-        ).map({ move |(response, _request_size)| response });
+        let f = self
+            .response(
+                request,
+                route,
+                maybe_path_params,
+                query_params,
+                response_size,
+            ).map({ move |(response, _request_size)| response });
 
         Box::new(f)
     }
