@@ -35,11 +35,11 @@ pub enum TypeDefinition {
 
 impl TypeDefinition {
     pub fn type_name(&self) -> &TypeName {
-        match self {
-            &TypeDefinition::Object(ref def) => &def.type_name,
-            &TypeDefinition::Alias(ref def) => &def.type_name,
-            &TypeDefinition::Enum(ref def) => &def.type_name,
-            &TypeDefinition::Union(ref def) => &def.type_name,
+        match *self {
+            TypeDefinition::Object(ref def) => &def.type_name,
+            TypeDefinition::Alias(ref def) => &def.type_name,
+            TypeDefinition::Enum(ref def) => &def.type_name,
+            TypeDefinition::Union(ref def) => &def.type_name,
         }
     }
 }

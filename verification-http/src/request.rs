@@ -193,12 +193,10 @@ impl<'a> Request<'a> {
 
         match content_type(&accept, formats) {
             Some(ty) => Ok(ty),
-            None => {
-                return Err(Error::new_safe(
-                    "unable to select a response type",
-                    ConjureVerificationError::NotAcceptable,
-                ))
-            }
+            None => Err(Error::new_safe(
+                "unable to select a response type",
+                ConjureVerificationError::NotAcceptable,
+            )),
         }
     }
 

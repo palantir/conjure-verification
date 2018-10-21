@@ -62,7 +62,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
             }
             Some(UnionField::Data(FieldDefinition { field_name, type_ })) => {
                 let value = items.next_value_seed(type_)?.into();
-                if let None = items.next_key::<UnionTypeField>()? {
+                if items.next_key::<UnionTypeField>()?.is_none() {
                     return Err(Error::missing_field("type"));
                 }
                 let variant: String = items.next_value()?;

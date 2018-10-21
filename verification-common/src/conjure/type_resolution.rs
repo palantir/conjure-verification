@@ -22,7 +22,7 @@ use conjure::resolved_type::ResolvedType;
 use conjure::resolved_type::*;
 
 /// Recursively resolve references and aliases to get to the real types.
-pub fn resolve_type(types: &Vec<TypeDefinition>, t: &Type) -> ResolvedType {
+pub fn resolve_type(types: &[TypeDefinition], t: &Type) -> ResolvedType {
     match t {
         Type::Reference(name) => {
             // Expect to find this type name in the definitions.
@@ -53,7 +53,7 @@ pub fn resolve_type(types: &Vec<TypeDefinition>, t: &Type) -> ResolvedType {
 }
 
 fn resolve_field_definition(
-    types: &Vec<TypeDefinition>,
+    types: &[TypeDefinition],
     field_def: &ir::FieldDefinition,
 ) -> FieldDefinition {
     let &ir::FieldDefinition {
@@ -66,7 +66,7 @@ fn resolve_field_definition(
     }
 }
 
-fn resolve_type_definition(types: &Vec<TypeDefinition>, t: &TypeDefinition) -> ResolvedType {
+fn resolve_type_definition(types: &[TypeDefinition], t: &TypeDefinition) -> ResolvedType {
     match t {
         TypeDefinition::Alias(alias) => resolve_type(types, &alias.alias),
         TypeDefinition::Enum(enum_) => ResolvedType::Enum(enum_.clone()),

@@ -254,7 +254,7 @@ impl Error {
         };
 
         Error(Box::new(inner))
-            .with_type(error_type)
+            .with_type(&error_type)
             .with_backtrace()
     }
 
@@ -293,7 +293,7 @@ impl Error {
     /// Replaces the error's `ErrorType` with another.
     ///
     /// Everything except the error's backtraces and cause will be reset.
-    pub fn with_type<T>(mut self, error_type: T) -> Error
+    pub fn with_type<T>(mut self, error_type: &T) -> Error
     where
         T: ErrorType,
     {
