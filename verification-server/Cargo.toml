@@ -10,7 +10,6 @@ conjure-verification-http = { path = "../verification-http" }
 conjure-verification-error = { path = "../verification-error" }
 conjure-verification-error-derive = { path = "../verification-error-derive" }
 serde-conjure = { path = "../serde-conjure" }
-serde-conjure-derive = { path = "../serde-conjure-derive" }
 
 bytes = "0.4"
 base64 = "0.9"
