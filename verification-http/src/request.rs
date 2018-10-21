@@ -75,8 +75,7 @@ impl<'a> Request<'a> {
                         },
                     )
                 })
-            })
-            .collect()
+            }).collect()
     }
 
     pub fn query_param<T>(&self, name: &str) -> Result<T>
@@ -236,7 +235,8 @@ pub trait Format {
         }
 
         for (name, value) in other.params() {
-            if mime.get_param(name)
+            if mime
+                .get_param(name)
                 .map(|value2| value != value2)
                 .unwrap_or(false)
             {

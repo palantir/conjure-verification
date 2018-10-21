@@ -156,7 +156,8 @@ fn namespace(input: &DeriveInput) -> Result<TokenStream, String> {
 }
 
 fn code(ident: &Ident, data: &DataEnum) -> Result<TokenStream, String> {
-    let arms = data.variants
+    let arms = data
+        .variants
         .iter()
         .map(|v| {
             let variant = &v.ident;
@@ -168,8 +169,7 @@ fn code(ident: &Ident, data: &DataEnum) -> Result<TokenStream, String> {
             let code = string_attr(&v.attrs, "code")?;
             let code = Ident::new(&code, Span::call_site());
             Ok(quote!(#pattern => _conjure_verification_error::Code::#code))
-        })
-        .collect::<Result<Vec<_>, String>>()?;
+        }).collect::<Result<Vec<_>, String>>()?;
 
     let generated = quote! {
         match *self {
@@ -202,7 +202,8 @@ fn name(ident: &Ident, data: &DataEnum) -> TokenStream {
 }
 
 fn body_params(ident: &Ident, data: &DataEnum, safe: bool) -> Result<TokenStream, String> {
-    let arms = data.variants
+    let arms = data
+        .variants
         .iter()
         .map(|v| {
             let variant = &v.ident;
@@ -241,8 +242,7 @@ fn body_params(ident: &Ident, data: &DataEnum, safe: bool) -> Result<TokenStream
             };
 
             Ok(generated)
-        })
-        .collect::<Result<Vec<_>, String>>()?;
+        }).collect::<Result<Vec<_>, String>>()?;
 
     let generated = quote! {
         match *self {
@@ -257,7 +257,8 @@ fn parse(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream, String> {
     let namespace = string_attr(&input.attrs, "namespace")?;
     let ident = &input.ident;
 
-    let arms = data.variants
+    let arms = data
+        .variants
         .iter()
         .map(|v| {
             let variant = &v.ident;
@@ -299,8 +300,7 @@ fn parse(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream, String> {
             };
 
             Ok(generated)
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+        }).collect::<Result<Vec<_>, _>>()?;
 
     let generated = quote! {
         let _params = error.params();

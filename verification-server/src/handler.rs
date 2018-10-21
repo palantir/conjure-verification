@@ -193,13 +193,14 @@ impl SyncHandler {
             size: 0,
         };
 
-        let response = self.response_inner(
-            &parts.headers,
-            &mut body,
-            endpoint,
-            path_params,
-            query_params,
-        ).unwrap_or_else(|e| self.handler_error(e));
+        let response = self
+            .response_inner(
+                &parts.headers,
+                &mut body,
+                endpoint,
+                path_params,
+                query_params,
+            ).unwrap_or_else(|e| self.handler_error(e));
 
         self.write_response(&parts.headers, response, body.size, sender, &response_size);
     }
@@ -372,13 +373,14 @@ impl Service for HttpService {
         let maybe_path_params = self.path_params(&route);
         let response_size = Arc::new(AtomicUsize::new(0));
 
-        let f = self.response(
-            request,
-            route,
-            maybe_path_params,
-            query_params,
-            response_size,
-        ).map({ move |(response, _request_size)| response });
+        let f = self
+            .response(
+                request,
+                route,
+                maybe_path_params,
+                query_params,
+                response_size,
+            ).map({ move |(response, _request_size)| response });
 
         Box::new(f)
     }

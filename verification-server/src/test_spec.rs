@@ -110,7 +110,8 @@ impl PositiveAndNegativeTestCases {
         };
         let is_negative_test = index.0 >= positives;
         let result = if is_negative_test {
-            let test = self.negative
+            let test = self
+                .negative
                 .get(index.0 - positives)
                 .ok_or_else(index_out_of_bounds)?;
             Right(test.clone().into())
