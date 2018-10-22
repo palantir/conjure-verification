@@ -52,8 +52,6 @@ use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::test_spec;
 use conjure_verification_common::type_mapping;
-//#[macro_use]
-//pub use conjure_verification_common::macros;
 use conjure::ir::Conjure;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
