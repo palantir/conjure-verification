@@ -14,7 +14,7 @@
 
 //! This file providers trait implementations so that you can convert a
 //!
-//!     conjure::resolved_type::ResolvedType into a conjure::value::ConjureValue
+//! conjure::resolved_type::ResolvedType into a conjure::value::ConjureValue
 //!
 //! Note, there is no internal mutability here, we just use DeserializeSeed to pass information into
 //! the deserialization process (contextual deserialization) instead of the usual context-free

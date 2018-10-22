@@ -13,6 +13,7 @@
 // limitations under the License.
 #![allow(unused_macros)]
 
+#[macro_export]
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
          let mut map = ::std::collections::HashMap::new();
@@ -21,6 +22,7 @@ macro_rules! hashmap {
     }}
 }
 
+#[macro_export]
 macro_rules! btreemap {
     ($( $key: expr => $val: expr ),*) => {{
          let mut map = ::std::collections::BTreeMap::new();
@@ -29,6 +31,7 @@ macro_rules! btreemap {
     }}
 }
 
+#[macro_export]
 macro_rules! either {
     ($value:expr, $pattern:pat => $result:expr) => {
         match $value {

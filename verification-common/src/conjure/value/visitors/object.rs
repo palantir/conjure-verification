@@ -34,7 +34,7 @@ pub struct ConjureObjectVisitor<'a> {
 }
 
 impl<'a> ConjureObjectVisitor<'a> {
-    pub fn new(fields: &'a Vec<FieldDefinition>, skip_unknown: bool) -> ConjureObjectVisitor {
+    pub fn new(fields: &'a [FieldDefinition], skip_unknown: bool) -> ConjureObjectVisitor {
         ConjureObjectVisitor {
             remaining_fields: fields
                 .iter()
@@ -65,7 +65,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureObjectVisitor<'a> {
             let field_type = self.remaining_fields.remove(key.as_str());
             if let Some(field_type) = field_type {
                 let value = items.next_value_seed(field_type)?;
-                if let Some(_) = result.insert(key.to_string(), value) {
+                if result.insert(key.to_string(), value).is_some() {
                     return Err(serde::de::Error::custom(format_args!(
                         "duplicate field `{}`",
                         key

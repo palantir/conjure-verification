@@ -25,6 +25,7 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use core;
+use either::{Either, Left, Right};
 use errors::*;
 use http::status::StatusCode;
 use http::Method;
@@ -36,9 +37,11 @@ use serde_plain;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::string::ToString;
+use test_spec::AutoDeserializeNegativeTest;
+use test_spec::AutoDeserializePositiveTest;
 use test_spec::ClientTestCases;
 use test_spec::EndpointName;
-use test_spec::TestIndex;
+use test_spec::PositiveAndNegativeTestCases;
 use DynamicResource;
 
 pub struct SpecTestResource {
@@ -175,8 +178,7 @@ impl SpecTestResource {
             validate(request)?;
 
             let cases = get_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
-            let reply: Bytes = cases
-                .index(&index)?
+            let reply: Bytes = get_test_case_at_index(cases, &index)?
                 .map_left(|case| case.0)
                 .map_right(|case| case.0)
                 .into_inner()
@@ -226,7 +228,7 @@ impl SpecTestResource {
                 VerificationError::confirmation_failure(
                     &expected_body_str,
                     &expected_body,
-                    request_body_value.clone(),
+                    &request_body_value,
                     None,
                     error_message,
                 ),
@@ -240,7 +242,7 @@ impl SpecTestResource {
                 VerificationError::confirmation_failure(
                     &expected_body_str,
                     &expected_body,
-                    request_body_value,
+                    &request_body_value,
                     Some(&request_body),
                     error,
                 ),
@@ -260,7 +262,7 @@ fn deserialize_expected_value(
         Error::internal_safe(e)
             .with_safe_param("endpoint", endpoint.to_string())
             .with_safe_param("index", index)
-            .with_safe_param("expected_raw", raw.clone())
+            .with_safe_param("expected_raw", raw)
     })
 }
 
@@ -272,6 +274,39 @@ impl Resource for SpecTestResource {
         R: Route<Self>,
     {
     }
+}
+
+/// The full index among `PositiveAndNegativeTests` where positives start at index 0, and after them
+/// come the negative tests.
+#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
+pub struct TestIndex(usize);
+
+fn get_test_case_at_index(
+    cases: &PositiveAndNegativeTestCases,
+    index: &TestIndex,
+) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>> {
+    let positives = cases.positive.len();
+    let negatives = cases.negative.len();
+    let index_out_of_bounds = || {
+        Error::new_safe(
+            "Index out of bounds",
+            VerificationError::IndexOutOfBounds {
+                index: index.0,
+                max_index: positives + negatives,
+            },
+        )
+    };
+    let is_negative_test = index.0 >= positives;
+    let result = if is_negative_test {
+        let test = cases
+            .negative
+            .get(index.0 - positives)
+            .ok_or_else(index_out_of_bounds)?;
+        Right(test.clone().into())
+    } else {
+        Left(cases.positive[index.0].clone().into())
+    };
+    Ok(result)
 }
 
 /// A trait that I derive automatically for things that have Route<T>, which allows binding a route
@@ -553,7 +588,7 @@ mod test {
     }
 
     fn confirm_with(router: &Router, body: Vec<u8>, expected_error: Option<Code>) -> () {
-        if let RouteResult::Matched { endpoint, .. } = router.route(Method::POST, "/confirm/foo/0")
+        if let RouteResult::Matched { endpoint, .. } = router.route(&Method::POST, "/confirm/foo/0")
         {
             let mut builder = RequestBuilder::default();
             builder.path_params = hashmap!("index" => "0", "endpoint" => "foo");
@@ -579,7 +614,7 @@ mod test {
     where
         F: FnOnce(&mut RequestBuilder),
     {
-        if let RouteResult::Matched { endpoint, .. } = router.route(method, path) {
+        if let RouteResult::Matched { endpoint, .. } = router.route(&method, path) {
             let mut builder = RequestBuilder::default();
             f(&mut builder);
             builder

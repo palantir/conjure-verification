@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "verification-server",
+    "verification-common",
     "verification-error",
     "verification-error-derive",
     "verification-http",

@@ -11,9 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-trait ServiceTester {
-    fn nextRequest(req: Request);
-}
 
-///
-struct ServiceTesterState {}
+#[macro_use]
+extern crate serde_conjure_derive;
+#[macro_use]
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate derive_more;
+
+extern crate base64;
+extern crate chrono;
+extern crate conjure_verification_error;
+extern crate core;
+extern crate either;
+extern crate itertools;
+extern crate serde_conjure;
+#[cfg_attr(test, macro_use)]
+extern crate serde_json;
+extern crate serde_plain;
+extern crate serde_value;
+extern crate serde_yaml;
+extern crate uuid;
+
+#[macro_use]
+pub mod macros;
+pub mod conjure;
+pub mod more_serde_json;
+pub mod test_spec;
+pub mod type_mapping;

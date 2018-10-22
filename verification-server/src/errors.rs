@@ -95,7 +95,7 @@ impl VerificationError {
     pub fn confirmation_failure<E>(
         expected_body_str: &str,
         expected_body: &ConjureValue,
-        request_body_str: serde_json::Value,
+        request_body_str: &serde_json::Value,
         // Option because it might be un-parseable as ConjureValue
         request_body: Option<&ConjureValue>,
         cause: E,

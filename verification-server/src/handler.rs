@@ -67,7 +67,7 @@ impl HttpService {
 
     fn route(&self, request: &hyper::Request<hyper::Body>) -> RouteResult {
         let path = &request.uri().path();
-        self.router.route(request.method().clone(), path)
+        self.router.route(request.method(), path)
     }
 
     fn query_params(&self, uri: &Uri) -> HashMap<String, Vec<String>> {
@@ -144,7 +144,7 @@ impl HttpService {
                         path_params,
                         query_params,
                         sender,
-                        response_size,
+                        &response_size,
                     );
                     Ok(())
                 }));
@@ -180,7 +180,7 @@ impl SyncHandler {
         path_params: HashMap<String, String>,
         query_params: HashMap<String, Vec<String>>,
         sender: oneshot::Sender<(hyper::Response<hyper::Body>, u64)>,
-        response_size: Arc<AtomicUsize>,
+        response_size: &Arc<AtomicUsize>,
     ) {
         let (parts, body) = request.into_parts();
 
@@ -197,15 +197,15 @@ impl SyncHandler {
             .response_inner(
                 &parts.headers,
                 &mut body,
-                endpoint,
-                path_params,
-                query_params,
-            ).unwrap_or_else(|e| self.handler_error(e));
+                &endpoint,
+                &path_params,
+                &query_params,
+            ).unwrap_or_else(|e| self.handler_error(&e));
 
         self.write_response(&parts.headers, response, body.size, sender, &response_size);
     }
 
-    fn handler_error(&self, e: Error) -> Response {
+    fn handler_error(&self, e: &Error) -> Response {
         let r = error_handling::response(&e);
         let level = match r.status {
             StatusCode::INTERNAL_SERVER_ERROR => Level::Error,
@@ -219,9 +219,9 @@ impl SyncHandler {
         &self,
         headers: &HeaderMap,
         body: &mut SizeTrackingReader<BodyReader>,
-        endpoint: Arc<Endpoint>,
-        path_params: HashMap<String, String>,
-        query_params: HashMap<String, Vec<String>>,
+        endpoint: &Arc<Endpoint>,
+        path_params: &HashMap<String, String>,
+        query_params: &HashMap<String, Vec<String>>,
     ) -> Result<Response> {
         let mut body = self.decode_body(&headers, body)?;
         let mut request = Request::new(&path_params, &query_params, &headers, &mut *body);
@@ -305,7 +305,7 @@ impl SyncHandler {
                     ..
                 } = mem::replace(&mut body_writer.state, BodyWriterState::Done)
                 {
-                    let raw_response = self.handler_error(e);
+                    let raw_response = self.handler_error(&e);
                     return self.write_response(
                         headers,
                         raw_response,
