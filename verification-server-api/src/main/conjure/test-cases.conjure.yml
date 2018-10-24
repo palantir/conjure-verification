@@ -1,6 +1,6 @@
 types:
   definitions:
-    default-package: com.palantir.conjure.verification
+    default-package: com.palantir.conjure.verification.server
     objects:
 
       TestCases:

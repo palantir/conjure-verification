@@ -5,7 +5,7 @@ types:
 services:
   SingleQueryParamService:
     name: Single Query Param Service
-    package: com.palantir.conjure.verification
+    package: com.palantir.conjure.verification.server
     default-auth: none
 
     endpoints:
