@@ -7,7 +7,7 @@ dependencies {
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6'
     compile 'com.palantir.conjure:conjure-core:4.0.0'
     compile 'com.palantir.remoting3:jackson-support:3.33.0'
-    compile project(':verification-api:verification-api-objects')
+    compile project(':server-verification-api:server-verification-api-objects')
 }
 
 task compileTestCasesJson(type: JavaExec) {

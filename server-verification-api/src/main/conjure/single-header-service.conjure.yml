@@ -5,7 +5,7 @@ types:
 services:
   SingleHeaderService:
     name: Single Header Service
-    package: com.palantir.conjure.verification
+    package: com.palantir.conjure.verification.server
     default-auth: none
 
     endpoints:
