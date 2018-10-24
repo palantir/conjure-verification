@@ -1,4 +1,4 @@
 rootProject.name = 'conjure-verification'
 
-include 'server-verification-api'
-include 'server-verification-api:server-verification-api-objects'
+include 'verification-server-api'
+include 'verification-server-api:verification-server-api-objects'

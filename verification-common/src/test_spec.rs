@@ -104,7 +104,7 @@ mod test {
     use std::fs::File;
     use std::path::Path;
 
-    const TEST_CASES_PATH: &str = "../test-cases.yml";
+    const TEST_CASES_PATH: &str = "../verification-server-api/test-cases.yml";
 
     #[test]
     fn deserializes_test_cases() {

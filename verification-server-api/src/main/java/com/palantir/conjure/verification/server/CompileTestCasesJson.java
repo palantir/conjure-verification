@@ -30,7 +30,7 @@ public final class CompileTestCasesJson {
 
         TestCases testCases = ObjectMappers
                 .withDefaultModules(new ObjectMapper(new YAMLFactory()))
-                .readValue(new File("../test-cases.yml"), TestCases.class);
+                .readValue(new File("test-cases.yml"), TestCases.class);
 
         ClientTestCases clientTestCases = testCases.getClient();
 
