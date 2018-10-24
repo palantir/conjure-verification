@@ -20,7 +20,7 @@ use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::time::Duration;
 use std::vec;
-use tokio::net::ConnectFuture;
+use tokio::net::tcp::ConnectFuture;
 use tokio::net::TcpStream;
 use tokio::timer::Timeout;
 use tokio_io_timeout::TimeoutStream;

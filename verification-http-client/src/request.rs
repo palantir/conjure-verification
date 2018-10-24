@@ -27,7 +27,7 @@ use std::collections::HashMap;
 use std::io::{self, Write};
 use std::result;
 use std::thread;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, SystemTime};
 use typed_headers::{
     Authorization, ContentLength, ContentType, Credentials, HeaderMapExt, Host, RetryAfter, Token68,
 };

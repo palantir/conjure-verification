@@ -109,6 +109,7 @@ lazy_static! {
             .keep_alive(Some(Duration::from_secs(30)))
             .name_prefix("chatter-");
 
+        #[allow(deprecated)]
         runtime::Builder::new()
             .threadpool_builder(pool)
             .build()
