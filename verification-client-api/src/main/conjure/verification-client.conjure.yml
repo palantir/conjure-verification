@@ -4,9 +4,12 @@ types:
     objects:
       VerificationClientRequest:
         fields:
-          methodName: string
+          endpointName: EndpointName
           testCase: integer
           baseUrl: string
+
+      EndpointName:
+        alias: string
 
 services:
   VerificationClientService:
