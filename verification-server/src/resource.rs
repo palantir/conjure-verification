@@ -24,12 +24,11 @@ use conjure_verification_http::resource::Route;
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
+use conjure_verification_http_server::RouteWithOptions;
 use core;
 use either::{Either, Left, Right};
 use errors::*;
-use http::status::StatusCode;
 use http::Method;
-use hyper::header::HeaderValue;
 use more_serde_json;
 use raw_json::RawJson;
 use serde_json;
@@ -309,44 +308,6 @@ fn get_test_case_at_index(
     Ok(result)
 }
 
-/// A trait that I derive automatically for things that have Route<T>, which allows binding a route
-/// to the desired method and also to OPTIONS with a default handler for the latter.
-trait RouteWithOptions<T>: Route<T> {
-    /// Creates a route but adds an OPTIONS endpoint to it as well.
-    fn route_with_options<F, R>(&mut self, method: Method, route: &str, f: F)
-    where
-        F: Fn(&T, &mut Request) -> Result<R> + 'static + Sync + Send,
-        R: 'static + IntoResponse,
-    {
-        assert_ne!(method, Method::OPTIONS);
-        self.route(method, route, "", f);
-        self.route(Method::OPTIONS, route, "", |_, req| Self::options(req));
-    }
-
-    /// To support pre-flight requests sent by browsers in CORS mode.
-    /// See <https://stackoverflow.com/questions/29954037/why-is-an-options-request-sent-and-can-i-disable-it>
-    fn options(_request: &mut Request) -> Result<Response> {
-        let mut response = Response::new(StatusCode::OK);
-        {
-            let headers = &mut response.headers;
-            headers.append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
-            headers.append(
-                "Access-Control-Allow-Methods",
-                HeaderValue::from_static("POST, GET, OPTIONS"),
-            );
-            headers.append(
-                "Access-Control-Allow-Headers",
-                // single-header-service.conjure.yml uses 'Some-Header', so we need to whitelist it in preflight checks
-                // we also allow 'Fetch-User-Agent' because browsers can't replace User-Agent
-                HeaderValue::from_static("Content-Type, Some-Header, Fetch-User-Agent"),
-            );
-        }
-        Ok(response)
-    }
-}
-
-impl<T, X> RouteWithOptions<T> for X where X: Route<T> {}
-
 impl DynamicResource for SpecTestResource {
     fn register<R>(&self, router: &mut R)
     where
@@ -450,6 +411,7 @@ mod test {
     use conjure::resolved_type::FieldDefinition;
     use conjure::resolved_type::ObjectDefinition;
     use conjure::resolved_type::OptionalType;
+    use hyper::header::HeaderValue;
     use hyper::HeaderMap;
     use hyper::Method;
     use mime::APPLICATION_JSON;

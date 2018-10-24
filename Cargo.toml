@@ -5,6 +5,7 @@ members = [
     "verification-error",
     "verification-error-derive",
     "verification-http",
+    "verification-http-server",
     "serde-conjure",
     "serde-conjure-derive"
 ]
