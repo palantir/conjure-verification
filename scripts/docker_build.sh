@@ -20,14 +20,14 @@ if [ ! -f $BINARY ]; then
 fi
 cp $BINARY $DEST
 
-TEST_CASES=./verification-api/build/test-cases.json
+TEST_CASES=./server-verification-api/build/test-cases.json
 if [ ! -f $TEST_CASES ]; then
     echo "$TEST_CASES file must exist - run './gradlew compileTestCasesJson' to create it"
     exit 1
 fi
 cp $TEST_CASES $DEST
 
-IR_FILE=./verification-api/build/conjure-ir/verification-api.json
+IR_FILE=./server-verification-api/build/conjure-ir/server-verification-api.json
 if [ ! -f $IR_FILE ]; then
     echo "$IR_FILE file must exist - run './gradlew compileIr' to create it"
     exit 1
