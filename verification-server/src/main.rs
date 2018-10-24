@@ -48,11 +48,11 @@ extern crate typed_headers;
 extern crate url;
 extern crate uuid;
 
+use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::test_spec;
 use conjure_verification_common::type_mapping;
-use conjure::ir::Conjure;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
 use futures::{future, Future};
