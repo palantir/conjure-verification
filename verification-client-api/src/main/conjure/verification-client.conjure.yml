@@ -1,6 +1,6 @@
 types:
   definitions:
-    default-package: com.palantir.conjure.verification
+    default-package: com.palantir.conjure.verification.client
     objects:
       VerificationClientRequest:
         fields:
@@ -14,7 +14,7 @@ types:
 services:
   VerificationClientService:
     name: Verification Client Service
-    package: com.palantir.conjure.verification
+    package: com.palantir.conjure.verification.client
     default-auth: none
     endpoints:
       runTestCase:
