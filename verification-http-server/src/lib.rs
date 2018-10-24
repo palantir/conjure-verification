@@ -34,7 +34,6 @@ extern crate url;
 
 pub use conjure_verification_http::{request, resource, response};
 
-use std::sync::Arc;
 use conjure_verification_error::Result;
 use http::status::StatusCode;
 use hyper::header::HeaderValue;
@@ -45,6 +44,7 @@ use resource::Route;
 use response::IntoResponse;
 use response::Response;
 use router::Binder;
+use std::sync::Arc;
 
 pub mod error_handling;
 pub mod handler;
