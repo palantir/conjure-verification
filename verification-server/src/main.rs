@@ -19,9 +19,7 @@ extern crate conjure_verification_error_derive;
 #[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
 
-extern crate base64;
 extern crate bytes;
-extern crate chrono;
 extern crate conjure_verification_error;
 extern crate conjure_verification_http;
 extern crate conjure_verification_http_server;
@@ -30,20 +28,12 @@ extern crate either;
 extern crate futures;
 extern crate http;
 extern crate hyper;
-extern crate itertools;
 extern crate mime;
 extern crate pretty_env_logger;
-extern crate scheduled_thread_pool;
 extern crate serde_conjure;
 extern crate serde_json;
 extern crate serde_plain;
-extern crate serde_value;
-extern crate serde_yaml;
-extern crate tokio;
-extern crate tokio_threadpool;
 extern crate typed_headers;
-extern crate url;
-extern crate uuid;
 
 pub use conjure_verification_http_server::*;
 
