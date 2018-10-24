@@ -2,7 +2,7 @@
  * (c) Copyright 2018 Palantir Technologies Inc. All rights reserved.
  */
 
-package com.palantir.conjure.verification;
+package com.palantir.conjure.verification.server;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Sets;
 import com.palantir.conjure.defs.Conjure;
+import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
-import com.palantir.remoting3.ext.jackson.ObjectMappers;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;

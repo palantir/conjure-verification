@@ -6,12 +6,12 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6'
     compile 'com.palantir.conjure:conjure-core:4.0.0'
-    compile 'com.palantir.remoting3:jackson-support:3.33.0'
+    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization:4.5.1'
     compile project(':server-verification-api:server-verification-api-objects')
 }
 
 task compileTestCasesJson(type: JavaExec) {
-   main = "com.palantir.conjure.verification.CompileTestCasesJson"
+   main = "com.palantir.conjure.verification.server.CompileTestCasesJson"
    classpath = sourceSets.main.runtimeClasspath
 
    inputs.file '../test-cases.yml'
