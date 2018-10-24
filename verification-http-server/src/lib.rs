@@ -32,7 +32,7 @@ extern crate tokio;
 extern crate typed_headers;
 extern crate url;
 
-pub use conjure_verification_http::{request, resource, response};
+use conjure_verification_http::{request, resource, response};
 
 use conjure_verification_error::Result;
 use http::status::StatusCode;
