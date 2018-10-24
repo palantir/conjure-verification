@@ -1,0 +1,20 @@
+types:
+  definitions:
+    default-package: com.palantir.conjure.verification
+    objects:
+      VerificationClientRequest:
+        fields:
+          methodName: string
+          testCase: integer
+          baseUrl: string
+
+services:
+  VerificationClientService:
+    name: Verification Client Service
+    package: com.palantir.conjure.verification
+    default-auth: none
+    endpoints:
+      runTestCase:
+        http: POST /runTestCase
+        args:
+          body: VerificationClientRequest
