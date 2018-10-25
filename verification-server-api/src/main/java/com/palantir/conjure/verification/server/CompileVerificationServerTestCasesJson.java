@@ -22,9 +22,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public final class CompileTestCasesJson {
+public final class CompileVerificationServerTestCasesJson {
 
-    private CompileTestCasesJson() {}
+    private CompileVerificationServerTestCasesJson() {}
 
     public static void main(String... args) throws IOException {
 
