@@ -21,12 +21,16 @@ use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
 use conjure_verification_http::response::Response;
+use conjure_verification_http_client::user_agent::Agent;
+use conjure_verification_http_client::user_agent::UserAgent;
+use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
 use core;
 use either::{Either, Left, Right};
 use errors::*;
 use http::Method;
 use more_serde_json;
+use serde_json;
 use std::collections::HashMap;
 use std::string::ToString;
 use test_spec::*;
@@ -56,8 +60,21 @@ impl VerificationClientResource {
         }
     }
 
-    fn run_test_case(&self, request: &mut Request) -> core::result::Result<Response, Error> {
-        unimplemented!()
+    fn run_test_case(&self, request: &mut Request) -> Result<Response> {
+        let client_request: ClientRequest = serde_json::from_reader(request.body()?)?;
+        if let Some(test_case) = self
+            .test_cases
+            .auto_deserialize
+            .get(clientRequest.endpoint_name)
+        {
+            return handle_auto_deserialise_test(client_request, test_case);
+        }
+        Err(Error::new_safe(
+            "Unable to find corresponding test case",
+            VerificationError::InvalidEndpointParameter {
+                endpoint_name: client_request.endpoint_name,
+            },
+        ))
     }
 
     fn parse_index(request: &Request) -> Result<usize> {
@@ -65,6 +82,14 @@ impl VerificationClientResource {
             .path_param("index")
             .parse()
             .map_err(|err| Error::new_safe(err, Code::InvalidArgument))
+    }
+
+    fn handle_auto_deserialise_test(clientRequest: &ClientRequest) -> Result<Response> {
+        let client = Client::new_static(
+            "serviceUnderTest",
+            UserAgent::new(Agent::new("conjure-verification-client", "0.0.0")),
+            Tracer::
+        );
     }
 }
 

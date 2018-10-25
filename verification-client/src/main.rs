@@ -19,6 +19,7 @@ extern crate conjure_verification_error;
 extern crate conjure_verification_error_derive;
 extern crate conjure_verification_http;
 extern crate conjure_verification_http_server;
+extern crate conjure_verification_http_client;
 extern crate core;
 #[macro_use]
 extern crate derive_more;
