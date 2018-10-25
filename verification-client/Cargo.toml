@@ -1,7 +1,7 @@
 [package]
 name = "conjure-verification-client"
 version = "0.1.0"
-authors = ["Dan Sanduleac <dsanduleac@palantir.com>"]
+authors = ["Felipe Orozco <forozco@palantir.com>", "Dan Sanduleac <dsanduleac@palantir.com>"]
 license-file = "../LICENSE"
 
 [dependencies]
