@@ -63,12 +63,6 @@ public final class CompileVerificationClientTestCasesJson {
                 serviceByName(ir, "AutoDeserialiseService"));
     }
 
-    private static long countTestCases(Map<EndpointName, List<String>> tests) {
-        return tests.entrySet().stream()
-                .flatMap(e -> e.getValue().stream())
-                .count();
-    }
-
     private static long countPositiveAndNegative(Map<EndpointName, PositiveAndNegativeTestCases> tests) {
         return tests.entrySet().stream()
                 .flatMap(e -> Stream.concat(e.getValue().getPositive().stream(), e.getValue().getNegative().stream()))
