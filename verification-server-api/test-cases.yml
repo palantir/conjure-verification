@@ -436,8 +436,6 @@ client:
   # single-query-param-service.conjure.yml
   singleQueryParamService:
 
-    queryParamBearertoken:
-      - '"bearertoken"'
     queryParamBoolean:
       - 'true'
       - 'false'

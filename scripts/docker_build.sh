@@ -27,7 +27,7 @@ if [ ! -f $TEST_CASES ]; then
 fi
 cp $TEST_CASES $DEST
 
-IR_FILE=./verification-server-api/build/conjure-ir/verification-server-api.json
+IR_FILE=./verification-server-api/build/conjure-ir/verification-server-api.conjure.json
 if [ ! -f $IR_FILE ]; then
     echo "$IR_FILE file must exist - run './gradlew compileIr' to create it"
     exit 1

@@ -9,7 +9,7 @@ RUN set -eux; \
 
 ADD conjure-verification-server /opt/palantir/services/conjure-verification-server/service/bin
 ADD test-cases.json /opt/palantir/services/conjure-verification-server/var/conf
-ADD verification-server-api.json /opt/palantir/services/conjure-verification-server/var/conf
+ADD verification-server-api.conjure.json /opt/palantir/services/conjure-verification-server/var/conf
 
 RUN chmod +x /opt/palantir/services/conjure-verification-server/service/bin/conjure-verification-server
 
@@ -20,4 +20,4 @@ ENV RUST_LOG conjure_verification_server=info,conjure_verification_http=info
 WORKDIR /opt/palantir/services/conjure-verification-server
 
 ENTRYPOINT ["dumb-init", "--", "service/bin/conjure-verification-server"]
-CMD ["var/conf/test-cases.json", "var/conf/verification-server-api.json"]
+CMD ["var/conf/test-cases.json", "var/conf/verification-server-api.conjure.json"]

@@ -26,17 +26,15 @@ buildscript {
     }
 
     dependencies {
-        classpath 'gradle.plugin.com.palantir:gradle-circle-style:1.1.2'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.3'
-        classpath 'com.palantir.baseline:gradle-baseline-java:0.20.1'
-        classpath 'com.palantir.configurationresolver:gradle-configuration-resolver-plugin:0.3.0'
-        classpath 'com.palantir.gradle.conjure:gradle-conjure:4.2.0'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+        classpath 'com.palantir.baseline:gradle-baseline-java:0.37.4'
+        classpath 'com.palantir.gradle.conjure:gradle-conjure:4.5.1'
         classpath 'com.palantir.gradle.gitversion:gradle-git-version:0.10.0'
     }
 }
 
 apply plugin: 'com.palantir.git-version'
-apply plugin: 'com.palantir.baseline-config'
+apply plugin: 'com.palantir.baseline'
 apply from: 'gradle/publish-rust-dist.gradle'
 
 allprojects {
@@ -49,26 +47,8 @@ allprojects {
             url 'https://dl.bintray.com/palantir/releases/'
         }
     }
-
-    apply plugin: 'com.palantir.configuration-resolver'
-    apply plugin: 'com.palantir.baseline-idea'
 }
 
 subprojects {
     apply plugin: 'java-library'
-    apply plugin: 'com.palantir.baseline-eclipse'
-    apply plugin: 'com.palantir.baseline-checkstyle'
-    apply plugin: 'com.palantir.baseline-error-prone'
-
-    configurations.all {
-        resolutionStrategy {
-            force 'com.palantir.conjure:conjure:4.0.0'
-            force 'com.palantir.conjure.java:conjure-java:1.0.0'
-            force 'com.palantir.conjure.java:conjure-lib:1.0.0'
-        }
-    }
-}
-
-dependencies {
-    baseline 'com.palantir.baseline:gradle-baseline-java-config:0.20.1@zip'
 }
