@@ -28,27 +28,14 @@ use conjure::type_resolution::resolve_type;
 use std::collections::HashMap;
 use test_spec::EndpointName;
 
-const PACKAGE: &str = "com.palantir.conjure.verification";
-
-pub fn resolve_types(ir: &Conjure) -> Box<HashMap<EndpointName, ResolvedType>> {
-    // Services whose endpoints we care about, and how to extract the type we care about.
-    let mut services: HashMap<ServiceName, TypeForEndpointFn> = HashMap::new();
-    services.insert(service_name("AutoDeserializeService"), return_type);
-    services.insert(service_name("SingleHeaderService"), type_of_non_index_arg);
-    services.insert(
-        service_name("SinglePathParamService"),
-        type_of_non_index_arg,
-    );
-    services.insert(
-        service_name("SingleQueryParamService"),
-        type_of_non_index_arg,
-    );
+pub fn resolve_types(ir: &Conjure, type_by_service: &HashMap<ServiceName, TypeForEndpointFn>) -> Box<HashMap<EndpointName, ResolvedType>> {
 
     // Resolve endpoint -> type mappings eagerly
     let mut param_types = Box::new(HashMap::new());
     ir.services
         .iter()
-        .filter_map(|s| services.get(&s.service_name).map(|func| (s, func)))
+        // TODO throw if service not found
+        .filter_map(|s| type_by_service.get(&s.service_name).map(|func| (s, func)))
         .for_each(|(s, func)| {
             for e in &s.endpoints {
                 // Resolve aliases
@@ -64,14 +51,7 @@ pub fn resolve_types(ir: &Conjure) -> Box<HashMap<EndpointName, ResolvedType>> {
     param_types
 }
 
-fn service_name(s: &str) -> ServiceName {
-    ServiceName {
-        name: s.into(),
-        package: PACKAGE.into(),
-    }
-}
-
-fn type_of_non_index_arg(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
+pub fn type_of_non_index_arg(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
     &endpoint_def
         .args
         .iter()
@@ -80,8 +60,8 @@ fn type_of_non_index_arg(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
         .type_
 }
 
-fn return_type(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
+pub fn return_type(endpoint_def: &ir::EndpointDefinition) -> &ir::Type {
     (&endpoint_def.returns).as_ref().unwrap()
 }
 
-type TypeForEndpointFn = fn(&ir::EndpointDefinition) -> &ir::Type;
+pub type TypeForEndpointFn = fn(&ir::EndpointDefinition) -> &ir::Type;

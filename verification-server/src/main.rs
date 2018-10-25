@@ -55,6 +55,11 @@ use std::path::Path;
 use std::process;
 use std::sync::Arc;
 use test_spec::TestCases;
+use std::collections::HashMap;
+use conjure_verification_common::conjure::ir::ServiceName;
+use conjure_verification_common::type_mapping::TypeForEndpointFn;
+use conjure_verification_common::type_mapping::return_type;
+use conjure_verification_common::type_mapping::type_of_non_index_arg;
 
 mod errors;
 mod raw_json;
@@ -89,12 +94,34 @@ fn main() {
     let ir = File::open(Path::new(ir_path)).unwrap();
     let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
+    // Declare how to map the types for each endpoint, by the service name.
+    const PACKAGE: &str = "com.palantir.conjure.verification";
+
+    fn service_name(s: &str) -> ServiceName {
+        ServiceName {
+            name: s.into(),
+            package: PACKAGE.into(),
+        }
+    }
+
+    let mut services_mapping: HashMap<ServiceName, TypeForEndpointFn> = HashMap::new();
+    services_mapping.insert(service_name("AutoDeserializeService"), return_type);
+    services_mapping.insert(service_name("SingleHeaderService"), type_of_non_index_arg);
+    services_mapping.insert(
+        service_name("SinglePathParamService"),
+        type_of_non_index_arg,
+    );
+    services_mapping.insert(
+        service_name("SingleQueryParamService"),
+        type_of_non_index_arg,
+    );
+
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
         &Arc::new(SpecTestResource::new(
             test_cases.client.into(),
-            type_mapping::resolve_types(&ir),
+            type_mapping::resolve_types(&ir, &services_mapping),
         )),
     );
     let router = builder.build();
