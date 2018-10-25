@@ -1,2 +1,34 @@
+apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
 apply plugin: 'com.palantir.conjure'
+
+dependencies {
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6'
+    compile 'com.palantir.conjure:conjure-core:4.0.0'
+    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization:4.5.1'
+    compile project('verification-client-api-objects')
+}
+
+task compileTestCasesJson(type: JavaExec) {
+    main = "com.palantir.conjure.verification.client.CompileVerificationClientTestCasesJson"
+    classpath = sourceSets.main.runtimeClasspath
+
+    inputs.file 'test-cases.yml'
+    outputs.file "$buildDir/test-cases.json"
+}
+
+build.dependsOn compileTestCasesJson
+
+publishing {
+    publications {
+        testCases(MavenPublication) {
+            artifactId "verification-client-test-cases"
+            artifact (compileTestCasesJson.outputs.files.singleFile) {
+                extension 'json'
+                builtBy compileTestCasesJson
+            }
+        }
+    }
+}
+
 

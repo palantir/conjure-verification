@@ -1,0 +1,31 @@
+types:
+  definitions:
+    default-package: com.palantir.conjure.verification.client
+    objects:
+
+      TestCases:
+        fields:
+          server: ServerTestCases
+
+      ServerTestCases:
+        fields:
+          autoDeserialize: map<EndpointName, PositiveAndNegativeTestCases>
+
+      EndpointName:
+        alias: string
+
+      PositiveAndNegativeTestCases:
+        fields:
+          positive: list<string> # json strings
+          negative: list<string>
+
+      IgnoredTestCases:
+        fields:
+          client: IgnoredClientTestCases
+
+      IgnoredClientTestCases:
+        fields:
+          autoDeserialize: map<EndpointName, set<string>>
+          singleHeaderService: map<EndpointName, set<string>>
+          singlePathParamService: map<EndpointName, set<string>>
+          singleQueryParamService: map<EndpointName, set<string>>
