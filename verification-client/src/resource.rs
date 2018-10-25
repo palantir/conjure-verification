@@ -73,7 +73,7 @@ impl VerificationClientResource {
 
         let endpoint_name = client_request.endpoint_name.clone();
         if let Some(auto_deserialize_cases) = self.test_cases.auto_deserialize.get(&endpoint_name) {
-            return self.handle_auto_deserialise_test(&client_request, auto_deserialize_cases);
+            return self.handle_auto_deserialize_test(&client_request, auto_deserialize_cases);
         }
         Err(Error::new_safe(
             "Unable to find corresponding test case",
@@ -88,7 +88,7 @@ impl VerificationClientResource {
             .map_err(|err| Error::new_safe(err, Code::InvalidArgument))
     }
 
-    fn handle_auto_deserialise_test(
+    fn handle_auto_deserialize_test(
         &self,
         client_request: &ClientRequest,
         auto_deserialize_cases: &PositiveAndNegativeTestCases,
