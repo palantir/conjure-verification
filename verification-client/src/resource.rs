@@ -20,20 +20,28 @@ use conjure_verification_error::Result;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
-use conjure_verification_http::response::Response;
+use conjure_verification_http::response::IntoResponse;
+use conjure_verification_http::response::NoContent;
+use conjure_verification_http_client::body::BytesBody;
+use conjure_verification_http_client::Client;
+use conjure_verification_http_client::config as client_config;
 use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
-use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
 use core;
 use either::{Either, Left, Right};
 use errors::*;
 use http::Method;
+use mime::APPLICATION_JSON;
 use more_serde_json;
+use self::client_config::ServiceConfig;
+use self::client_config::ServiceDiscoveryConfig;
 use serde_json;
 use std::collections::HashMap;
 use std::string::ToString;
 use test_spec::*;
+use zipkin::Endpoint;
+use zipkin::Tracer;
 
 pub struct VerificationClientResource {
     test_cases: Box<ServerTestCases>,
@@ -45,7 +53,7 @@ type ParamTypes = HashMap<EndpointName, ResolvedType>;
 #[derive(ConjureDeserialize, Debug)]
 struct ClientRequest {
     endpoint_name: EndpointName,
-    test_case: u64,
+    test_case: usize,
     base_url: String,
 }
 
@@ -60,20 +68,16 @@ impl VerificationClientResource {
         }
     }
 
-    fn run_test_case(&self, request: &mut Request) -> Result<Response> {
-        let client_request: ClientRequest = serde_json::from_reader(request.body()?)?;
-        if let Some(test_case) = self
-            .test_cases
-            .auto_deserialize
-            .get(clientRequest.endpoint_name)
-        {
-            return handle_auto_deserialise_test(client_request, test_case);
+    fn run_test_case(&self, request: &mut Request) -> Result<impl IntoResponse> {
+        let client_request: ClientRequest = request.body()?;
+
+        let endpoint_name = client_request.endpoint_name.clone();
+        if let Some(auto_deserialize_cases) = self.test_cases.auto_deserialize.get(&endpoint_name) {
+            return self.handle_auto_deserialise_test(&client_request, auto_deserialize_cases);
         }
         Err(Error::new_safe(
             "Unable to find corresponding test case",
-            VerificationError::InvalidEndpointParameter {
-                endpoint_name: client_request.endpoint_name,
-            },
+            VerificationError::InvalidEndpointParameter { endpoint_name },
         ))
     }
 
@@ -84,12 +88,101 @@ impl VerificationClientResource {
             .map_err(|err| Error::new_safe(err, Code::InvalidArgument))
     }
 
-    fn handle_auto_deserialise_test(clientRequest: &ClientRequest) -> Result<Response> {
-        let client = Client::new_static(
-            "serviceUnderTest",
+    fn handle_auto_deserialise_test(
+        &self,
+        client_request: &ClientRequest,
+        auto_deserialize_cases: &PositiveAndNegativeTestCases,
+    ) -> Result<impl IntoResponse> {
+        let test_case =
+            get_test_case_at_index(auto_deserialize_cases, &client_request.test_case.into())?;
+        let endpoint = &client_request.endpoint_name;
+
+        let client = VerificationClientResource::construct_client(&client_request.base_url)?;
+        let mut builder = client.post("/{endpoint}");
+        builder.param("endpoint", &endpoint.0);
+        match test_case {
+            Left(positive) => {
+                let test_body_str = positive.0;
+                let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
+                let expected_body = deserialize_expected_value(
+                    conjure_type,
+                    test_body_str.as_str(),
+                    &endpoint,
+                    client_request.test_case,
+                )?;
+                let response = builder
+                    .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
+                    .send()?;
+                if !response.status().is_success() {
+                    return Err(Error::new_safe("Wasn't successful", Code::InvalidArgument));
+                }
+
+                // We deserialize into serde_json::Value first because .body()'s return type needs
+                // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
+                let response_body_value: serde_json::Value = response.body()?;
+                let response_body = conjure_type.deserialize(&response_body_value).map_err(|e| {
+                    let error_message = format!("{}", e);
+                    Error::new_safe(
+                        e,
+                        VerificationError::confirmation_failure(
+                            &test_body_str,
+                            &expected_body,
+                            &response_body_value,
+                            None,
+                            error_message,
+                        ),
+                    )
+                })?;
+
+                // Compare response_body with what the test case says we sent
+                if response_body != expected_body {
+                    let error = "Body didn't match expected Conjure value";
+                    return Err(Error::new_safe(
+                        error,
+                        VerificationError::confirmation_failure(
+                            &test_body_str,
+                            &expected_body,
+                            &response_body_value,
+                            Some(&response_body),
+                            "",
+                        ),
+                    ));
+                }
+            }
+
+            Right(negative) => {
+                let response = builder
+                    .body(BytesBody::new(negative.0, APPLICATION_JSON))
+                    .send()?;
+                if response.status().is_success() {
+                    return Err(Error::new_safe(
+                        "Unexpected successful response",
+                        Code::InvalidArgument,
+                    ));
+                }
+            }
+        };
+        Ok(NoContent)
+    }
+
+    fn construct_client(base_url: &str) -> Result<Client> {
+        let service_name = "serviceUnderTest";
+        Client::new_static(
+            service_name,
             UserAgent::new(Agent::new("conjure-verification-client", "0.0.0")),
-            Tracer::
-        );
+            &Tracer::builder().build(Endpoint::builder().build()),
+            &ServiceDiscoveryConfig::builder()
+                .service(
+                    service_name,
+                    ServiceConfig::builder()
+                        .uris(vec![
+                            base_url
+                                .parse()
+                                // TODO make this better
+                                .map_err(|e| Error::new_safe(e, Code::InvalidArgument))?,
+                        ]).build(),
+                ).build(),
+        )
     }
 }
 
@@ -153,6 +246,20 @@ impl Resource for VerificationClientResource {
             VerificationClientResource::run_test_case,
         )
     }
+}
+
+fn get_endpoint<'a, V>(
+    map: &'a HashMap<EndpointName, V>,
+    endpoint: &EndpointName,
+) -> Result<&'a V> {
+    map.get(endpoint).ok_or_else(|| {
+        Error::new_safe(
+            "No such endpoint",
+            VerificationError::InvalidEndpointParameter {
+                endpoint_name: endpoint.clone(),
+            },
+        )
+    })
 }
 
 trait OrErr<R, E> {
