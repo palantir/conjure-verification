@@ -257,22 +257,3 @@ fn get_endpoint<'a, V>(
         )
     })
 }
-
-trait OrErr<R, E> {
-    fn or_err<F>(&self, f: F) -> core::result::Result<R, E>
-    where
-        F: FnOnce() -> E;
-}
-
-impl OrErr<(), Error> for bool {
-    fn or_err<F>(&self, f: F) -> core::result::Result<(), Error>
-    where
-        F: FnOnce() -> Error,
-    {
-        if *self {
-            Ok(())
-        } else {
-            Err(f())
-        }
-    }
-}
