@@ -3,7 +3,7 @@ types:
     examples: example-types.conjure.yml
 
 services:
-  AutoDeserialiseService:
+  AutoDeserializeService:
     name: Test Service
     package: com.palantir.conjure.verification.client
     default-auth: none
