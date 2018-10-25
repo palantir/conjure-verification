@@ -63,9 +63,9 @@ where
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use std::fs::File;
     use std::path::Path;
-    use super::*;
 
     const TEST_CASES_PATH: &str = "../verification-server-api/test-cases.yml";
 
