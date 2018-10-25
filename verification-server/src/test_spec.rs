@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure_verification_common::test_spec::EndpointName;
+pub use conjure_verification_common::test_spec::EndpointName;
 use serde_json;
 use serde_yaml;
 use std::collections::HashMap;

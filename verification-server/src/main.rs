@@ -40,7 +40,6 @@ extern crate typed_headers;
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
-use conjure_verification_common::test_spec::EndpointName;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::type_of_non_index_arg;
