@@ -11,55 +11,41 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#[macro_use]
-extern crate futures;
+
 #[macro_use]
 extern crate derive_more;
-#[macro_use]
-extern crate log;
 #[macro_use]
 extern crate conjure_verification_error_derive;
 #[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
 
-extern crate base64;
 extern crate bytes;
-extern crate chrono;
 extern crate conjure_verification_error;
 extern crate conjure_verification_http;
+extern crate conjure_verification_http_server;
 extern crate core;
 extern crate either;
-extern crate flate2;
+extern crate futures;
 extern crate http;
 extern crate hyper;
-extern crate itertools;
 extern crate mime;
 extern crate pretty_env_logger;
-extern crate route_recognizer;
-extern crate scheduled_thread_pool;
 extern crate serde_conjure;
 extern crate serde_json;
 extern crate serde_plain;
-extern crate serde_value;
-extern crate serde_yaml;
-extern crate tokio;
-extern crate tokio_threadpool;
 extern crate typed_headers;
-extern crate url;
-extern crate uuid;
+
+pub use conjure_verification_http_server::*;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::test_spec;
 use conjure_verification_common::type_mapping;
-use conjure_verification_http::resource::Resource;
-use conjure_verification_http::resource::Route;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
 use resource::SpecTestResource;
-use router::Binder;
 use router::Router;
 use std::env;
 use std::env::VarError;
@@ -70,12 +56,9 @@ use std::process;
 use std::sync::Arc;
 use test_spec::TestCases;
 
-mod error_handling;
 mod errors;
-mod handler;
 mod raw_json;
 mod resource;
-mod router;
 
 fn main() {
     pretty_env_logger::init();
@@ -140,19 +123,4 @@ fn start_server(router: Router, port: u16) {
 
         server
     }));
-}
-
-fn register_resource<T>(builder: &mut router::Builder, resource: &Arc<T>)
-where
-    T: DynamicResource,
-{
-    let mut binder = Binder::new(resource.clone(), builder, "");
-    binder.register_externally(DynamicResource::register);
-}
-
-/// Just like `Resource` but allowing the route registration access to `&self`.
-trait DynamicResource: Resource {
-    fn register<R>(&self, router: &mut R)
-    where
-        R: Route<Self>;
 }
