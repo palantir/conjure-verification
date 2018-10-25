@@ -2,6 +2,7 @@
 members = [
     "verification-server",
     "verification-common",
+    "verification-client",
     "verification-error",
     "verification-error-derive",
     "verification-http",
