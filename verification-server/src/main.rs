@@ -95,7 +95,7 @@ fn main() {
     let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
     // Declare how to map the types for each endpoint, by the service name.
-    const PACKAGE: &str = "com.palantir.conjure.verification";
+    const PACKAGE: &str = "com.palantir.conjure.verification.server";
 
     fn service_name(s: &str) -> ServiceName {
         ServiceName {
