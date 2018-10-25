@@ -28,18 +28,17 @@ use conjure::type_resolution::resolve_type;
 use std::collections::HashMap;
 use test_spec::EndpointName;
 
-pub fn resolve_types(ir: &Conjure, type_by_service: &HashMap<ServiceName, TypeForEndpointFn>) -> Box<HashMap<EndpointName, ResolvedType>> {
+pub fn resolve_types(ir: &Conjure, type_by_service: &HashMap<String, TypeForEndpointFn>) -> Box<HashMap<EndpointName, ResolvedType>> {
 
     // Resolve endpoint -> type mappings eagerly
     let mut param_types = Box::new(HashMap::new());
-    ir.services
-        .iter()
-        // TODO throw if service not found
-        .filter_map(|s| type_by_service.get(&s.service_name).map(|func| (s, func)))
-        .for_each(|(s, func)| {
+    type_by_service.iter().for_each(|(serviceName, matcher)| {
+        if let Some(service) = ir.services.iter().find(|service| {
+            service.service_name.name == *serviceName
+        }) {
             for e in &s.endpoints {
                 // Resolve aliases
-                let type_ = resolve_type(&ir.types, func(&e));
+                let type_ = resolve_type(&ir.types, matcher(&e));
                 // Create a unique map
                 assert!(
                     param_types
@@ -47,7 +46,10 @@ pub fn resolve_types(ir: &Conjure, type_by_service: &HashMap<ServiceName, TypeFo
                         .is_none()
                 );
             }
-        });
+        } else {
+            panic!("Unable to find matching service for {}", serviceName);
+        }
+    });
     param_types
 }
 
