@@ -30,14 +30,16 @@ extern crate hyper;
 extern crate mime;
 extern crate pretty_env_logger;
 extern crate serde_conjure;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_json;
 extern crate serde_plain;
+extern crate serde_yaml;
 extern crate typed_headers;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
-use conjure_verification_common::test_spec;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::type_of_non_index_arg;
@@ -61,6 +63,7 @@ use test_spec::TestCases;
 mod errors;
 mod raw_json;
 mod resource;
+mod test_spec;
 
 fn main() {
     pretty_env_logger::init();
@@ -84,7 +87,7 @@ fn main() {
     // Read the test cases file.
     let test_cases_path: &str = &args[1];
     let test_cases = File::open(Path::new(test_cases_path)).unwrap();
-    let test_cases: Box<TestCases> = Box::new(test_spec::from_json_file(test_cases).unwrap());
+    let test_cases: Box<TestCases> = Box::new(serde_json::from_reader(test_cases).unwrap());
 
     // Read the conjure IR.
     let ir_path: &str = &args[2];
