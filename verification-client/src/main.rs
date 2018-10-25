@@ -18,8 +18,8 @@ extern crate conjure_verification_error;
 #[macro_use]
 extern crate conjure_verification_error_derive;
 extern crate conjure_verification_http;
-extern crate conjure_verification_http_server;
 extern crate conjure_verification_http_client;
+extern crate conjure_verification_http_server;
 extern crate core;
 #[macro_use]
 extern crate derive_more;
@@ -39,6 +39,7 @@ extern crate serde_plain;
 extern crate serde_value;
 extern crate serde_yaml;
 extern crate typed_headers;
+extern crate zipkin;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
@@ -47,8 +48,8 @@ use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::TypeForEndpointFn;
 use conjure_verification_http::resource::Resource;
-pub use conjure_verification_http_server::*;
 use conjure_verification_http_server::router::Binder;
+pub use conjure_verification_http_server::*;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
