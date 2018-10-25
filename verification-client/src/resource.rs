@@ -30,7 +30,6 @@ use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
 use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
-use core;
 use either::{Either, Left, Right};
 use errors::*;
 use http::Method;
@@ -48,7 +47,7 @@ pub struct VerificationClientResource {
     param_types: Box<HashMap<EndpointName, ResolvedType>>,
 }
 
-type ParamTypes = HashMap<EndpointName, ResolvedType>;
+pub type ParamTypes = HashMap<EndpointName, ResolvedType>;
 
 #[derive(ConjureDeserialize, Debug)]
 struct ClientRequest {
