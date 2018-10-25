@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use conjure_verification_common::test_spec::EndpointName;
 use serde_json;
-use serde_value::Value;
 use serde_yaml;
 use std::collections::HashMap;
 use std::io;
@@ -38,25 +38,6 @@ pub struct ClientTestCases {
 pub struct PositiveAndNegativeTestCases {
     pub positive: Vec<String>,
     pub negative: Vec<String>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ServiceTest {
-    endpoint_name: String,
-    auth: Option<String>,
-    #[serde(default)]
-    header_params: HashMap<String, String>,
-    #[serde(default)]
-    path_params: HashMap<String, Value>,
-    request: Option<ExpectedRequest>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ExpectedRequest {
-    type_name: String,
-    value: Value,
 }
 
 #[derive(Deserialize, Debug, Eq, PartialEq, Clone, From)]

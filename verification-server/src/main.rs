@@ -33,6 +33,7 @@ extern crate pretty_env_logger;
 extern crate serde_conjure;
 extern crate serde_json;
 extern crate serde_plain;
+extern crate serde_yaml;
 extern crate typed_headers;
 
 pub use conjure_verification_http_server::*;
