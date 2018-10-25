@@ -1,15 +1,15 @@
 types:
+  conjure-imports:
+    testCases: test-cases.conjure.yml
+
   definitions:
     default-package: com.palantir.conjure.verification.client
     objects:
       VerificationClientRequest:
         fields:
-          endpointName: EndpointName
+          endpointName: testCases.EndpointName
           testCase: integer
           baseUrl: string
-
-      EndpointName:
-        alias: string
 
 services:
   VerificationClientService:
