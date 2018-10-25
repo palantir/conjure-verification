@@ -40,7 +40,7 @@ pub use conjure_verification_http_server::*;
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
-use conjure_verification_common::test_spec;
+use conjure_verification_common::test_spec::EndpointName;
 use conjure_verification_common::type_mapping;
 use futures::{future, Future};
 use handler::HttpService;
@@ -59,6 +59,7 @@ use test_spec::TestCases;
 mod errors;
 mod raw_json;
 mod resource;
+mod test_spec;
 
 fn main() {
     pretty_env_logger::init();
