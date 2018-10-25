@@ -39,14 +39,19 @@ pub use conjure_verification_http_server::*;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
+use conjure_verification_common::conjure::ir::ServiceName;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::test_spec;
 use conjure_verification_common::type_mapping;
+use conjure_verification_common::type_mapping::return_type;
+use conjure_verification_common::type_mapping::type_of_non_index_arg;
+use conjure_verification_common::type_mapping::TypeForEndpointFn;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
 use resource::SpecTestResource;
 use router::Router;
+use std::collections::HashMap;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
@@ -55,11 +60,6 @@ use std::path::Path;
 use std::process;
 use std::sync::Arc;
 use test_spec::TestCases;
-use std::collections::HashMap;
-use conjure_verification_common::conjure::ir::ServiceName;
-use conjure_verification_common::type_mapping::TypeForEndpointFn;
-use conjure_verification_common::type_mapping::return_type;
-use conjure_verification_common::type_mapping::type_of_non_index_arg;
 
 mod errors;
 mod raw_json;
@@ -94,27 +94,11 @@ fn main() {
     let ir = File::open(Path::new(ir_path)).unwrap();
     let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
-    // Declare how to map the types for each endpoint, by the service name.
-    const PACKAGE: &str = "com.palantir.conjure.verification.server";
-
-    fn service_name(s: &str) -> ServiceName {
-        ServiceName {
-            name: s.into(),
-            package: PACKAGE.into(),
-        }
-    }
-
-    let mut services_mapping: HashMap<ServiceName, TypeForEndpointFn> = HashMap::new();
-    services_mapping.insert(service_name("AutoDeserializeService"), return_type);
-    services_mapping.insert(service_name("SingleHeaderService"), type_of_non_index_arg);
-    services_mapping.insert(
-        service_name("SinglePathParamService"),
-        type_of_non_index_arg,
-    );
-    services_mapping.insert(
-        service_name("SingleQueryParamService"),
-        type_of_non_index_arg,
-    );
+    let mut services_mapping: HashMap<String, TypeForEndpointFn> = HashMap::new();
+    services_mapping.insert("AutoDeserializeService".to_string(), return_type);
+    services_mapping.insert("SingleHeaderService".to_string(), type_of_non_index_arg);
+    services_mapping.insert("SinglePathParamService".to_string(), type_of_non_index_arg);
+    services_mapping.insert("SingleQueryParamService".to_string(), type_of_non_index_arg);
 
     let mut builder = router::Router::builder();
     register_resource(
