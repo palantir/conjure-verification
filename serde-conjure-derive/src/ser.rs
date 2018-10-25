@@ -91,8 +91,7 @@ fn serialize_struct_body(fields: &FieldsNamed) -> TokenStream {
                     &self.#ident,
                 )?;
             }
-        })
-        .collect::<Vec<_>>();
+        }).collect::<Vec<_>>();
 
     quote! {
         let mut __serde_state =

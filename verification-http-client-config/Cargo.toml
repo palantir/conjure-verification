@@ -1,0 +1,14 @@
+[package]
+name = "conjure-verification-http-client-config"
+version = "0.10.0"
+authors = ["Steven Fackler <sfackler@palantir.com>"]
+
+[dependencies]
+serde = "1.0"
+serde_derive = "1.0"
+serde-humantime = "0.1.1"
+url = "1.0"
+url_serde = "0.2"
+
+[dev-dependencies]
+serde_json = "1.0"

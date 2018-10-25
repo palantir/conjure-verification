@@ -1,9 +1,13 @@
 [workspace]
 members = [
     "verification-server",
+    "verification-common",
     "verification-error",
     "verification-error-derive",
     "verification-http",
+    "verification-http-client",
+    "verification-http-client-config",
+    "verification-http-server",
     "serde-conjure",
     "serde-conjure-derive"
 ]

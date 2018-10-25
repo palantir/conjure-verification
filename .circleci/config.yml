@@ -33,7 +33,7 @@ jobs:
 
   cargo-build-linux:
     docker:
-    - image: circleci/rust:1.27
+    - image: circleci/rust:1.29.2
     environment:
       RUSTFLAGS: -D warnings
     steps:
@@ -42,7 +42,7 @@ jobs:
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
     - run: rustup component add rustfmt-preview
-    - run: cargo fmt --all -- --write-mode check
+    - run: cargo fmt --all -- --check
     - run: cargo test && cargo build --release
     - *SAVE_DEPS
     - *SAVE_REGISTRY
@@ -78,7 +78,7 @@ jobs:
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
-      RUST_CHANNEL: 1.27.0
+      RUST_CHANNEL: 1.29.2
       TARGET: x86_64-apple-darwin
     steps:
     - checkout

@@ -75,8 +75,7 @@ impl<'a> Request<'a> {
                         },
                     )
                 })
-            })
-            .collect()
+            }).collect()
     }
 
     pub fn query_param<T>(&self, name: &str) -> Result<T>
@@ -194,12 +193,10 @@ impl<'a> Request<'a> {
 
         match content_type(&accept, formats) {
             Some(ty) => Ok(ty),
-            None => {
-                return Err(Error::new_safe(
-                    "unable to select a response type",
-                    ConjureVerificationError::NotAcceptable,
-                ))
-            }
+            None => Err(Error::new_safe(
+                "unable to select a response type",
+                ConjureVerificationError::NotAcceptable,
+            )),
         }
     }
 
@@ -236,7 +233,8 @@ pub trait Format {
         }
 
         for (name, value) in other.params() {
-            if mime.get_param(name)
+            if mime
+                .get_param(name)
                 .map(|value2| value != value2)
                 .unwrap_or(false)
             {

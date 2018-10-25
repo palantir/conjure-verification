@@ -1,0 +1,360 @@
+server:
+  # auto-deserialize-service.conjure.yml
+  autoDeserialize:
+
+    # primitives
+    getBearerTokenExample:
+      positive:
+        - '{"value":"abc123"}'
+        - '{"value":"-._~+/="}'
+        - '{"value":"abc="}'
+        - '{"value":"a="}'
+      negative:
+        - '{"value":null}'
+        - '{}'
+        - '{"value":" space"}'
+        - '{"value":"space "}'
+        - '{"value":"with space"}'
+        - '{"value":""}'
+        - '{"value":"#"}'
+        - '{"value":" "}'
+        - '{"value":"("}'
+        - '{"value":"="}'
+        - '{"value":"=a"}'
+      # getBinaryExample: # TODO
+      # positive:
+      # negative:
+    #   - '{"value":}'
+    getBooleanExample:
+      positive:
+        - '{"value":false}'
+        - '{"value":true}'
+      negative:
+        - '{}'
+        - '{"value":null}'
+        - '{"value":0}'
+        - '{"value":"true"}'
+    getDateTimeExample:
+      positive:
+        - '{"value":"2017-01-02T03:04:05Z"}'
+        - '{"value":"2017-01-02T03:04:05.000Z"}'
+        - '{"value":"2017-01-02T03:04:05.000000Z"}'
+        - '{"value":"2017-01-02T03:04:05.000000000Z"}'
+        - '{"value":"2017-01-02T04:04:05.000000000+01:00"}'
+        - '{"value":"2017-01-02T05:04:05.000000000+02:00"}'
+      negative:
+        - '{"value":"4/3/2018"}'
+        - '{"value":"1523040070"}'
+        - '{"value":1523040070}'
+        - '{"value":"2017-01-02T03:04:05.0000000000Z"}'
+        - '{"value":"2017-01-02T04:04:05.000000000+01:00[Europe/Berlin]"}'
+    getDoubleExample:
+      positive:
+        - '{"value":1.23}'
+        - '{"value":0.0}'
+        - '{"value":-0.0}'
+        - '{"value":13}'
+        - '{"value":123e5}'
+        - '{"value":123e-5}'
+        - '{"value":"NaN"}'
+        - '{"value":"Infinity"}'
+        - '{"value":"-Infinity"}'
+      negative:
+        - '{"value":null}'
+        - '{}'
+        - '{"value":"1.23"}'
+        - '{"value":"nan"}'
+        - '{"value":nan}'
+    getIntegerExample:
+      positive:
+        - '{"value":-2147483648}'
+        - '{"value":0}'
+        - '{"value":2147483647}'
+      negative:
+        - '{"value":-2147483649}'
+        - '{"value":2147483648}'
+        - '{"value":null}'
+        - '{}'
+        - '{"value":1.23}'
+        - '{"value":"12"}'
+    getRidExample:
+      positive:
+        - '{"value":"ri.service.instance.folder.foo"}'
+        - '{"value":"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"}'
+        - '{"value":"ri.my-service.instance1.graph-node.._"}'
+        - '{"value":"ri.service.1instance.type.emptyname"}'
+        - '{"value":"ri.my-service..graph-node.noInstance"}'
+        - '{"value":"ri.my-service..graph-node.noInstance.multiple.extra.dots"}'
+      negative:
+        - '{"value":null}'
+        - '{}'
+        - '{"value":""}'
+        - '{"value":"badString"}'
+        - '{"value":"ri.service.CAPLOCK.type.name"}'
+        - '{"value":"ri.service.instance.-123.name"}'
+        - '{"value":"ri..instance.type.noService"}'
+        - '{"value":"ri.service.instance.type."}'
+        - '{"value":"id.bad.id.class.b.name"}'
+        - '{"value":"ri:service::instance:type:name"}'
+        - '{"value":"ri.service.instance.type.name!@#"}'
+        - '{"value":"ri.service(name)..folder.foo"}'
+    getSafeLongExample:
+      positive:
+        - '{"value":-9007199254740991}'
+        - '{"value":0}'
+        - '{"value":9007199254740991}'
+      negative:
+        - '{"value":null}'
+        - '{}'
+        - '{"value":-9007199254740992}'
+        - '{"value":9007199254740992}'
+        - '{"value":1.23}'
+        - '{"value":"12"}'
+    getStringExample:
+      positive:
+        - '{"value":"exampleOutput"}'
+        - '{"value":""}'
+      negative:
+        - '{"value":null}'
+        - '{}'
+        - '{"value":8}'
+    getUuidExample:
+      positive:
+        - '{"value":"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"}' # UUID v1
+        - '{"value":"80e6dd13-5f42-4e33-ad18-f73875540c8b"}' # UUID v4
+      negative:
+        - '{"value":null}'
+        - '{}'
+        - '{"value":""}'
+        - '{"value":"80e6dd13-5f42-4e33-ad18"}'
+    getAnyExample:
+      positive:
+        - '{"value":0}'
+        - '{"value":"content"}'
+        - '{"value":true}'
+        - '{"value":[1,2,3]}'
+        - '{"value":{"key":3}}'
+        - '{"value":{"key":{"inner-key":[1,2,3]}}}'
+      negative:
+        - '{"value":null}'
+
+
+    # collections
+    getListExample:
+      positive:
+        - '{"value":[]}'
+        - '{"value":["","a","b","c","a"]}'
+        - '{}'
+        # - '{"value":null}'
+        #   tag: "lenient"
+      negative:
+        - '{"value":{}}'
+        # - '{"value":null}'
+        #   tag: "!lenient"
+    getSetStringExample:
+      positive:
+        - '{"value":[]}'
+        - '{"value":["","a","b","c"]}'
+        - '{}'
+        # - '{"value":null}'
+        #   tag: "lenient"
+      negative:
+        # - '{"value":null}'
+        #   tag: "!lenient"
+        # TODO SPEC: behavior for an object declared as a "Set" that receives a list with multiple elements that are equal.
+        - '{"value":["a","a"]}'
+    getSetDoubleExample:
+      positive:
+        - '{"value":[]}'
+        - '{"value":[1.100, 1.2, 1.3]}'
+        - '{}'
+      negative:
+        - '{"value":[1.1, 1.10, 01.100]}'
+    getMapExample:
+      positive:
+        - '{"value":{"key":"value","key2":"value2"}}'
+        - '{}'
+        - '{"value":{}}'
+        # - '{"value":null}'
+        #   tag: "lenient"
+      negative:
+        - '{"value":{"key":[1,2,3]}}'
+        - '{"value":"not a map"}'
+        # - '{"value":null}'
+        #   tag: "!lenient"
+    getOptionalExample:
+      positive:
+        - '{}'
+        - '{"value":null}'
+        - '{"value":""}'
+        - '{"value":"foo"}'
+      negative:
+        - '{"value":{}}'
+        - '{"value":[]}'
+    getLongOptionalExample:
+      positive:
+        - '{}'
+        - '{"someLongName":null}'
+        - '{"someLongName":""}'
+        - '{"someLongName":"foo"}'
+      negative:
+        - '{"someLongName":{}}'
+        - '{"someLongName":[]}'
+    getRawOptionalExample:
+      positive:
+        - 'null'
+        - '1'
+      negative:
+        - '"not an integer"'
+
+    # complex aliases
+    getStringAliasExample:
+      positive:
+        - '"exampleOutput"'
+        - '""'
+      negative:
+        - 'null'
+        - '{}'
+        - '[]'
+    getDoubleAliasExample:
+      positive:
+        - '10'
+        - '10.0'
+        - '"NaN"'
+        - '"Infinity"'
+        - '"-Infinity"'
+      negative:
+        - 'null'
+        - '{}'
+        - '[]'
+        - '""'
+        - '"nan"'
+        - '"NAN"'
+        - '"infinity"'
+        - '"-infinity"'
+        - '"+Infinity"'
+    getIntegerAliasExample:
+      positive:
+        - '0'
+        - '123'
+      negative:
+        - 'null'
+        - '{}'
+        - '[]'
+        - '""'
+        - '123.4'
+    getBooleanAliasExample:
+      positive:
+        - 'true'
+        - 'false'
+      negative:
+        - 'null'
+        - '{}'
+        - '[]'
+        - '""'
+    getSafeLongAliasExample:
+      positive:
+        - '-9007199254740991'
+        - '0'
+        - '9007199254740991'
+      negative:
+        - '-9007199254740992'
+        - '9007199254740992'
+        - 'null'
+        - '{}'
+        - '[]'
+        - '""'
+    getRidAliasExample:
+      positive:
+        - '"ri.service.instance.folder.foo"'
+        - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
+        - '"ri.my-service.instance1.graph-node.._"'
+        - '"ri.service.1instance.type.emptyname"'
+        - '"ri.my-service..graph-node.noInstance"'
+        - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
+      negative:
+        - 'null'
+        - '{}'
+        - '""'
+        - '"badString"'
+        - '"ri.service.CAPLOCK.type.name"'
+        - '"ri.service.instance.-123.name"'
+        - '"ri..instance.type.noService"'
+        - '"ri.service.instance.type."'
+        - '"id.bad.id.class.b.name"'
+        - '"ri:service::instance:type:name"'
+        - '"ri.service.instance.type.name!@#"'
+        - '"ri.service(name)..folder.foo"'
+        - '{}'
+        - '[]'
+        - '""'
+    getBearerTokenAliasExample:
+      positive:
+        - '"abc123"'
+        - '"-._~+/="'
+        - '"abc="'
+        - '"a="'
+      negative:
+        - 'null'
+        - '{}'
+        - '[]'
+        - '""'
+    getUuidAliasExample:
+      positive:
+        - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
+        - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
+      negative:
+        - 'null'
+        - '{}'
+        - '[]'
+        - '""'
+        - '"80e6dd13-5f42-4e33-ad18"'
+    getReferenceAliasExample:
+      positive:
+        - '{"value":0}'
+        - '{"value":"content"}'
+        - '{"value":true}'
+        - '{"value":[1,2,3]}'
+        - '{"value":{"key":3}}'
+        - '{"value":{"key":{"inner-key":[1,2,3]}}}'
+      negative:
+        - 'null'
+        - '{{'
+    getDateTimeAliasExample:
+      positive:
+        - '"2017-01-02T03:04:05Z"'
+        - '"2017-01-02T03:04:05.000Z"'
+        - '"2017-01-02T03:04:05.000000Z"'
+        - '"2017-01-02T03:04:05.000000000Z"'
+        - '"2017-01-02T04:04:05.000000000+01:00"'
+        - '"2017-01-02T05:04:05.000000000+02:00"'
+      negative:
+        - '"4/3/2018"'
+        - '"1523040070"'
+        - '"1523040070'
+        - '"2017-01-02T03:04:05.0000000000Z"'
+        - '"2017-01-02T04:04:05.000000000+01:00[Europe/Berlin]"'
+        - 'null'
+        - '{}'
+        - '[]'
+        - '""'
+    # getBinaryAliasExample:
+    #   positive:
+    #     - ''
+    #   negative:
+    #     - 'null'
+    #     - '{}'
+    #     - '[]'
+    #     - '""'
+    getKebabCaseObjectExample:
+      positive:
+        - '{"kebab-cased-field":1}'
+      negative:
+        - '{"kebabCasedField":1}'
+        - '{"kebab_cased_field":1}'
+    getSnakeCaseObjectExample:
+      positive:
+        - '{"snake_cased_field":1}'
+      negative:
+        - '{"snakeCasedField":1}'
+        - '{"snake-cased-field":1}'

@@ -1,0 +1,169 @@
+types:
+  conjure-imports:
+    examples: example-types.conjure.yml
+
+services:
+  AutoDeserialiseService:
+    name: Test Service
+    package: com.palantir.conjure.verification.client
+    default-auth: none
+    endpoints:
+      # primitives
+      getBearerTokenExample:
+        http: POST /getBearerTokenExample
+        returns: examples.BearerTokenExample
+        args: { body: examples.BearerTokenExample }
+
+      # TODO(dfox): define a test-case for this
+      # getBinaryExample:
+      #   http: POST /getBinaryExample
+      #   returns: examples.BinaryExample
+      #   args: { body: examples.BinaryExample  }
+
+      getBooleanExample:
+        http: POST /getBooleanExample
+        returns: examples.BooleanExample
+        args: { body: examples.BooleanExample  }
+
+      getDateTimeExample:
+        http: POST /getDateTimeExample
+        returns: examples.DateTimeExample
+        args: { body: examples.DateTimeExample  }
+
+      getDoubleExample:
+        http: POST /getDoubleExample
+        returns: examples.DoubleExample
+        args: { body: examples.DoubleExample  }
+
+      getIntegerExample:
+        http: POST /getIntegerExample
+        returns: examples.IntegerExample
+        args: { body: examples.IntegerExample  }
+
+      getRidExample:
+        http: POST /getRidExample
+        returns: examples.RidExample
+        args: { body: examples.RidExample  }
+
+      getSafeLongExample:
+        http: POST /getSafeLongExample
+        returns: examples.SafeLongExample
+        args: { body: examples.SafeLongExample  }
+
+      getStringExample:
+        http: POST /getStringExample
+        returns: examples.StringExample
+        args: { body: examples.StringExample  }
+
+      getUuidExample:
+        http: POST /getUuidExample
+        returns: examples.UuidExample
+        args: { body: examples.UuidExample  }
+
+      getAnyExample:
+        http: POST /getAnyExample
+        returns: examples.AnyExample
+        args: { body: examples.AnyExample  }
+
+      # collections
+      getListExample:
+        http: POST /getListExample
+        returns: examples.ListExample
+        args: { body: examples.ListExample  }
+
+      getSetStringExample:
+        http: POST /getSetStringExample
+        returns: examples.SetStringExample
+        args: { body: examples.SetStringExample  }
+
+      getSetDoubleExample:
+        http: POST /getSetDoubleExample
+        returns: examples.SetDoubleExample
+        args: { body: examples.SetDoubleExample  }
+
+      getMapExample:
+        http: POST /getMapExample
+        returns: examples.MapExample
+        args: { body: examples.MapExample  }
+
+      getOptionalExample:
+        http: POST /getOptionalExample
+        returns: examples.OptionalExample
+        args: { body: examples.OptionalExample  }
+
+      getLongOptionalExample:
+        http: POST /getLongOptionalExample
+        returns: examples.LongOptionalExample
+        args: { body: examples.LongOptionalExample  }
+
+      getRawOptionalExample:
+        http: POST /getRawOptionalExample
+        returns: examples.RawOptionalExample
+        args: { body: examples.RawOptionalExample  }
+
+      # complex alias
+      getStringAliasExample:
+        http: POST /getStringAliasExample
+        returns: examples.StringAliasExample
+        args: { body: examples.StringAliasExample  }
+
+      getDoubleAliasExample:
+        http: POST /getDoubleAliasExample
+        returns: examples.DoubleAliasExample
+        args: { body: examples.DoubleAliasExample  }
+
+      getIntegerAliasExample:
+        http: POST /getIntegerAliasExample
+        returns: examples.IntegerAliasExample
+        args: { body: examples.IntegerAliasExample  }
+
+      getBooleanAliasExample:
+        http: POST /getBooleanAliasExample
+        returns: examples.BooleanAliasExample
+        args: { body: examples.BooleanAliasExample  }
+
+      getSafeLongAliasExample:
+        http: POST /getSafeLongAliasExample
+        returns: examples.SafeLongAliasExample
+        args: { body: examples.SafeLongAliasExample  }
+
+      getRidAliasExample:
+        http: POST /getRidAliasExample
+        returns: examples.RidAliasExample
+        args: { body: examples.RidAliasExample  }
+
+      getBearerTokenAliasExample:
+        http: POST /getBearerTokenAliasExample
+        returns: examples.BearerTokenAliasExample
+        args: { body: examples.BearerTokenAliasExample  }
+
+      getUuidAliasExample:
+        http: POST /getUuidAliasExample
+        returns: examples.UuidAliasExample
+        args: { body: examples.UuidAliasExample  }
+
+      getReferenceAliasExample:
+        http: POST /getReferenceAliasExample
+        returns: examples.ReferenceAliasExample
+        args: { body: examples.ReferenceAliasExample  }
+
+      getDateTimeAliasExample:
+        http: POST /getDateTimeAliasExample
+        returns: examples.DateTimeAliasExample
+        args: { body: examples.DateTimeAliasExample  }
+
+      # TODO(dfox): define a test case for this
+      # getBinaryAliasExample:
+      #   http: POST /getBinaryAliasExample
+      #   returns: examples.BinaryAliasExample
+      #   args: { body: examples.BinaryAliasExample  }
+
+      getKebabCaseObjectExample:
+        http: POST /getKebabCaseObjectExample
+        returns: examples.KebabCaseObjectExample
+        args: { body: examples.KebabCaseObjectExample  }
+
+      getSnakeCaseObjectExample:
+        http: POST /getSnakeCaseObjectExample
+        returns: examples.SnakeCaseObjectExample
+        args: { body: examples.SnakeCaseObjectExample  }

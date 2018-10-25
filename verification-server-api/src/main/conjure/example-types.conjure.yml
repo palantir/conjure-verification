@@ -1,0 +1,141 @@
+types:
+  definitions:
+    default-package: com.palantir.conjure.verification.server
+    objects:
+
+      # primitives: https://github.com/palantir/conjure/blob/develop/specification.md#primitiveDataTypes
+      BearerTokenExample: { fields: { value: bearertoken } }
+      BinaryExample: { fields: { value: binary } }
+      BooleanExample: { fields: { value: boolean } }
+      DateTimeExample: { fields: { value: datetime } }
+      DoubleExample: { fields: { value: double } }
+      IntegerExample: { fields: { value: integer } }
+      RidExample: { fields: { value: rid } }
+      SafeLongExample: { fields: { value: safelong } }
+      StringExample: { fields: { value: string } }
+      UuidExample: { fields: { value: uuid } }
+      AnyExample: { fields: { value: any } }
+
+      # collections: https://github.com/palantir/conjure/blob/develop/specification.md#collection-data-types
+      ListExample:
+        fields:
+          value: list<string>
+
+      SetStringExample:
+        fields:
+          value: set<string>
+
+      SetDoubleExample:
+        fields:
+          value: set<double>
+
+      MapExample:
+        fields:
+          value: map<string, string>
+      # AnyMapExample:
+      #   fields:
+      #     items: map<string, any>
+      # AliasAsMapKeyExample:
+      #   fields:
+      #     strings: map<StringAliasExample, ManyFieldExample>
+      #     rids: map<RidAliasExample, ManyFieldExample>
+      #     bearertokens: map<BearerTokenAliasExample, ManyFieldExample>
+      #     integers: map<IntegerAliasExample, ManyFieldExample>
+      #     # doubles: map<DoubleAliasExample, ManyFieldExample> # typescript freaks out with the 'NaN'
+      #     safelongs: map<SafeLongAliasExample, ManyFieldExample>
+      #     datetimes: map<DateTimeAliasExample, ManyFieldExample>
+      #     uuids: map<UuidAliasExample, ManyFieldExample>
+
+      OptionalExample: { fields: { value: optional<string> } }
+      LongOptionalExample: { fields: { someLongName: optional<string> } }
+
+      RawOptionalExample: { alias: optional<integer> }
+
+      # PrimitiveOptionalsExample:
+      #   fields:
+      #     num: optional<double>
+      #     bool: optional<boolean>
+      #     integer: optional<integer>
+      #     safelong: optional<safelong>
+      #     rid: optional<rid>
+      #     bearertoken: optional<bearertoken>
+      #     uuid: optional<uuid>
+
+      # complex: https://github.com/palantir/conjure/blob/develop/specification.md#complex-data-types
+
+      # complex alias
+      AliasString: { alias: string }
+      StringAliasExample: { alias: string }
+      DoubleAliasExample: { alias: double }
+      IntegerAliasExample: { alias: integer }
+      BooleanAliasExample: { alias: boolean }
+      SafeLongAliasExample: { alias: safelong }
+      RidAliasExample: { alias: rid }
+      BearerTokenAliasExample: { alias: bearertoken }
+      UuidAliasExample: { alias: uuid }
+      ReferenceAliasExample: { alias: AnyExample }
+      DateTimeAliasExample: { alias: datetime }
+      BinaryAliasExample: { alias: binary }
+
+      # complex enum
+      EnumExample:
+        values:
+          - ONE
+          - TWO
+      Enum:
+        values:
+          - ONE
+          - TWO
+      EnumFieldExample: { fields: { enum: EnumExample } }
+
+      # complex object
+      EmptyObjectExample:
+        fields: {}
+      ObjectExample:
+        fields:
+          string:
+            type: string
+            docs: docs for string field
+          integer:
+            type: integer
+            docs: docs for integer field
+          doubleValue:
+            type: double
+            docs: docs for doubleValue field
+          optionalItem:
+            type: optional<string>
+            docs: docs for optionalItem field
+          items:
+            type: list<string>
+            docs: docs for items field
+          set:
+            type: set<string>
+            docs: docs for set field
+          map:
+            type: map<string, string>
+            docs: docs for map field
+          alias:
+            type: StringAliasExample
+            docs: docs for alias field
+
+      KebabCaseObjectExample:
+        fields:
+          kebab-cased-field: integer
+
+      SnakeCaseObjectExample:
+        fields:
+          snake_cased_field: integer
+
+      # complex union
+      Union:
+        docs: A type which can either be a StringExample, a set of strings, or an integer.
+        union:
+          stringExample:
+            type: StringExample
+            docs: Docs for when UnionTypeExample is of type StringExample.
+          set: set<string>
+          thisFieldIsAnInteger: integer
+          alsoAnInteger: integer
+          if: integer # some 'bad' member names!
+          new: integer
+          interface: integer

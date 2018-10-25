@@ -1,0 +1,76 @@
+types:
+  conjure-imports:
+    examples: example-types.conjure.yml
+
+services:
+  SinglePathParamService:
+    name: Single Path Param Service
+    package: com.palantir.conjure.verification.server
+    default-auth: none
+
+    endpoints:
+#      pathParamBearertoken:
+#        http: POST /pathParamBearertoken/{index}/{bearertokenParam}
+#        args:
+#          index: integer
+#          bearertokenParam: bearertoken
+
+#      pathParamBinary:
+#        http: POST /pathParamBinary/{index}/{binaryParam}
+#        args:
+#          index: integer
+#          binaryParam: binary
+
+      pathParamBoolean:
+        http: POST /pathParamBoolean/{index}/{booleanParam}
+        args:
+          index: integer
+          booleanParam: boolean
+
+      pathParamDatetime:
+        http: POST /pathParamDatetime/{index}/{datetimeParam}
+        args:
+          index: integer
+          datetimeParam: datetime
+
+      pathParamDouble:
+        http: POST /pathParamDouble/{index}/{doubleParam}
+        args:
+          index: integer
+          doubleParam: double
+
+      pathParamInteger:
+        http: POST /pathParamInteger/{index}/{integerParam}
+        args:
+          index: integer
+          integerParam: integer
+
+      pathParamRid:
+        http: POST /pathParamRid/{index}/{ridParam}
+        args:
+          index: integer
+          ridParam: rid
+
+      pathParamSafelong:
+        http: POST /pathParamSafelong/{index}/{safelongParam}
+        args:
+          index: integer
+          safelongParam: safelong
+
+      pathParamString:
+        http: POST /pathParamString/{index}/{stringParam}
+        args:
+          index: integer
+          stringParam: string
+
+      pathParamUuid:
+        http: POST /pathParamUuid/{index}/{uuidParam}
+        args:
+          index: integer
+          uuidParam: uuid
+
+      pathParamAliasString:
+        http: POST /pathParamAliasString/{index}/{aliasStringParam}
+        args:
+          index: integer
+          aliasStringParam: examples.AliasString

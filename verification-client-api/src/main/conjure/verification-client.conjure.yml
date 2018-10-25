@@ -1,0 +1,23 @@
+types:
+  conjure-imports:
+    testCases: test-cases.conjure.yml
+
+  definitions:
+    default-package: com.palantir.conjure.verification.client
+    objects:
+      VerificationClientRequest:
+        fields:
+          endpointName: testCases.EndpointName
+          testCase: integer
+          baseUrl: string
+
+services:
+  VerificationClientService:
+    name: Verification Client Service
+    package: com.palantir.conjure.verification.client
+    default-auth: none
+    endpoints:
+      runTestCase:
+        http: POST /runTestCase
+        args:
+          body: VerificationClientRequest
