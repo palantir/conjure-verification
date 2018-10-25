@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[macro_use]
-extern crate derive_more;
-#[macro_use]
-extern crate conjure_verification_error_derive;
+extern crate bytes;
 #[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
-
-extern crate bytes;
 extern crate conjure_verification_error;
+#[macro_use]
+extern crate conjure_verification_error_derive;
 extern crate conjure_verification_http;
 extern crate conjure_verification_http_server;
 extern crate core;
+#[macro_use]
+extern crate derive_more;
 extern crate either;
 extern crate futures;
 extern crate http;
@@ -35,17 +34,15 @@ extern crate serde_json;
 extern crate serde_plain;
 extern crate typed_headers;
 
-pub use conjure_verification_http_server::*;
-
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
-use conjure_verification_common::conjure::ir::ServiceName;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::test_spec;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::type_of_non_index_arg;
 use conjure_verification_common::type_mapping::TypeForEndpointFn;
+pub use conjure_verification_http_server::*;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
