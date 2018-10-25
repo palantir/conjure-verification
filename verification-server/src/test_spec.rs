@@ -48,15 +48,15 @@ pub struct AutoDeserializeNegativeTest(pub String);
 
 #[allow(dead_code)]
 pub fn from_yaml_file<R>(rdr: R) -> serde_yaml::Result<TestCases>
-    where
-        R: io::Read,
+where
+    R: io::Read,
 {
     serde_yaml::from_reader(rdr)
 }
 
 pub fn from_json_file<R>(rdr: R) -> serde_json::Result<TestCases>
-    where
-        R: io::Read,
+where
+    R: io::Read,
 {
     serde_json::from_reader(rdr)
 }
