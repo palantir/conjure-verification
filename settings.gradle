@@ -2,3 +2,5 @@ rootProject.name = 'conjure-verification'
 
 include 'verification-api'
 include 'verification-api:verification-api-objects'
+
+enableFeaturePreview('STABLE_PUBLISHING')
