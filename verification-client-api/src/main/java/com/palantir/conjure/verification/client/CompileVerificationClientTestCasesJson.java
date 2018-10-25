@@ -59,7 +59,7 @@ public final class CompileVerificationClientTestCasesJson {
 
         checkEndpointNamesMatchPaths(ir);
         checkNoLeftovers(serverTestCases.getAutoDeserialize().keySet(),
-                serviceByName(ir, "AutoDeserialiseService"));
+                serviceByName(ir, "AutoDeserializeService"));
     }
 
     private static long countPositiveAndNegative(Map<EndpointName, PositiveAndNegativeTestCases> tests) {
