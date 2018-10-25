@@ -13,10 +13,7 @@
 // limitations under the License.
 
 pub use conjure_verification_common::test_spec::EndpointName;
-use serde_json;
-use serde_yaml;
 use std::collections::HashMap;
-use std::io;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -46,32 +43,18 @@ pub struct AutoDeserializePositiveTest(pub String);
 #[derive(Deserialize, Debug, Eq, PartialEq, Clone, From)]
 pub struct AutoDeserializeNegativeTest(pub String);
 
-#[allow(dead_code)]
-pub fn from_yaml_file<R>(rdr: R) -> serde_yaml::Result<TestCases>
-where
-    R: io::Read,
-{
-    serde_yaml::from_reader(rdr)
-}
-
-pub fn from_json_file<R>(rdr: R) -> serde_json::Result<TestCases>
-where
-    R: io::Read,
-{
-    serde_json::from_reader(rdr)
-}
-
 #[cfg(test)]
 mod test {
-    use super::*;
+    use serde_yaml;
     use std::fs::File;
     use std::path::Path;
+    use super::*;
 
     const TEST_CASES_PATH: &str = "../verification-server-api/test-cases.yml";
 
     #[test]
     fn deserializes_test_cases() {
         let f = File::open(Path::new(TEST_CASES_PATH)).unwrap();
-        from_yaml_file(f).unwrap();
+        serde_yaml::from_reader::<_, TestCases>(f).unwrap();
     }
 }

@@ -87,7 +87,7 @@ fn main() {
     // Read the test cases file.
     let test_cases_path: &str = &args[1];
     let test_cases = File::open(Path::new(test_cases_path)).unwrap();
-    let test_cases: Box<TestCases> = Box::new(test_spec::from_json_file(test_cases).unwrap());
+    let test_cases: Box<TestCases> = Box::new(serde_json::from_reader(test_cases).unwrap());
 
     // Read the conjure IR.
     let ir_path: &str = &args[2];
