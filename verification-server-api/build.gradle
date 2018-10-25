@@ -11,7 +11,7 @@ dependencies {
 }
 
 task compileTestCasesJson(type: JavaExec) {
-   main = "com.palantir.conjure.verification.server.CompileTestCasesJson"
+   main = "com.palantir.conjure.verification.server.CompileVerificationServerTestCasesJson"
    classpath = sourceSets.main.runtimeClasspath
 
    inputs.file 'test-cases.yml'
