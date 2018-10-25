@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use self::client_config::ServiceConfig;
-use self::client_config::ServiceDiscoveryConfig;
 use conjure::resolved_type::ResolvedType;
 use conjure::value::*;
 use conjure_verification_error::Code;
@@ -25,10 +23,10 @@ use conjure_verification_http::resource::Route;
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http_client::body::BytesBody;
+use conjure_verification_http_client::Client;
 use conjure_verification_http_client::config as client_config;
 use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
-use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
 use core;
 use either::{Either, Left, Right};
@@ -36,6 +34,8 @@ use errors::*;
 use http::Method;
 use mime::APPLICATION_JSON;
 use more_serde_json;
+use self::client_config::ServiceConfig;
+use self::client_config::ServiceDiscoveryConfig;
 use serde_json;
 use std::collections::HashMap;
 use std::string::ToString;
@@ -79,13 +79,6 @@ impl VerificationClientResource {
             "Unable to find corresponding test case",
             VerificationError::InvalidEndpointParameter { endpoint_name },
         ))
-    }
-
-    fn parse_index(request: &Request) -> Result<usize> {
-        request
-            .path_param("index")
-            .parse()
-            .map_err(|err| Error::new_safe(err, Code::InvalidArgument))
     }
 
     fn handle_auto_deserialize_test(
