@@ -28,6 +28,8 @@ extern crate either;
 extern crate futures;
 extern crate http;
 extern crate hyper;
+#[macro_use]
+extern crate log;
 extern crate mime;
 extern crate pretty_env_logger;
 extern crate serde_conjure;
