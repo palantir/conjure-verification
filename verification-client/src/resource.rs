@@ -120,19 +120,22 @@ impl VerificationClientResource {
                 // We deserialize into serde_json::Value first because .body()'s return type needs
                 // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
                 let response_body_value: serde_json::Value = response.body()?;
-                let response_body = conjure_type.deserialize(&response_body_value).map_err(|e| {
-                    let error_message = format!("{}", e);
-                    Error::new_safe(
-                        e,
-                        VerificationError::confirmation_failure(
-                            &test_body_str,
-                            &expected_body,
-                            &response_body_value,
-                            None,
-                            error_message,
-                        ),
-                    )
-                })?;
+                let response_body =
+                    conjure_type
+                        .deserialize(&response_body_value)
+                        .map_err(|e| {
+                            let error_message = format!("{}", e);
+                            Error::new_safe(
+                                e,
+                                VerificationError::confirmation_failure(
+                                    &test_body_str,
+                                    &expected_body,
+                                    &response_body_value,
+                                    None,
+                                    error_message,
+                                ),
+                            )
+                        })?;
 
                 // Compare response_body with what the test case says we sent
                 if response_body != expected_body {
