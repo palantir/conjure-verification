@@ -18,7 +18,7 @@ use std::fmt::Display;
 use test_spec::EndpointName;
 
 #[derive(ErrorType)]
-#[error_type(namespace = "ConjureVerification")]
+#[error_type(namespace = "ConjureVerificationClient")]
 pub enum VerificationError {
     #[error_type(code = "InvalidArgument")]
     InvalidEndpointParameter {
