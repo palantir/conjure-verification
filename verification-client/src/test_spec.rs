@@ -42,10 +42,10 @@ pub struct AutoDeserializeNegativeTest(pub String);
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use serde_yaml;
     use std::fs::File;
     use std::path::Path;
-    use super::*;
 
     const TEST_CASES_PATH: &str = "../verification-client-api/test-cases.yml";
 
