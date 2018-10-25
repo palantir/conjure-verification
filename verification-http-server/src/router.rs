@@ -11,11 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 use conjure_verification_error::Result;
-use conjure_verification_http::request::Request;
-use conjure_verification_http::resource::{NewRoute, Resource, Route};
-use conjure_verification_http::response::{IntoResponse, Response};
 use hyper::Method;
+use request::Request;
+use resource::{NewRoute, Resource, Route};
+use response::{IntoResponse, Response};
 use route_recognizer::{self, Params};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;

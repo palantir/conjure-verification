@@ -1,20 +1,16 @@
 [package]
-name = "conjure-verification-server"
+name = "conjure-verification-http-server"
 version = "0.1.0"
 authors = ["Dan Sanduleac <dsanduleac@palantir.com>"]
 license-file = "../LICENSE"
 
 [dependencies]
-conjure-verification-common = { path = "../verification-common" }
 conjure-verification-http = { path = "../verification-http" }
-conjure-verification-http-server = { path = "../verification-http-server" }
 conjure-verification-error = { path = "../verification-error" }
 conjure-verification-error-derive = { path = "../verification-error-derive" }
-serde-conjure = { path = "../serde-conjure" }
 
 bytes = "0.4"
-derive_more = "0.11"
-either = "1.5"
+flate2 = "1.0"
 futures = "0.1.21"
 http = "0.1"
 hyper = "0.12"
@@ -22,8 +18,9 @@ itertools = "0.7.4"
 lazy_static = "1.0"
 log = "0.4"
 mime = "0.3"
-pretty_env_logger = "0.2"
+route-recognizer = "0.1.12"
 serde = "1.0"
 serde_json = "1.0"
-serde_plain = "0.3"
+tokio = "0.1"
 typed-headers = "0.1"
+url = "1.0"
