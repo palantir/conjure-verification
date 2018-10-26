@@ -1,5 +1,4 @@
 apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
-apply plugin: 'maven-publish'
 apply plugin: 'com.palantir.conjure'
 
 dependencies {
