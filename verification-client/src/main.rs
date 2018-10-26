@@ -13,7 +13,6 @@
 // limitations under the License.
 
 extern crate bytes;
-#[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
 extern crate conjure_verification_error;
 #[macro_use]
