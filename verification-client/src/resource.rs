@@ -42,6 +42,11 @@ use test_spec::*;
 use zipkin::Endpoint;
 use zipkin::Tracer;
 
+lazy_static! {
+    static ref USER_AGENT: UserAgent =
+        UserAgent::new(Agent::new("conjure-verification-client", "0.0.0"));
+}
+
 pub struct VerificationClientResource {
     test_cases: Box<ServerTestCases>,
     param_types: Box<HashMap<EndpointName, ResolvedType>>,
@@ -178,7 +183,7 @@ impl VerificationClientResource {
         let service_name = "serviceUnderTest";
         Client::new_static(
             service_name,
-            UserAgent::new(Agent::new("conjure-verification-client", "0.0.0")),
+            USER_AGENT.clone(),
             &Tracer::builder().build(Endpoint::builder().build()),
             &ServiceDiscoveryConfig::builder()
                 .service(
