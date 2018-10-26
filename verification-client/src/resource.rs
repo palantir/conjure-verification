@@ -162,6 +162,7 @@ impl VerificationClientResource {
             .headers()
             .typed_get::<ContentType>()
             .map_err(Error::internal_safe);
+
         // We deserialize into serde_json::Value first because .body()'s return type needs
         // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
         let response_body_value: serde_json::Value = response.body()?;
@@ -180,6 +181,7 @@ impl VerificationClientResource {
                     ),
                 )
             })?;
+
         let test_case_is_empty_container = {
             match expected_body {
                 ConjureValue::Optional(None) => true,
