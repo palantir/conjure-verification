@@ -26,14 +26,14 @@ pub enum VerificationError {
         #[error_type(safe)]
         endpoint_name: EndpointName,
     },
-    #[error_type(code = "InvalidArgument")]
+    #[error_type(code = "FailedPrecondition")]
     UnexpectedBody { body_size: usize },
-    #[error_type(code = "InvalidArgument")]
+    #[error_type(code = "FailedPrecondition")]
     UnexpectedContentType {
         #[error_type(safe)]
         content_type: String,
     },
-    #[error_type(code = "InvalidArgument")]
+    #[error_type(code = "FailedPrecondition")]
     ConfirmationFailure {
         #[error_type(safe)]
         expected_body_raw: String,
