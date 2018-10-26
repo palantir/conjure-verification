@@ -33,6 +33,8 @@ use conjure_verification_http_server::RouteWithOptions;
 use either::{Either, Left, Right};
 use errors::*;
 use http::Method;
+use hyper::header::HeaderValue;
+use hyper::header::ACCEPT;
 use mime::APPLICATION_JSON;
 use more_serde_json;
 use serde_json;
@@ -102,6 +104,10 @@ impl VerificationClientResource {
         let client = VerificationClientResource::construct_client(&client_request.base_url)?;
         let mut builder = client.post("/:endpoint");
         builder.param("endpoint", &endpoint.0);
+        builder.headers_mut().insert(
+            ACCEPT,
+            HeaderValue::from_static("*/*; q=0.5, application/json"),
+        );
         match test_case {
             Left(positive) => {
                 let test_body_str = positive.0;
