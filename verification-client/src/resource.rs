@@ -16,7 +16,6 @@ use self::client_config::ServiceConfig;
 use self::client_config::ServiceDiscoveryConfig;
 use conjure::resolved_type::ResolvedType;
 use conjure::value::*;
-use conjure_verification_error::Code;
 use conjure_verification_error::Error;
 use conjure_verification_error::Result;
 use conjure_verification_http::request::Request;
@@ -132,13 +131,6 @@ impl VerificationClientResource {
         positive: AutoDeserializePositiveTest,
     ) -> Result<()> {
         let test_body_str = positive.0;
-        let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
-        let expected_body = deserialize_expected_value(
-            conjure_type,
-            test_body_str.as_str(),
-            &endpoint,
-            client_request.test_case,
-        )?;
         let response = builder
             .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
             .send()
@@ -168,38 +160,27 @@ impl VerificationClientResource {
             .typed_get::<ContentType>()
             .map_err(Error::internal_safe);
 
+        let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
+        let expected_body = deserialize_expected_value(
+            conjure_type,
+            test_body_str.as_str(),
+            &endpoint,
+            client_request.test_case,
+        )?;
+
         // We deserialize into serde_json::Value first because .body()'s return type needs
         // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
         let response_body_value: serde_json::Value = response.body()?;
-        let response_body = conjure_type
-            .deserialize(&response_body_value)
-            .map_err(|e| {
-                let error_message = format!("{}", e);
-                Error::new_safe(
-                    e,
-                    VerificationError::confirmation_failure(
-                        &test_body_str,
-                        &expected_body,
-                        &response_body_value,
-                        None,
-                        error_message,
-                    ),
-                )
-            })?;
+        let response_body = VerificationClientResource::try_parse_response_body(
+            conjure_type,
+            &response_body_value,
+        )?;
 
-        let test_case_is_empty_container = {
-            match expected_body {
-                ConjureValue::Optional(None) => true,
-                ConjureValue::List(ref vec) if vec.is_empty() => true,
-                ConjureValue::Set(ref vec) if vec.is_empty() => true,
-                ConjureValue::Map(ref map) if map.is_empty() => true,
-                _ => false,
-            }
-        };
-
-        // Edge case: if we expect an empty value (optional, list, set, map), then the
-        // server is also allowed to reply with 204
-        if test_case_is_empty_container && response_status == StatusCode::NO_CONTENT {
+        // Edge case: if we expect an empty value (optional, list, set, map), then the server is
+        // also allowed to reply with 204
+        if VerificationClientResource::is_empty_container(&expected_body)
+            && response_status == StatusCode::NO_CONTENT
+        {
             debug!("Accepting 204 response to empty test case {{testCase: {}, endpoint: {}, testCaseContents: {}}}",
                    client_request.test_case, client_request.endpoint_name, test_body_str);
             return Ok(());
@@ -230,6 +211,34 @@ impl VerificationClientResource {
         }
 
         Ok(())
+    }
+
+    fn try_parse_response_body(
+        conjure_type: &ResolvedType,
+        response_body_value: &serde_json::Value,
+    ) -> Result<ConjureValue> {
+        conjure_type.deserialize(response_body_value).map_err(|e| {
+            let error_message = format!("{}", e);
+            Error::new_safe(
+                e,
+                VerificationError::CouldNotParseServerResponse {
+                    response_body: response_body_value.to_string(),
+                    cause: error_message,
+                },
+            )
+        })
+    }
+
+    /// Checks whether the given [ConjureValue] is an "empty container", i.e. it can be deserialized
+    /// from a NO_CONTENT response.
+    fn is_empty_container(value: &ConjureValue) -> bool {
+        match value {
+            ConjureValue::Optional(None) => true,
+            ConjureValue::List(ref vec) if vec.is_empty() => true,
+            ConjureValue::Set(ref vec) if vec.is_empty() => true,
+            ConjureValue::Map(ref map) if map.is_empty() => true,
+            _ => false,
+        }
     }
 
     fn check_negative_test_case(
