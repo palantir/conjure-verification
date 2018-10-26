@@ -32,9 +32,10 @@ use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
 use either::{Either, Left, Right};
 use errors::*;
-use http::Method;
 use hyper::header::HeaderValue;
 use hyper::header::ACCEPT;
+use hyper::Method;
+use hyper::StatusCode;
 use mime::APPLICATION_JSON;
 use more_serde_json;
 use serde_json;
@@ -130,7 +131,8 @@ impl VerificationClientResource {
                             VerificationError::ServerUnderTestConnectionError { cause },
                         )
                     })?;
-                if !response.status().is_success() {
+                let response_status = response.status();
+                if !response_status.is_success() {
                     return Err(Error::new_safe("Wasn't successful", Code::InvalidArgument));
                 }
 
@@ -153,6 +155,13 @@ impl VerificationClientResource {
                                 ),
                             )
                         })?;
+
+                // Edge case: if we expect a null, then the server is also allowed to reply with 204
+                if test_body_str == "null" && response_status == StatusCode::NO_CONTENT {
+                    debug!("Accepting 204 response to literal 'null' test case {testCase: {}, endpoint: {}}",
+                        client_request.test_case(), client_request.endpoint());
+                    return Ok(NoContent);
+                }
 
                 // Compare response_body with what the test case says we sent
                 if response_body != expected_body {
