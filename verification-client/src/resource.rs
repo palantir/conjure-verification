@@ -26,6 +26,7 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http_client::body::BytesBody;
 use conjure_verification_http_client::config as client_config;
+use conjure_verification_http_client::request::RequestBuilder;
 use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
 use conjure_verification_http_client::Client;
@@ -208,20 +209,28 @@ impl VerificationClientResource {
             }
 
             Right(negative) => {
-                let response = builder
-                    .body(BytesBody::new(negative.0, APPLICATION_JSON))
-                    .send()?;
-                if !response.status().is_client_error() {
-                    return Err(Error::new_safe(
-                        "Unexpected response, expected client error",
-                        VerificationError::UnexpectedResponseCode {
-                            code: response.status(),
-                        },
-                    ));
-                }
+                VerificationClientResource::check_negative_test_case(&mut builder, negative)?;
             }
         };
         Ok(NoContent)
+    }
+
+    fn check_negative_test_case(
+        builder: &mut RequestBuilder,
+        negative: AutoDeserializeNegativeTest,
+    ) -> Result<()> {
+        let response = builder
+            .body(BytesBody::new(negative.0, APPLICATION_JSON))
+            .send()?;
+        if !response.status().is_client_error() {
+            return Err(Error::new_safe(
+                "Unexpected response, expected client error",
+                VerificationError::UnexpectedResponseCode {
+                    code: response.status(),
+                },
+            ));
+        }
+        Ok(())
     }
 
     /// Assert content-type header matches one of the expected ones.
