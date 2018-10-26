@@ -28,11 +28,7 @@ publishing {
                 builtBy compileIr
             }
         }
-    }
-}
 
-publishing {
-    publications {
         testCases(MavenPublication) {
             artifactId "verification-client-test-cases"
             artifact (compileTestCasesJson.outputs.files.singleFile) {
