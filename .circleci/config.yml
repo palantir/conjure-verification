@@ -163,4 +163,4 @@ workflows:
             - cargo-build-linux
             - cargo-build-osx
             - gradle-build
-          filters: { tags: { only: /.*/ } }
+          filters: { branches: { ignore: /.*/ }, tags: { only: /.*/ } }
