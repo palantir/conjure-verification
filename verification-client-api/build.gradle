@@ -1,4 +1,5 @@
 apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
+apply plugin: 'maven-publish'
 apply plugin: 'com.palantir.conjure'
 
 dependencies {
@@ -18,6 +19,18 @@ task compileTestCasesJson(type: JavaExec) {
 }
 
 build.dependsOn compileTestCasesJson
+
+publishing {
+    publications {
+        conjureIr(MavenPublication) {
+            artifactId project.name
+            artifact (compileIr.outputs.files.singleFile) {
+                extension 'conjure.json'
+                builtBy compileIr
+            }
+        }
+    }
+}
 
 publishing {
     publications {
