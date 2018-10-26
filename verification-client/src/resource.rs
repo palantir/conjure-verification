@@ -37,11 +37,13 @@ use hyper::header::ACCEPT;
 use hyper::Method;
 use hyper::StatusCode;
 use mime::APPLICATION_JSON;
+use mime::APPLICATION_OCTET_STREAM;
 use more_serde_json;
 use serde_json;
 use std::collections::HashMap;
 use std::string::ToString;
 use test_spec::*;
+use typed_headers::{ContentType, HeaderMapExt};
 use zipkin::Endpoint;
 use zipkin::Tracer;
 
@@ -136,6 +138,12 @@ impl VerificationClientResource {
                     return Err(Error::new_safe("Wasn't successful", Code::InvalidArgument));
                 }
 
+                // Have to save this before the response is consumed by `Response::body`
+                let content_type = response
+                    .headers()
+                    .typed_get::<ContentType>()
+                    .map_err(Error::internal_safe);
+
                 // We deserialize into serde_json::Value first because .body()'s return type needs
                 // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
                 let response_body_value: serde_json::Value = response.body()?;
@@ -174,6 +182,15 @@ impl VerificationClientResource {
                     return Ok(NoContent);
                 }
 
+                // At this point, we have concluded we don't expect a 204.
+                // Thus, we expect a 200 with either OCTET_STREAM or APPLICATION_JSON.
+                VerificationClientResource::assert_content_type(
+                    content_type?,
+                    &mut vec![APPLICATION_JSON, APPLICATION_OCTET_STREAM]
+                        .into_iter()
+                        .map(|mime| Some(ContentType(mime))),
+                )?;
+
                 // Compare response_body with what the test case says we sent
                 if response_body != expected_body {
                     let error = "Body didn't match expected Conjure value";
@@ -203,6 +220,25 @@ impl VerificationClientResource {
             }
         };
         Ok(NoContent)
+    }
+
+    /// Assert content-type header matches one of the expected ones.
+    fn assert_content_type<ExpectedTypes: Iterator<Item = Option<ContentType>>>(
+        response_content_type: Option<ContentType>,
+        expected_content_types: &mut ExpectedTypes,
+    ) -> Result<()> {
+        if expected_content_types.any(|expected| expected == response_content_type) {
+            Ok(())
+        } else {
+            return Err(Error::new_safe(
+                "Did not expect content type",
+                VerificationError::UnexpectedContentType {
+                    content_type: response_content_type
+                        .map(|ct| ct.to_string())
+                        .unwrap_or("<empty>".to_string()),
+                },
+            ));
+        }
     }
 
     fn construct_client(base_url: &str) -> Result<Client> {
