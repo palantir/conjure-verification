@@ -106,7 +106,16 @@ impl VerificationClientResource {
                 )?;
                 let response = builder
                     .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
-                    .send()?;
+                    .send()
+                    .map_err(|e| {
+                        // Unpack error cause to expose it to user.
+                        let cause = e.cause().to_string();
+                        // TODO format error cause nicely
+                        Error::new_safe(
+                            "Failed to connect to server under test",
+                            VerificationError::ServerUnderTestConnectionError { cause },
+                        )
+                    })?;
                 if !response.status().is_success() {
                     return Err(Error::new_safe("Wasn't successful", Code::InvalidArgument));
                 }

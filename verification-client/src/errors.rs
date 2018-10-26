@@ -45,6 +45,11 @@ pub enum VerificationError {
         #[error_type(safe)]
         cause: String,
     },
+    #[error_type(code = "FailedPrecondition")]
+    ServerUnderTestConnectionError {
+        #[error_type(safe)]
+        cause: String,
+    },
     #[error_type(code = "InvalidArgument")]
     IndexOutOfBounds {
         #[error_type(safe)]
