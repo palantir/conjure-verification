@@ -114,98 +114,7 @@ impl VerificationClientResource {
         );
         match test_case {
             Left(positive) => {
-                let test_body_str = positive.0;
-                let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
-                let expected_body = deserialize_expected_value(
-                    conjure_type,
-                    test_body_str.as_str(),
-                    &endpoint,
-                    client_request.test_case,
-                )?;
-                let response = builder
-                    .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
-                    .send()
-                    .map_err(|e| {
-                        // Unpack error cause to expose it to user.
-                        let cause = e.cause().to_string();
-                        // TODO format error cause nicely
-                        Error::new_safe(
-                            "Failed to connect to server under test",
-                            VerificationError::ServerUnderTestConnectionError { cause },
-                        )
-                    })?;
-                let response_status = response.status();
-                if !response_status.is_success() {
-                    return Err(Error::new_safe("Wasn't successful", Code::InvalidArgument));
-                }
-
-                // Have to save this before the response is consumed by `Response::body`
-                let content_type = response
-                    .headers()
-                    .typed_get::<ContentType>()
-                    .map_err(Error::internal_safe);
-
-                // We deserialize into serde_json::Value first because .body()'s return type needs
-                // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
-                let response_body_value: serde_json::Value = response.body()?;
-                let response_body =
-                    conjure_type
-                        .deserialize(&response_body_value)
-                        .map_err(|e| {
-                            let error_message = format!("{}", e);
-                            Error::new_safe(
-                                e,
-                                VerificationError::confirmation_failure(
-                                    &test_body_str,
-                                    &expected_body,
-                                    &response_body_value,
-                                    None,
-                                    error_message,
-                                ),
-                            )
-                        })?;
-
-                let test_case_is_empty_container = {
-                    match expected_body {
-                        ConjureValue::Optional(None) => true,
-                        ConjureValue::List(ref vec) if vec.is_empty() => true,
-                        ConjureValue::Set(ref vec) if vec.is_empty() => true,
-                        ConjureValue::Map(ref map) if map.is_empty() => true,
-                        _ => false,
-                    }
-                };
-
-                // Edge case: if we expect an empty value (optional, list, set, map), then the
-                // server is also allowed to reply with 204
-                if test_case_is_empty_container && response_status == StatusCode::NO_CONTENT {
-                    debug!("Accepting 204 response to empty test case {{testCase: {}, endpoint: {}, testCaseContents: {}}}",
-                        client_request.test_case, client_request.endpoint_name, test_body_str);
-                    return Ok(NoContent);
-                }
-
-                // At this point, we have concluded we don't expect a 204.
-                // Thus, we expect a 200 with either OCTET_STREAM or APPLICATION_JSON.
-                VerificationClientResource::assert_content_type(
-                    content_type?,
-                    &mut vec![APPLICATION_JSON, APPLICATION_OCTET_STREAM]
-                        .into_iter()
-                        .map(|mime| Some(ContentType(mime))),
-                )?;
-
-                // Compare response_body with what the test case says we sent
-                if response_body != expected_body {
-                    let error = "Body didn't match expected Conjure value";
-                    return Err(Error::new_safe(
-                        error,
-                        VerificationError::confirmation_failure(
-                            &test_body_str,
-                            &expected_body,
-                            &response_body_value,
-                            Some(&response_body),
-                            "",
-                        ),
-                    ));
-                }
+                self.check_positive_test_case(client_request, &endpoint, &mut builder, positive)?;
             }
 
             Right(negative) => {
@@ -213,6 +122,107 @@ impl VerificationClientResource {
             }
         };
         Ok(NoContent)
+    }
+
+    fn check_positive_test_case(
+        &self,
+        client_request: &ClientRequest,
+        endpoint: &EndpointName,
+        builder: &mut RequestBuilder,
+        positive: AutoDeserializePositiveTest,
+    ) -> Result<()> {
+        let test_body_str = positive.0;
+        let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
+        let expected_body = deserialize_expected_value(
+            conjure_type,
+            test_body_str.as_str(),
+            &endpoint,
+            client_request.test_case,
+        )?;
+        let response = builder
+            .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
+            .send()
+            .map_err(|e| {
+                // Unpack error cause to expose it to user.
+                let cause = e.cause().to_string();
+                // TODO format error cause nicely
+                Error::new_safe(
+                    "Failed to connect to server under test",
+                    VerificationError::ServerUnderTestConnectionError { cause },
+                )
+            })?;
+
+        let response_status = response.status();
+        if !response_status.is_success() {
+            return Err(Error::new_safe("Wasn't successful", Code::InvalidArgument));
+        }
+
+        // Have to save this before the response is consumed by `Response::body`
+        let content_type = response
+            .headers()
+            .typed_get::<ContentType>()
+            .map_err(Error::internal_safe);
+        // We deserialize into serde_json::Value first because .body()'s return type needs
+        // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
+        let response_body_value: serde_json::Value = response.body()?;
+        let response_body = conjure_type
+            .deserialize(&response_body_value)
+            .map_err(|e| {
+                let error_message = format!("{}", e);
+                Error::new_safe(
+                    e,
+                    VerificationError::confirmation_failure(
+                        &test_body_str,
+                        &expected_body,
+                        &response_body_value,
+                        None,
+                        error_message,
+                    ),
+                )
+            })?;
+        let test_case_is_empty_container = {
+            match expected_body {
+                ConjureValue::Optional(None) => true,
+                ConjureValue::List(ref vec) if vec.is_empty() => true,
+                ConjureValue::Set(ref vec) if vec.is_empty() => true,
+                ConjureValue::Map(ref map) if map.is_empty() => true,
+                _ => false,
+            }
+        };
+
+        // Edge case: if we expect an empty value (optional, list, set, map), then the
+        // server is also allowed to reply with 204
+        if test_case_is_empty_container && response_status == StatusCode::NO_CONTENT {
+            debug!("Accepting 204 response to empty test case {{testCase: {}, endpoint: {}, testCaseContents: {}}}",
+                   client_request.test_case, client_request.endpoint_name, test_body_str);
+            return Ok(());
+        }
+
+        // At this point, we have concluded we don't expect a 204.
+        // Thus, we expect a 200 with either OCTET_STREAM or APPLICATION_JSON.
+        VerificationClientResource::assert_content_type(
+            content_type?,
+            &mut vec![APPLICATION_JSON, APPLICATION_OCTET_STREAM]
+                .into_iter()
+                .map(|mime| Some(ContentType(mime))),
+        )?;
+
+        // Compare response_body with what the test case says we sent
+        if response_body != expected_body {
+            let error = "Body didn't match expected Conjure value";
+            return Err(Error::new_safe(
+                error,
+                VerificationError::confirmation_failure(
+                    &test_body_str,
+                    &expected_body,
+                    &response_body_value,
+                    Some(&response_body),
+                    "",
+                ),
+            ));
+        }
+
+        Ok(())
     }
 
     fn check_negative_test_case(
