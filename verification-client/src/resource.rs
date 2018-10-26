@@ -70,7 +70,10 @@ impl VerificationClientResource {
     fn run_test_case(&self, request: &mut Request) -> Result<impl IntoResponse> {
         let client_request: ClientRequest = request.body()?;
 
-        info!("Got request: {}", serde_json::to_string(&client_request).map_err(|e| Error::internal(e))?);
+        info!(
+            "Got request: {}",
+            serde_json::to_string(&client_request).map_err(|e| Error::internal(e))?
+        );
 
         let endpoint_name = client_request.endpoint_name.clone();
         if let Some(auto_deserialize_cases) = self.test_cases.auto_deserialize.get(&endpoint_name) {
