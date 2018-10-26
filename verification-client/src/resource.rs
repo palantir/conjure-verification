@@ -154,7 +154,12 @@ impl VerificationClientResource {
 
         let response_status = response.status();
         if !response_status.is_success() {
-            return Err(Error::new_safe("Wasn't successful", Code::InvalidArgument));
+            return Err(Error::new_safe(
+                "Wasn't successful",
+                VerificationError::UnexpectedResponseCode {
+                    code: response_status,
+                },
+            ));
         }
 
         // Have to save this before the response is consumed by `Response::body`
