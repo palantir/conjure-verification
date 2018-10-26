@@ -156,10 +156,21 @@ impl VerificationClientResource {
                             )
                         })?;
 
-                // Edge case: if we expect a null, then the server is also allowed to reply with 204
-                if test_body_str == "null" && response_status == StatusCode::NO_CONTENT {
-                    debug!("Accepting 204 response to literal 'null' test case {testCase: {}, endpoint: {}}",
-                        client_request.test_case(), client_request.endpoint());
+                let test_case_is_empty_container = {
+                    match expected_body {
+                        ConjureValue::Optional(None) => true,
+                        ConjureValue::List(ref vec) if vec.is_empty() => true,
+                        ConjureValue::Set(ref vec) if vec.is_empty() => true,
+                        ConjureValue::Map(ref map) if map.is_empty() => true,
+                        _ => false,
+                    }
+                };
+
+                // Edge case: if we expect an empty value (optional, list, set, map), then the
+                // server is also allowed to reply with 204
+                if test_case_is_empty_container && response_status == StatusCode::NO_CONTENT {
+                    debug!("Accepting 204 response to empty test case {{testCase: {}, endpoint: {}, testCaseContents: {}}}",
+                        client_request.test_case, client_request.endpoint_name, test_body_str);
                     return Ok(NoContent);
                 }
 
