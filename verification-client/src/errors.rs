@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use conjure::value::ConjureValue;
+use hyper::StatusCode;
 use serde_json;
 use std::fmt::Display;
 use test_spec::EndpointName;
@@ -49,6 +50,11 @@ pub enum VerificationError {
     ServerUnderTestConnectionError {
         #[error_type(safe)]
         cause: String,
+    },
+    #[error_type(code = "InvalidArgument")]
+    UnexpectedResponseCode {
+        #[error_type(safe)]
+        code: StatusCode,
     },
     #[error_type(code = "InvalidArgument")]
     UrlParseFailure { url: String },

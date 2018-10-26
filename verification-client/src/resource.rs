@@ -211,10 +211,12 @@ impl VerificationClientResource {
                 let response = builder
                     .body(BytesBody::new(negative.0, APPLICATION_JSON))
                     .send()?;
-                if response.status().is_success() {
+                if !response.status().is_client_error() {
                     return Err(Error::new_safe(
-                        "Unexpected successful response",
-                        Code::InvalidArgument,
+                        "Unexpected response, expected client error",
+                        VerificationError::UnexpectedResponseCode {
+                            code: response.status(),
+                        },
                     ));
                 }
             }
