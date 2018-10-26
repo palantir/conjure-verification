@@ -51,6 +51,10 @@ pub enum VerificationError {
         cause: String,
     },
     #[error_type(code = "InvalidArgument")]
+    UrlParseFailure {
+        url: String,
+    },
+    #[error_type(code = "InvalidArgument")]
     IndexOutOfBounds {
         #[error_type(safe)]
         index: usize,

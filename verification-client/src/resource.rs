@@ -183,13 +183,17 @@ impl VerificationClientResource {
             &ServiceDiscoveryConfig::builder()
                 .service(
                     service_name,
+                    // don't retry as that gives better error message if client fails
                     ServiceConfig::builder()
-                        .uris(vec![
-                            base_url
-                                .parse()
-                                // TODO make this better
-                                .map_err(|e| Error::new_safe(e, Code::InvalidArgument))?,
-                        ]).build(),
+                        .max_num_retries(0)
+                        .uris(vec![base_url.parse().map_err(|e| {
+                            Error::new_safe(
+                                e,
+                                VerificationError::UrlParseFailure {
+                                    url: base_url.to_string(),
+                                },
+                            )
+                        })?]).build(),
                 ).build(),
         )
     }
