@@ -14,7 +14,7 @@
 use core::result::Result as StdResult;
 use std::str::FromStr;
 
-#[derive(Deserialize, Debug, Eq, PartialEq, Hash, Clone, From, Display)]
+#[derive(Deserialize, Serialize, Debug, Eq, PartialEq, Hash, Clone, From, Display)]
 pub struct EndpointName(pub String);
 
 impl FromStr for EndpointName {

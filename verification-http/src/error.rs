@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #[derive(ErrorType)]
-#[error_type(namespace = "Conjureverification")]
+#[error_type(namespace = "Default")]
 pub enum ConjureVerificationError {
     #[error_type(code = "InvalidArgument")]
     InvalidQueryParameter {
