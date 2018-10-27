@@ -61,7 +61,7 @@ fn test_content_type_error() {
 fn test_confirmation_error() {
     let endpoint_name = "returns_string_foo";
     let conjure_type = ResolvedType::Primitive(ir::PrimitiveType::String);
-    // Sending it a different string!
+    // Sending it & expecting back a different string "bar"!
     let router = setup::setup_simple_auto_positive(json!("bar"), endpoint_name, conjure_type);
 
     run_test_case_against_server(
