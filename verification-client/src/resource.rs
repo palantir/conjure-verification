@@ -60,10 +60,10 @@ pub struct VerificationClientResource {
 pub type ParamTypes = HashMap<EndpointName, ResolvedType>;
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
-struct ClientRequest {
-    endpoint_name: EndpointName,
-    test_case: usize,
-    base_url: String,
+pub(crate) struct ClientRequest {
+    pub endpoint_name: EndpointName,
+    pub test_case: usize,
+    pub base_url: String,
 }
 
 impl VerificationClientResource {
