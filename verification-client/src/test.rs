@@ -143,6 +143,16 @@ fn test_returns_body() {
     run_test_case_against_server(&router, endpoint_name, None);
 }
 
+/// Test that an empty optional sent as "null" accepts a 204 back.
+#[test]
+fn test_returns_204() {
+    let conjure_type = optional_type(primitive_type(ir::PrimitiveType::String));
+    let endpoint_name = "returns_204";
+    let router =
+        setup::setup_simple_auto_positive(json!(null), endpoint_name, conjure_type);
+    run_test_case_against_server(&router, endpoint_name, None);
+}
+
 /// Spins up a server-under-test, and instructs the configured [VerificationClientResource]
 /// identified by the given [Router] to run the given test case against it, making an assertion
 /// on the error name (if any) returned by the call to the [VerificationClientResource].
