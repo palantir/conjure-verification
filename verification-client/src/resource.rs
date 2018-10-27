@@ -168,14 +168,6 @@ impl VerificationClientResource {
             client_request.test_case,
         )?;
 
-        // We deserialize into serde_json::Value first because .body()'s return type needs
-        // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
-        let response_body_value: serde_json::Value = response.body()?;
-        let response_body = VerificationClientResource::try_parse_response_body(
-            conjure_type,
-            &response_body_value,
-        )?;
-
         // Edge case: if we expect an empty value (optional, list, set, map), then the server is
         // also allowed to reply with 204
         if VerificationClientResource::is_empty_container(&expected_body)
@@ -188,11 +180,20 @@ impl VerificationClientResource {
 
         // At this point, we have concluded we don't expect a 204.
         // Thus, we expect a 200 with either OCTET_STREAM or APPLICATION_JSON.
+        // Note: we MUST check this before calling .body(), which will fail if there's no content type.
         VerificationClientResource::assert_content_type(
             content_type?,
             &mut vec![APPLICATION_JSON, APPLICATION_OCTET_STREAM]
                 .into_iter()
                 .map(|mime| Some(ContentType(mime))),
+        )?;
+
+        // We deserialize into serde_json::Value first because .body()'s return type needs
+        // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
+        let response_body_value: serde_json::Value = response.body()?;
+        let response_body = VerificationClientResource::try_parse_response_body(
+            conjure_type,
+            &response_body_value,
         )?;
 
         // Compare response_body with what the test case says we sent
