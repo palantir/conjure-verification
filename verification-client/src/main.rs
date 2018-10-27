@@ -13,6 +13,7 @@
 // limitations under the License.
 
 extern crate bytes;
+#[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
 extern crate conjure_verification_error;
 #[macro_use]
@@ -38,12 +39,21 @@ extern crate serde_conjure;
 extern crate serde_conjure_derive;
 #[macro_use]
 extern crate serde_derive;
+#[cfg_attr(test, macro_use)]
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
 extern crate serde_yaml;
 extern crate typed_headers;
 extern crate zipkin;
+
+#[cfg(test)]
+extern crate tokio;
+#[cfg(test)]
+extern crate url;
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
@@ -72,6 +82,9 @@ use test_spec::TestCases;
 mod errors;
 mod resource;
 mod test_spec;
+
+#[cfg(test)]
+mod test;
 
 fn main() {
     pretty_env_logger::init();

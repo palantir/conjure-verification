@@ -34,3 +34,8 @@ serde_yaml = "0.7"
 serde_plain = "0.3"
 typed-headers = "0.1"
 zipkin = "0.3"
+
+[dev-dependencies]
+tokio = "0.1"
+url = "1.0"
+pretty_assertions = "0.5.1"
