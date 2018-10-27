@@ -52,6 +52,11 @@ fn test_content_type_error() {
     run_test_case_against_server(
         &router,
         endpoint_name,
+        |_| {
+            let mut response = Response::new(StatusCode::OK);
+            response.body = Body::Fixed(Bytes::from("10"));
+            Ok(response)
+        },
         Some("ConjureVerificationClient:UnexpectedContentType"),
     );
 }
@@ -67,6 +72,7 @@ fn test_confirmation_error() {
     run_test_case_against_server(
         &router,
         endpoint_name,
+        |_| Ok(json!("foo")),
         Some("ConjureVerificationClient:ConfirmationFailure"),
     );
 }
@@ -81,6 +87,7 @@ fn test_response_parse_error() {
     run_test_case_against_server(
         &router,
         endpoint_name,
+        |_| Ok(json!({})),
         Some("ConjureVerificationClient:CouldNotParseServerResponse"),
     );
 }
@@ -124,7 +131,7 @@ fn test_response_empty_missing_fields_ok() {
         conjure_type,
     );
 
-    run_test_case_against_server(&router, endpoint_name, None);
+    run_test_case_against_server(&router, endpoint_name, |_| Ok(json!({})), None);
 }
 
 /// Test that a simple JSON round-trips against a mirroring server-under-test endpoint.
@@ -140,7 +147,12 @@ fn test_returns_body() {
     let endpoint_name = "returns_body";
     let router =
         setup::setup_simple_auto_positive(json!({"heyo": 43}), endpoint_name, conjure_type);
-    run_test_case_against_server(&router, endpoint_name, None);
+    run_test_case_against_server(
+        &router,
+        endpoint_name,
+        |request| Ok(request.body::<serde_json::Value>()?),
+        None,
+    );
 }
 
 /// Test that an empty optional sent as "null" accepts a 204 back.
@@ -149,18 +161,32 @@ fn test_returns_204() {
     let conjure_type = optional_type(primitive_type(ir::PrimitiveType::String));
     let endpoint_name = "returns_204";
     let router = setup::setup_simple_auto_positive(json!(null), endpoint_name, conjure_type);
-    run_test_case_against_server(&router, endpoint_name, None);
+    run_test_case_against_server(&router, endpoint_name, |_| Ok(NoContent), None);
 }
 
 /// Spins up a server-under-test, and instructs the configured [VerificationClientResource]
 /// identified by the given [Router] to run the given test case against it, making an assertion
 /// on the error name (if any) returned by the call to the [VerificationClientResource].
-fn run_test_case_against_server(
+/// The server-under-test is wired up to serve the [server_under_test_implementation] from the
+/// 'POST /{endpoint_name}' endpoint.
+fn run_test_case_against_server<F, R>(
     router: &Router,
     endpoint_name: &str,
+    server_under_test_implementation: F,
     expected_error: Option<&str>,
-) {
-    self::server_under_test::with_server_under_test(|addr| {
+) where
+    F: Fn(&mut Request) -> Result<R> + Send + Sync + 'static,
+    R: 'static + IntoResponse,
+{
+    let mut responses: HashMap<
+        EndpointName,
+        Arc<Fn(&mut Request) -> Result<Response> + Send + Sync>,
+    > = HashMap::new();
+    responses.insert(
+        EndpointName::new(endpoint_name),
+        Arc::new(move |req| (server_under_test_implementation)(req)?.into_response(req)),
+    );
+    self::server_under_test::with_server_under_test(responses, |addr| {
         let request = ClientRequest {
             endpoint_name: EndpointName::new(endpoint_name),
             test_case: 0,
@@ -338,10 +364,14 @@ mod server_under_test {
     use conjure_verification_http_server::router::Binder;
     use conjure_verification_http_server::DynamicResource;
 
+    pub type ResponseFunction = Fn(&mut Request) -> Result<Response> + Send + Sync + 'static;
+
     /// Spins up a server under test using [ServerUnderTest] on a random localhost port and returns
     /// the address where it was bound.
-    pub fn with_server_under_test<F>(f: F)
-    where
+    pub fn with_server_under_test<F>(
+        response_functions: HashMap<EndpointName, Arc<ResponseFunction>>,
+        f: F,
+    ) where
         F: FnOnce(Url),
     {
         use futures::{future, Future};
@@ -351,7 +381,7 @@ mod server_under_test {
         let addr = "127.0.0.1:0".parse().unwrap();
         let prefix = "server-under-test";
 
-        let resource = Arc::new(ServerUnderTest {});
+        let resource = Arc::new(ServerUnderTest { response_functions });
         let mut builder = router::Router::builder();
         {
             let ref mut binder = Binder::new(resource.clone(), &mut builder, prefix);
@@ -383,36 +413,8 @@ mod server_under_test {
         runtime.shutdown_now().wait().unwrap();
     }
 
-    struct ServerUnderTest;
-
-    impl ServerUnderTest {
-        /// Always returns a 204
-        fn returns_204(&self, _request: &mut Request) -> Result<impl IntoResponse> {
-            Ok(NoContent)
-        }
-
-        /// Always returns back the JSON body
-        fn returns_body(&self, request: &mut Request) -> Result<impl IntoResponse> {
-            let value: serde_json::Value = request.body()?;
-            Ok(value)
-        }
-
-        /// Always returns the string "foo"
-        fn returns_string_foo(&self, _request: &mut Request) -> Result<impl IntoResponse> {
-            Ok(json!("foo"))
-        }
-
-        /// Always returns an empty json object
-        fn returns_empty_object(&self, _request: &mut Request) -> Result<impl IntoResponse> {
-            Ok(json!({}))
-        }
-
-        /// Returns an empty-content-type response of the int '10'. Used for validation testing.
-        fn returns_non_json_10_body(&self, _request: &mut Request) -> Result<Response> {
-            let mut response = Response::new(StatusCode::OK);
-            response.body = Body::Fixed(Bytes::from("10"));
-            Ok(response)
-        }
+    struct ServerUnderTest {
+        pub response_functions: HashMap<EndpointName, Arc<ResponseFunction>>,
     }
 
     impl Resource for ServerUnderTest {
@@ -430,23 +432,12 @@ mod server_under_test {
         where
             R: Route<Self>,
         {
-            router.post("/returns_body", "", ServerUnderTest::returns_body);
-            router.post("/returns_204", "", ServerUnderTest::returns_204);
-            router.post(
-                "/returns_string_foo",
-                "",
-                ServerUnderTest::returns_string_foo,
-            );
-            router.post(
-                "/returns_empty_object",
-                "",
-                ServerUnderTest::returns_empty_object,
-            );
-            router.post(
-                "/returns_non_json_10_body",
-                "",
-                ServerUnderTest::returns_non_json_10_body,
-            );
+            for (endpoint, response_function) in &self.response_functions {
+                let response_function = response_function.clone();
+                router.post(format!("/{}", endpoint.0).as_str(), "", move |_, req| {
+                    (response_function)(req)
+                });
+            }
         }
     }
 }
