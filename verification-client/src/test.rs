@@ -15,7 +15,6 @@
 #[allow(unused_imports)]
 use conjure_verification_common::conjure;
 
-use self::server_under_test::with_server_under_test;
 use self::type_builders::*;
 use bytes::Bytes;
 use conjure::ir;
@@ -51,18 +50,11 @@ fn test_content_type_error() {
     let conjure_type = ResolvedType::Primitive(ir::PrimitiveType::Integer);
     let router = setup::setup_simple_auto_positive(json!(10), endpoint_name, conjure_type);
 
-    with_server_under_test(|addr| {
-        let request = ClientRequest {
-            endpoint_name: EndpointName::new(endpoint_name),
-            test_case: 0,
-            base_url: addr.to_string(),
-        };
-        setup::run_test_case(
-            &router,
-            &request,
-            Some("ConjureVerificationClient:UnexpectedContentType"),
-        );
-    });
+    run_test_case_against_server(
+        &router,
+        endpoint_name,
+        Some("ConjureVerificationClient:UnexpectedContentType"),
+    );
 }
 
 /// Test a bad response from the server-under-test that is still parseable with the expected conjure type.
@@ -73,18 +65,11 @@ fn test_confirmation_error() {
     // Sending it a different string!
     let router = setup::setup_simple_auto_positive(json!("bar"), endpoint_name, conjure_type);
 
-    with_server_under_test(|addr| {
-        let request = ClientRequest {
-            endpoint_name: EndpointName::new(endpoint_name),
-            test_case: 0,
-            base_url: addr.to_string(),
-        };
-        setup::run_test_case(
-            &router,
-            &request,
-            Some("ConjureVerificationClient:ConfirmationFailure"),
-        );
-    });
+    run_test_case_against_server(
+        &router,
+        endpoint_name,
+        Some("ConjureVerificationClient:ConfirmationFailure"),
+    );
 }
 
 /// Test a bad response from the server-under-test that has a different structure than expected.
@@ -94,18 +79,11 @@ fn test_response_parse_error() {
     let conjure_type = ResolvedType::Primitive(ir::PrimitiveType::Integer);
     let router = setup::setup_simple_auto_positive(json!(5), endpoint_name, conjure_type);
 
-    with_server_under_test(|addr| {
-        let request = ClientRequest {
-            endpoint_name: EndpointName::new(endpoint_name),
-            test_case: 0,
-            base_url: addr.to_string(),
-        };
-        setup::run_test_case(
-            &router,
-            &request,
-            Some("ConjureVerificationClient:CouldNotParseServerResponse"),
-        );
-    });
+    run_test_case_against_server(
+        &router,
+        endpoint_name,
+        Some("ConjureVerificationClient:CouldNotParseServerResponse"),
+    );
 }
 
 /// Test missing fields in the response are ok if their values were 'empty'.
@@ -147,14 +125,7 @@ fn test_response_empty_missing_fields_ok() {
         conjure_type,
     );
 
-    with_server_under_test(|addr| {
-        let request = ClientRequest {
-            endpoint_name: EndpointName::new(endpoint_name),
-            test_case: 0,
-            base_url: addr.to_string(),
-        };
-        setup::run_test_case(&router, &request, None);
-    });
+    run_test_case_against_server(&router, endpoint_name, None);
 }
 
 /// Test that a simple JSON round-trips against a mirroring server-under-test endpoint.
@@ -173,13 +144,29 @@ fn test_returns_body() {
     let endpoint_name = "returns_body";
     let router =
         setup::setup_simple_auto_positive(json!({"heyo": 43}), endpoint_name, conjure_type);
-    with_server_under_test(|addr| {
+    run_test_case_against_server(&router, endpoint_name, None);
+}
+
+/// Spins up a server-under-test, and instructs the configured [VerificationClientResource]
+/// identified by the given [Router] to run the given test case against it, making an assertion
+/// on the error name (if any) returned by the call to the [VerificationClientResource].
+fn run_test_case_against_server(
+    router: &Router,
+    endpoint_name: &str,
+    expected_error: Option<&str>,
+) {
+    self::server_under_test::with_server_under_test(|addr| {
         let request = ClientRequest {
             endpoint_name: EndpointName::new(endpoint_name),
             test_case: 0,
             base_url: addr.to_string(),
         };
-        setup::run_test_case(&router, &request, None);
+        setup::run_test_case(router, &request, |result| {
+            match expected_error {
+                Some(name) => assert_eq!(result.err().unwrap().name(), name),
+                None => assert!(result.is_ok()),
+            };
+        });
     });
 }
 
@@ -250,21 +237,21 @@ mod setup {
     use typed_headers::{ContentType, HeaderMapExt};
 
     /// Simulate asking the VerificationClientService to run a test case against a server-under-test.
-    pub(crate) fn run_test_case(
-        router: &Router,
-        req: &ClientRequest,
-        expected_error: Option<&str>,
-    ) {
+    pub(crate) fn run_test_case<F>(router: &Router, req: &ClientRequest, response_assertion: F)
+    where
+        F: FnOnce(Result<Response>),
+    {
         if let RouteResult::Matched { endpoint, .. } = router.route(&Method::POST, "/runTestCase") {
             let mut builder = RequestBuilder::default();
             builder.headers.typed_insert(&ContentType(APPLICATION_JSON));
             builder.body = serde_json::to_vec(req).unwrap();
             let result: Result<Response> = builder.with_request(|req| endpoint.handler.handle(req));
-            println!("Got result error: {:?}", result.as_ref().err());
-            match expected_error {
-                Some(name) => assert_eq!(result.err().unwrap().name(), name),
-                None => assert!(result.is_ok()),
-            }
+            println!(
+                "Got result error for request {:?}: {:?}",
+                req,
+                result.as_ref().err()
+            );
+            response_assertion(result);
         } else {
             panic!("Failed to route!")
         }
@@ -346,8 +333,8 @@ mod server_under_test {
     use conjure_verification_http_server::router::Binder;
     use conjure_verification_http_server::DynamicResource;
 
-    /// Spins up a server under test using [ServerUnderTest] on a random localhost port and returns the
-    /// address where it was bound.
+    /// Spins up a server under test using [ServerUnderTest] on a random localhost port and returns
+    /// the address where it was bound.
     pub fn with_server_under_test<F>(f: F)
     where
         F: FnOnce(Url),
