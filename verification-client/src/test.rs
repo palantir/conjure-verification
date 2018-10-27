@@ -148,8 +148,7 @@ fn test_returns_body() {
 fn test_returns_204() {
     let conjure_type = optional_type(primitive_type(ir::PrimitiveType::String));
     let endpoint_name = "returns_204";
-    let router =
-        setup::setup_simple_auto_positive(json!(null), endpoint_name, conjure_type);
+    let router = setup::setup_simple_auto_positive(json!(null), endpoint_name, conjure_type);
     run_test_case_against_server(&router, endpoint_name, None);
 }
 
