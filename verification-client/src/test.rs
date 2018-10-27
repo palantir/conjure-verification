@@ -18,7 +18,6 @@ use conjure_verification_common::conjure;
 use self::type_builders::*;
 use bytes::Bytes;
 use conjure::ir;
-use conjure::resolved_type::ObjectDefinition;
 use conjure::resolved_type::ResolvedType;
 use conjure_verification_error::Result;
 use conjure_verification_http::request::Request;
@@ -131,16 +130,13 @@ fn test_response_empty_missing_fields_ok() {
 /// Test that a simple JSON round-trips against a mirroring server-under-test endpoint.
 #[test]
 fn test_returns_body() {
-    let conjure_type = ResolvedType::Object(ObjectDefinition {
-        type_name: ir::TypeName {
-            name: "Name".to_string(),
-            package: "com.palantir.package".to_string(),
-        },
-        fields: vec![field_definition(
+    let conjure_type = object_definition(
+        "foo",
+        &[field_definition(
             "heyo",
-            ResolvedType::Primitive(ir::PrimitiveType::Integer),
+            primitive_type(ir::PrimitiveType::Integer),
         )],
-    });
+    );
     let endpoint_name = "returns_body";
     let router =
         setup::setup_simple_auto_positive(json!({"heyo": 43}), endpoint_name, conjure_type);
