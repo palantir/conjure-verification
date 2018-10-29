@@ -381,7 +381,12 @@ fn get_endpoint<'a, V>(
     endpoint: &EndpointName,
 ) -> Result<&'a V> {
     map.get(endpoint).ok_or_else(|| {
-        Error::internal_safe("No such endpoint").with_safe_param("endpointName", endpoint)
+        Error::new_safe(
+            "No such endpoint",
+            VerificationError::InvalidEndpointParameter {
+                endpoint_name: endpoint.clone(),
+            },
+        )
     })
 }
 
