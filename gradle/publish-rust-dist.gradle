@@ -20,29 +20,44 @@ bintrayUpload.onlyIf {
     versionDetails().isCleanTag
 }
 
-task distTarLinux(type: Tar) {
-    from "target/release/conjure-verification-server"
-    baseName = 'verification-server-linux'
-    compression = Compression.GZIP
-}
+['server', 'client'].each {
+    task "${it}DistTarLinux"(type: Tar) {
+        from "target/release/conjure-verification-${it}"
+        baseName = "verification-${it}-linux"
+        compression = Compression.GZIP
+    }
 
-task distTarOsx(type: Tar) {
-    from "target/x86_64-apple-darwin/release/conjure-verification-server"
-    baseName = 'verification-server-osx'
-    compression = Compression.GZIP
+    task "${it}DistTarOsx"(type: Tar) {
+        from "target/x86_64-apple-darwin/release/conjure-verification-${it}"
+        baseName = "verification-${it}-osx"
+        compression = Compression.GZIP
+    }
 }
 
 publishing {
     publications {
-        distTarLinux(MavenPublication) {
+        serverDistTarLinux(MavenPublication) {
             artifactId "verification-server"
-            artifact (tasks.distTarLinux) {
+            artifact (tasks.serverDistTarLinux) {
                 classifier "linux"
             }
         }
-        distTarOsx(MavenPublication) {
+        serverDistTarOsx(MavenPublication) {
             artifactId "verification-server"
-            artifact (tasks.distTarOsx) {
+            artifact (tasks.serverDistTarOsx) {
+                classifier "osx"
+            }
+        }
+
+        clientDistTarLinux(MavenPublication) {
+            artifactId "verification-client"
+            artifact (tasks.clientDistTarLinux) {
+                classifier "linux"
+            }
+        }
+        clientDistTarOsx(MavenPublication) {
+            artifactId "verification-client"
+            artifact (tasks.clientDistTarOsx) {
                 classifier "osx"
             }
         }
