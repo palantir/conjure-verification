@@ -8,7 +8,7 @@ esac
 
 VERSION=$(git describe --tags --always --first-parent)
 
-function build_docker() {
+function build_docker() (
     DEST="build/$1/docker-context"
     rm -rf "$DEST"
     mkdir -p "$DEST"
@@ -40,7 +40,7 @@ function build_docker() {
     docker build -t "palantirtechnologies/conjure-verification-$1:$VERSION" .
 
     docker tag "palantirtechnologies/conjure-verification-$1:$VERSION" "palantirtechnologies/conjure-verification-$1:latest"
-}
+)
 
 build_docker "server"
 build_docker "client"
