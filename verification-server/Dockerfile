@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM rust:1.29.0-stretch
 
 RUN set -eux; \
     apt-get update; \
