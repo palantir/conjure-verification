@@ -21,9 +21,9 @@ types:
 
       IgnoredTestCases:
         fields:
-          client: IgnoredClientTestCases
+          server: IgnoredServerTestCases
 
-      IgnoredClientTestCases:
+      IgnoredServerTestCases:
         fields:
           autoDeserialize: map<EndpointName, set<string>>
           singleHeaderService: map<EndpointName, set<string>>
