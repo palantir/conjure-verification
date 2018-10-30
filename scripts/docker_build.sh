@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -ex
+set -euxo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}" )"/..
 
 case $(uname -s) in
@@ -7,34 +7,40 @@ case $(uname -s) in
 esac
 
 VERSION=$(git describe --tags --always --first-parent)
-DEST=build/docker-context
-rm -rf $DEST
-mkdir -p $DEST
 
-cp ./verification-server/Dockerfile $DEST/Dockerfile
+function build_docker() (
+    DEST="build/$1/docker-context"
+    rm -rf "$DEST"
+    mkdir -p "$DEST"
 
-BINARY=./target/release/conjure-verification-server
-if [ ! -f $BINARY ]; then
-    echo "$BINARY must exist - run 'cargo build --release' to create it"
-    exit 1
-fi
-cp $BINARY $DEST
+    cp "./verification-$1/Dockerfile" "$DEST/Dockerfile"
 
-TEST_CASES=./verification-server-api/build/test-cases.json
-if [ ! -f $TEST_CASES ]; then
-    echo "$TEST_CASES file must exist - run './gradlew compileTestCasesJson' to create it"
-    exit 1
-fi
-cp $TEST_CASES $DEST
+    BINARY="./target/release/conjure-verification-$1"
+    if [ ! -f "$BINARY" ]; then
+        echo "$BINARY must exist - run 'cargo build --release' to create it"
+        exit 1
+    fi
+    cp "$BINARY" "$DEST"
 
-IR_FILE=./verification-server-api/build/conjure-ir/verification-server-api.conjure.json
-if [ ! -f $IR_FILE ]; then
-    echo "$IR_FILE file must exist - run './gradlew compileIr' to create it"
-    exit 1
-fi
-cp $IR_FILE $DEST
+    TEST_CASES=./verification-$1-api/build/test-cases.json
+    if [ ! -f "$TEST_CASES" ]; then
+        echo "$TEST_CASES file must exist - run './gradlew compileTestCasesJson' to create it"
+        exit 1
+    fi
+    cp "$TEST_CASES" "$DEST"
 
-cd $DEST
-docker build -t "palantirtechnologies/conjure-verification-server:$VERSION" .
+    IR_FILE="./verification-$1-api/build/conjure-ir/verification-$1-api.conjure.json"
+    if [ ! -f "$IR_FILE" ]; then
+        echo "$IR_FILE file must exist - run './gradlew compileIr' to create it"
+        exit 1
+    fi
+    cp "$IR_FILE" "$DEST"
 
-docker tag "palantirtechnologies/conjure-verification-server:$VERSION" "palantirtechnologies/conjure-verification-server:latest"
+    cd "$DEST"
+    docker build -t "palantirtechnologies/conjure-verification-$1:$VERSION" .
+
+    docker tag "palantirtechnologies/conjure-verification-$1:$VERSION" "palantirtechnologies/conjure-verification-$1:latest"
+)
+
+build_docker "server"
+build_docker "client"
