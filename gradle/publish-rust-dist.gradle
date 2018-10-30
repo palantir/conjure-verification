@@ -44,7 +44,7 @@ variants.each { String variant ->
                 }
             }
             "${variant}DistTarOsx"(MavenPublication) {
-                artifactId "verification-server"
+                artifactId "verification-$variant"
                 artifact (tasks["${variant}DistTarOsx"]) {
                     classifier "osx"
                 }
