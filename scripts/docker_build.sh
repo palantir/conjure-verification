@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -ex
+set -euxo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}" )"/..
 
 case $(uname -s) in
