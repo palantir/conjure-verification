@@ -3,7 +3,7 @@ types:
     default-package: com.palantir.conjure.verification.client
     objects:
 
-      # primitives: https://github.com/palantir/conjure/blob/develop/specification.md#primitiveDataTypes
+      # built-ins: https://github.com/palantir/conjure/blob/develop/docs/spec/wire.md#json-format
       BearerTokenExample: { fields: { value: bearertoken } }
       BinaryExample: { fields: { value: binary } }
       BooleanExample: { fields: { value: boolean } }
@@ -16,81 +16,28 @@ types:
       UuidExample: { fields: { value: uuid } }
       AnyExample: { fields: { value: any } }
 
-      # collections: https://github.com/palantir/conjure/blob/develop/specification.md#collection-data-types
+      # container types: https://github.com/palantir/conjure/blob/develop/docs/spec/wire.md#json-format
       ListExample:
         fields:
           value: list<string>
-
       SetStringExample:
         fields:
           value: set<string>
-
       SetDoubleExample:
         fields:
           value: set<double>
-
       MapExample:
         fields:
           value: map<string, string>
-      # AnyMapExample:
-      #   fields:
-      #     items: map<string, any>
-      # AliasAsMapKeyExample:
-      #   fields:
-      #     strings: map<StringAliasExample, ManyFieldExample>
-      #     rids: map<RidAliasExample, ManyFieldExample>
-      #     bearertokens: map<BearerTokenAliasExample, ManyFieldExample>
-      #     integers: map<IntegerAliasExample, ManyFieldExample>
-      #     # doubles: map<DoubleAliasExample, ManyFieldExample> # typescript freaks out with the 'NaN'
-      #     safelongs: map<SafeLongAliasExample, ManyFieldExample>
-      #     datetimes: map<DateTimeAliasExample, ManyFieldExample>
-      #     uuids: map<UuidAliasExample, ManyFieldExample>
-
       OptionalExample: { fields: { value: optional<string> } }
       OptionalBooleanExample: { fields: { value: optional<boolean> } }
       OptionalIntegerExample: { fields: { value: optional<integer> } }
       LongFieldNameOptionalExample: { fields: { someLongName: optional<string> } }
-
       RawOptionalExample: { alias: optional<integer> }
 
-      # PrimitiveOptionalsExample:
-      #   fields:
-      #     num: optional<double>
-      #     bool: optional<boolean>
-      #     integer: optional<integer>
-      #     safelong: optional<safelong>
-      #     rid: optional<rid>
-      #     bearertoken: optional<bearertoken>
-      #     uuid: optional<uuid>
+      # named types: https://github.com/palantir/conjure/blob/develop/docs/spec/wire.md#json-format
 
-      # complex: https://github.com/palantir/conjure/blob/develop/specification.md#complex-data-types
-
-      # complex alias
-      AliasString: { alias: string }
-      StringAliasExample: { alias: string }
-      DoubleAliasExample: { alias: double }
-      IntegerAliasExample: { alias: integer }
-      BooleanAliasExample: { alias: boolean }
-      SafeLongAliasExample: { alias: safelong }
-      RidAliasExample: { alias: rid }
-      BearerTokenAliasExample: { alias: bearertoken }
-      UuidAliasExample: { alias: uuid }
-      ReferenceAliasExample: { alias: AnyExample }
-      DateTimeAliasExample: { alias: datetime }
-      BinaryAliasExample: { alias: binary }
-
-      # complex enum
-      EnumExample:
-        values:
-          - ONE
-          - TWO
-      Enum:
-        values:
-          - ONE
-          - TWO
-      EnumFieldExample: { fields: { enum: EnumExample } }
-
-      # complex object
+      # named object
       EmptyObjectExample:
         fields: {}
       ObjectExample:
@@ -103,16 +50,25 @@ types:
           set: set<string>
           map: map<string, string>
           alias: StringAliasExample
-
       KebabCaseObjectExample:
         fields:
           kebab-cased-field: integer
-
       SnakeCaseObjectExample:
         fields:
           snake_cased_field: integer
 
-      # complex union
+      # named enum
+      EnumExample:
+        values:
+          - ONE
+          - TWO
+      Enum:
+        values:
+          - ONE
+          - TWO
+      EnumFieldExample: { fields: { enum: EnumExample } }
+
+      # named union
       Union:
         docs: A type which can either be a StringExample, a set of strings, or an integer.
         union:
@@ -123,3 +79,17 @@ types:
           if: integer # some 'bad' member names!
           new: integer
           interface: integer
+
+      # named alias
+      AliasString: { alias: string }
+      StringAliasExample: { alias: string }
+      DoubleAliasExample: { alias: double }
+      IntegerAliasExample: { alias: integer }
+      BooleanAliasExample: { alias: boolean }
+      SafeLongAliasExample: { alias: safelong }
+      RidAliasExample: { alias: rid }
+      BearerTokenAliasExample: { alias: bearertoken }
+      UuidAliasExample: { alias: uuid }
+      ReferenceAliasExample: { alias: AnyExample }
+      DateTimeAliasExample: { alias: datetime }
+      BinaryAliasExample: { alias: binary }
