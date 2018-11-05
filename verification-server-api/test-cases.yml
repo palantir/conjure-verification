@@ -191,6 +191,26 @@ client:
       negative:
         - '{"value":{}}'
         - '{"value":[]}'
+    receiveOptionalBooleanExample:
+      positive:
+        - '{}'
+        - '{"value":null}'
+        - '{"value":true}'
+        - '{"value":false}'
+      negative:
+        - '{"value":{}}'
+        - '{"value":[]}'
+        - '{"value":"true"}'
+    receiveOptionalIntegerExample:
+      positive:
+        - '{}'
+        - '{"value":null}'
+        - '{"value":0}'
+        - '{"value":1234}'
+      negative:
+        - '{"value":{}}'
+        - '{"value":[]}'
+        - '{"value":"1234"}'
     receiveLongFieldNameOptionalExample:
       positive:
         - '{}'
