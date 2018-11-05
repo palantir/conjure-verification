@@ -115,9 +115,19 @@ services:
         returns: examples.OptionalExample
         args: { index: integer }
 
-      receiveLongOptionalExample:
-        http: GET /receiveLongOptionalExample/{index}
-        returns: examples.LongOptionalExample
+      receiveOptionalBooleanExample:
+        http: GET /receiveOptionalBooleanExample/{index}
+        returns: examples.OptionalBooleanExample
+        args: { index: integer }
+
+      receiveOptionalIntegerExample:
+        http: GET /receiveOptionalIntegerExample/{index}
+        returns: examples.OptionalIntegerExample
+        args: { index: integer }
+
+      receiveLongFieldNameOptionalExample:
+        http: GET /receiveLongFieldNameOptionalExample/{index}
+        returns: examples.LongFieldNameOptionalExample
         args: { index: integer }
 
       receiveRawOptionalExample:

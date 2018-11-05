@@ -91,10 +91,20 @@ services:
         returns: examples.OptionalExample
         args: { body: examples.OptionalExample  }
 
-      getLongOptionalExample:
-        http: POST /getLongOptionalExample
-        returns: examples.LongOptionalExample
-        args: { body: examples.LongOptionalExample  }
+      getOptionalBooleanExample:
+        http: POST /getOptionalBooleanExample
+        returns: examples.OptionalBooleanExample
+        args: { body: examples.OptionalBooleanExample  }
+
+      getOptionalIntegerExample:
+        http: POST /getOptionalIntegerExample
+        returns: examples.OptionalIntegerExample
+        args: { body: examples.OptionalIntegerExample  }
+
+      getLongFieldNameOptionalExample:
+        http: POST /getLongFieldNameOptionalExample
+        returns: examples.LongFieldNameOptionalExample
+        args: { body: examples.LongFieldNameOptionalExample  }
 
       getRawOptionalExample:
         http: POST /getRawOptionalExample

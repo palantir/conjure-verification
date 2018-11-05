@@ -191,7 +191,27 @@ server:
       negative:
         - '{"value":{}}'
         - '{"value":[]}'
-    getLongOptionalExample:
+    getOptionalBooleanExample:
+      positive:
+        - '{}'
+        - '{"value":null}'
+        - '{"value":true}'
+        - '{"value":false}'
+      negative:
+        - '{"value":{}}'
+        - '{"value":[]}'
+        - '{"value":"true"}'
+    getOptionalIntegerExample:
+      positive:
+        - '{}'
+        - '{"value":null}'
+        - '{"value":0}'
+        - '{"value":1234}'
+      negative:
+        - '{"value":{}}'
+        - '{"value":[]}'
+        - '{"value":"1234"}'
+    getLongFieldNameOptionalExample:
       positive:
         - '{}'
         - '{"someLongName":null}'
