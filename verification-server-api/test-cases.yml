@@ -191,7 +191,7 @@ client:
       negative:
         - '{"value":{}}'
         - '{"value":[]}'
-    receiveLongOptionalExample:
+    receiveLongFieldNameOptionalExample:
       positive:
         - '{}'
         - '{"someLongName":null}'

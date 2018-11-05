@@ -191,7 +191,7 @@ server:
       negative:
         - '{"value":{}}'
         - '{"value":[]}'
-    getLongOptionalExample:
+    getLongFieldNameOptionalExample:
       positive:
         - '{}'
         - '{"someLongName":null}'
