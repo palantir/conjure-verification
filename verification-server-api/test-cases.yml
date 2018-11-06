@@ -602,27 +602,27 @@ client:
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
       negative: []
-    receiveMapBearerTokenAliasExample:  # WIP
+    receiveMapBearerTokenAliasExample:
       positive:
         - '{}'
         - '{"abc123": true}'
       negative: []
-    receiveMapBinaryAliasExample:  # WIP
+    receiveMapBinaryAliasExample:
       positive:
         - '{}'
         - '{"SGVsbG8sIFdvcmxk": true}'
       negative: []
-    receiveMapBooleanAliasExample:  # WIP
+    receiveMapBooleanAliasExample:
       positive:
         - '{}'
         - '{"true": true}'
       negative: []
-    receiveMapDateTimeAliasExample:  # WIP
+    receiveMapDateTimeAliasExample:
       positive:
         - '{}'
         - '{"2017-01-02T03:04:05Z": true}'
       negative: []
-    receiveMapDoubleAliasExample:  # WIP
+    receiveMapDoubleAliasExample:
       positive:
         - '{}'
         - '{"10": true}'
@@ -636,31 +636,31 @@ client:
       negative:
         - '{"10": true, "10e0": false}'
         - '{"10": true, "10.0": false}'
-    receiveMapIntegerAliasExample:  # WIP
+    receiveMapIntegerAliasExample:
       positive:
         - '{}'
         - '{"0": true}'
         - '{"123": true}'
       negative: []
-    receiveMapRidAliasExample:  # WIP
+    receiveMapRidAliasExample:
       positive:
         - '{}'
         - '{"ri.service.instance.folder.foo": true}'
       negative: []
-    receiveMapSafeLongAliasExample:  # WIP
+    receiveMapSafeLongAliasExample:
       positive:
         - '{}'
         - '{"-9007199254740991": true}'
         - '{"0": true}'
         - '{"9007199254740991": true}'
       negative: []
-    receiveMapStringAliasExample:  # WIP
+    receiveMapStringAliasExample:
       positive:
         - '{}'
         - '{"": true}'
         - '{"hello": true}'
       negative: []
-    receiveMapUuidAliasExample:  # WIP
+    receiveMapUuidAliasExample:
       positive:
         - '{}'
         - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
