@@ -380,6 +380,7 @@ client:
       - '{"snake-cased-field":1}'
     receiveOptionalBearerTokenAliasExample:
       positive:
+        - 'null'
         - '"abc123"'
         - '"-._~+/="'
         - '"abc="'
@@ -388,12 +389,15 @@ client:
         - '{}'
         - '[]'
     receiveOptionalBinaryAliasExample:
-      positive: [] # TODO(dfox): binary alias?
+      positive:
+        - 'null'
+        # TODO(dfox): binary alias?
       negative:
         - '{}'
         - '[]'
     receiveOptionalBooleanAliasExample:
       positive:
+        - 'null'
         - 'true'
         - 'false'
       negative:
@@ -401,12 +405,14 @@ client:
         - '[]'
     receiveOptionalDateTimeAliasExample:
       positive:
+        - 'null'
         - '"2017-01-02T03:04:05Z"'
       negative:
         - '{}'
         - '[]'
     receiveOptionalDoubleAliasExample:
       positive:
+        - 'null'
         - '10'
         - '10.0'
         - '"NaN"'
@@ -417,6 +423,7 @@ client:
         - '[]'
     receiveOptionalIntegerAliasExample:
       positive:
+        - 'null'
         - '0'
         - '123'
       negative:
@@ -424,12 +431,14 @@ client:
         - '[]'
     receiveOptionalRidAliasExample:
       positive:
+        - 'null'
         - '"ri.service.instance.folder.foo"'
       negative:
         - '{}'
         - '[]'
     receiveOptionalSafeLongAliasExample:
       positive:
+        - 'null'
         - '-9007199254740991'
         - '0'
         - '9007199254740991'
@@ -438,6 +447,7 @@ client:
         - '[]'
     receiveOptionalStringAliasExample:
       positive:
+        - 'null'
         - '""'
         - '"hello"'
       negative:
@@ -445,6 +455,7 @@ client:
         - '[]'
     receiveOptionalUuidAliasExample:
       positive:
+        - 'null'
         - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"'
         - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"'
       negative:
@@ -452,24 +463,79 @@ client:
         - '[]'
     receiveOptionalAnyAliasExample:
       positive:
+        - 'null'
         - '0'
         - '"content"'
         - 'true'
         - '[1,2,3]'
         - '{"key":3}'
-        - 'null'
       negative: []
-    # receiveListBearerTokenAliasExample:  # WIP
-    # receiveListBinaryAliasExample:  # WIP
-    # receiveListBooleanAliasExample:  # WIP
-    # receiveListDateTimeAliasExample:  # WIP
-    # receiveListDoubleAliasExample:  # WIP
-    # receiveListIntegerAliasExample:  # WIP
-    # receiveListRidAliasExample:  # WIP
-    # receiveListSafeLongAliasExample:  # WIP
-    # receiveListStringAliasExample:  # WIP
-    # receiveListUuidAliasExample:  # WIP
-    # receiveListAnyAliasExample:  # WIP
+    receiveListBearerTokenAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["abc123"]'
+      negative: []
+    receiveListBinaryAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["", "SGVsbG8sIFdvcmxk"]'
+      negative: []
+    receiveListBooleanAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[true]'
+      negative: []
+    receiveListDateTimeAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["2017-01-02T03:04:05Z"]'
+      negative: []
+    receiveListDoubleAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
+      negative: []
+    receiveListIntegerAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[0, 123]'
+      negative: []
+    receiveListRidAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["ri.service.instance.folder.foo"]'
+      negative: []
+    receiveListSafeLongAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[-9007199254740991, 0, 9007199254740991]'
+      negative: []
+    receiveListStringAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["", "hello"]'
+      negative: []
+    receiveListUuidAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
+      negative: []
+    receiveListAnyAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+      negative: []
     # receiveSetBearerTokenAliasExample:  # WIP
     # receiveSetBinaryAliasExample:  # WIP
     # receiveSetBooleanAliasExample:  # WIP

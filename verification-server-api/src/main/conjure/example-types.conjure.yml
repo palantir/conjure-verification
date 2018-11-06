@@ -106,17 +106,17 @@ types:
       OptionalUuidAliasExample: { alias: optional<uuid> }
       OptionalAnyAliasExample: { alias: optional<any> }
 
-      # ListBearerTokenAliasExample: { alias: list<bearertoken> }
-      # ListBinaryAliasExample: { alias: list<binary> }
-      # ListBooleanAliasExample: { alias: list<boolean> }
-      # ListDateTimeAliasExample: { alias: list<datetime> }
-      # ListDoubleAliasExample: { alias: list<double> }
-      # ListIntegerAliasExample: { alias: list<integer> }
-      # ListRidAliasExample: { alias: list<rid> }
-      # ListSafeLongAliasExample: { alias: list<safelong> }
-      # ListStringAliasExample: { alias: list<string> }
-      # ListUuidAliasExample: { alias: list<uuid> }
-      # ListAnyAliasExample: { alias: list<any> }
+      ListBearerTokenAliasExample: { alias: list<bearertoken> }
+      ListBinaryAliasExample: { alias: list<binary> }
+      ListBooleanAliasExample: { alias: list<boolean> }
+      ListDateTimeAliasExample: { alias: list<datetime> }
+      ListDoubleAliasExample: { alias: list<double> }
+      ListIntegerAliasExample: { alias: list<integer> }
+      ListRidAliasExample: { alias: list<rid> }
+      ListSafeLongAliasExample: { alias: list<safelong> }
+      ListStringAliasExample: { alias: list<string> }
+      ListUuidAliasExample: { alias: list<uuid> }
+      ListAnyAliasExample: { alias: list<any> }
 
       # SetBearerTokenAliasExample: { alias: set<bearertoken> }
       # SetBinaryAliasExample: { alias: set<binary> }
