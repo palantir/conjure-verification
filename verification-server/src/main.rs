@@ -65,6 +65,9 @@ mod raw_json;
 mod resource;
 mod test_spec;
 
+#[cfg(test)]
+mod test;
+
 fn main() {
     pretty_env_logger::init();
     let args = &env::args().collect::<Vec<_>>()[..];
