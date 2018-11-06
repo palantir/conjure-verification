@@ -536,17 +536,72 @@ client:
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
       negative: []
-    # receiveSetBearerTokenAliasExample:  # WIP
-    # receiveSetBinaryAliasExample:  # WIP
-    # receiveSetBooleanAliasExample:  # WIP
-    # receiveSetDateTimeAliasExample:  # WIP
-    # receiveSetDoubleAliasExample:  # WIP
-    # receiveSetIntegerAliasExample:  # WIP
-    # receiveSetRidAliasExample:  # WIP
-    # receiveSetSafeLongAliasExample:  # WIP
-    # receiveSetStringAliasExample:  # WIP
-    # receiveSetUuidAliasExample:  # WIP
-    # receiveSetAnyAliasExample:  # WIP
+    receiveSetBearerTokenAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["abc123"]'
+      negative: []
+    receiveSetBinaryAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["", "SGVsbG8sIFdvcmxk"]'
+      negative: []
+    receiveSetBooleanAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[true]'
+      negative: []
+    receiveSetDateTimeAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["2017-01-02T03:04:05Z"]'
+      negative: []
+    receiveSetDoubleAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
+      negative: []
+    receiveSetIntegerAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[0, 123]'
+      negative: []
+    receiveSetRidAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["ri.service.instance.folder.foo"]'
+      negative: []
+    receiveSetSafeLongAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[-9007199254740991, 0, 9007199254740991]'
+      negative: []
+    receiveSetStringAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["", "hello"]'
+      negative: []
+    receiveSetUuidAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
+      negative: []
+    receiveSetAnyAliasExample:
+      positive:
+        - 'null'
+        - '[]'
+        - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+      negative: []
     # receiveMapBearerTokenAliasExample:  # WIP
     # receiveMapBinaryAliasExample:  # WIP
     # receiveMapBooleanAliasExample:  # WIP

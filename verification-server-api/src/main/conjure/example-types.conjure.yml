@@ -118,17 +118,17 @@ types:
       ListUuidAliasExample: { alias: list<uuid> }
       ListAnyAliasExample: { alias: list<any> }
 
-      # SetBearerTokenAliasExample: { alias: set<bearertoken> }
-      # SetBinaryAliasExample: { alias: set<binary> }
-      # SetBooleanAliasExample: { alias: set<boolean> }
-      # SetDateTimeAliasExample: { alias: set<datetime> }
-      # SetDoubleAliasExample: { alias: set<double> }
-      # SetIntegerAliasExample: { alias: set<integer> }
-      # SetRidAliasExample: { alias: set<rid> }
-      # SetSafeLongAliasExample: { alias: set<safelong> }
-      # SetStringAliasExample: { alias: set<string> }
-      # SetUuidAliasExample: { alias: set<uuid> }
-      # SetAnyAliasExample: { alias: set<any> }
+      SetBearerTokenAliasExample: { alias: set<bearertoken> }
+      SetBinaryAliasExample: { alias: set<binary> }
+      SetBooleanAliasExample: { alias: set<boolean> }
+      SetDateTimeAliasExample: { alias: set<datetime> }
+      SetDoubleAliasExample: { alias: set<double> }
+      SetIntegerAliasExample: { alias: set<integer> }
+      SetRidAliasExample: { alias: set<rid> }
+      SetSafeLongAliasExample: { alias: set<safelong> }
+      SetStringAliasExample: { alias: set<string> }
+      SetUuidAliasExample: { alias: set<uuid> }
+      SetAnyAliasExample: { alias: set<any> }
 
       # MapBearerTokenAliasExample:
       #   alias: map<bearertoken, boolean>
