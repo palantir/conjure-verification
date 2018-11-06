@@ -28,7 +28,7 @@ publishing {
                 builtBy compileIr
             }
         }
-        
+
         testCases(MavenPublication) {
             artifactId "verification-server-test-cases"
             artifact (compileTestCasesJson.outputs.files.singleFile) {

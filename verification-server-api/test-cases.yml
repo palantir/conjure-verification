@@ -227,7 +227,7 @@ client:
       negative:
         - '"not an integer"'
 
-    # complex aliases
+    # named aliases
     receiveStringAliasExample:
       positive:
         - '"exampleOutput"'
@@ -378,6 +378,119 @@ client:
       negative:
       - '{"snakeCasedField":1}'
       - '{"snake-cased-field":1}'
+    receiveOptionalBearerTokenAliasExample:
+      positive:
+        - '"abc123"'
+        - '"-._~+/="'
+        - '"abc="'
+        - '"a="'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalBinaryAliasExample:
+      positive: [] # TODO(dfox): binary alias?
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalBooleanAliasExample:
+      positive:
+        - 'true'
+        - 'false'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalDateTimeAliasExample:
+      positive:
+        - '"2017-01-02T03:04:05Z"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalDoubleAliasExample:
+      positive:
+        - '10'
+        - '10.0'
+        - '"NaN"'
+        - '"Infinity"'
+        - '"-Infinity"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalIntegerAliasExample:
+      positive:
+        - '0'
+        - '123'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalRidAliasExample:
+      positive:
+        - '"ri.service.instance.folder.foo"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalSafeLongAliasExample:
+      positive:
+        - '-9007199254740991'
+        - '0'
+        - '9007199254740991'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalStringAliasExample:
+      positive:
+        - '""'
+        - '"hello"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalUuidAliasExample:
+      positive:
+        - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"'
+        - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalAnyAliasExample:
+      positive:
+        - '0'
+        - '"content"'
+        - 'true'
+        - '[1,2,3]'
+        - '{"key":3}'
+        - 'null'
+      negative: []
+    # receiveListBearerTokenAliasExample:  # WIP
+    # receiveListBinaryAliasExample:  # WIP
+    # receiveListBooleanAliasExample:  # WIP
+    # receiveListDateTimeAliasExample:  # WIP
+    # receiveListDoubleAliasExample:  # WIP
+    # receiveListIntegerAliasExample:  # WIP
+    # receiveListRidAliasExample:  # WIP
+    # receiveListSafeLongAliasExample:  # WIP
+    # receiveListStringAliasExample:  # WIP
+    # receiveListUuidAliasExample:  # WIP
+    # receiveListAnyAliasExample:  # WIP
+    # receiveSetBearerTokenAliasExample:  # WIP
+    # receiveSetBinaryAliasExample:  # WIP
+    # receiveSetBooleanAliasExample:  # WIP
+    # receiveSetDateTimeAliasExample:  # WIP
+    # receiveSetDoubleAliasExample:  # WIP
+    # receiveSetIntegerAliasExample:  # WIP
+    # receiveSetRidAliasExample:  # WIP
+    # receiveSetSafeLongAliasExample:  # WIP
+    # receiveSetStringAliasExample:  # WIP
+    # receiveSetUuidAliasExample:  # WIP
+    # receiveSetAnyAliasExample:  # WIP
+    # receiveMapBearerTokenAliasExample:  # WIP
+    # receiveMapBinaryAliasExample:  # WIP
+    # receiveMapBooleanAliasExample:  # WIP
+    # receiveMapDateTimeAliasExample:  # WIP
+    # receiveMapDoubleAliasExample:  # WIP
+    # receiveMapIntegerAliasExample:  # WIP
+    # receiveMapRidAliasExample:  # WIP
+    # receiveMapSafeLongAliasExample:  # WIP
+    # receiveMapStringAliasExample:  # WIP
+    # receiveMapUuidAliasExample:  # WIP
 
   # single-header-service.conjure.yml
   singleHeaderService:

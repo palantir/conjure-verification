@@ -93,3 +93,60 @@ types:
       ReferenceAliasExample: { alias: AnyExample }
       DateTimeAliasExample: { alias: datetime }
       BinaryAliasExample: { alias: binary }
+
+      OptionalBearerTokenAliasExample: { alias: optional<bearertoken> }
+      OptionalBinaryAliasExample: { alias: optional<binary> }
+      OptionalBooleanAliasExample: { alias: optional<boolean> }
+      OptionalDateTimeAliasExample: { alias: optional<datetime> }
+      OptionalDoubleAliasExample: { alias: optional<double> }
+      OptionalIntegerAliasExample: { alias: optional<integer> }
+      OptionalRidAliasExample: { alias: optional<rid> }
+      OptionalSafeLongAliasExample: { alias: optional<safelong> }
+      OptionalStringAliasExample: { alias: optional<string> }
+      OptionalUuidAliasExample: { alias: optional<uuid> }
+      OptionalAnyAliasExample: { alias: optional<any> }
+
+      # ListBearerTokenAliasExample: { alias: list<bearertoken> }
+      # ListBinaryAliasExample: { alias: list<binary> }
+      # ListBooleanAliasExample: { alias: list<boolean> }
+      # ListDateTimeAliasExample: { alias: list<datetime> }
+      # ListDoubleAliasExample: { alias: list<double> }
+      # ListIntegerAliasExample: { alias: list<integer> }
+      # ListRidAliasExample: { alias: list<rid> }
+      # ListSafeLongAliasExample: { alias: list<safelong> }
+      # ListStringAliasExample: { alias: list<string> }
+      # ListUuidAliasExample: { alias: list<uuid> }
+      # ListAnyAliasExample: { alias: list<any> }
+
+      # SetBearerTokenAliasExample: { alias: set<bearertoken> }
+      # SetBinaryAliasExample: { alias: set<binary> }
+      # SetBooleanAliasExample: { alias: set<boolean> }
+      # SetDateTimeAliasExample: { alias: set<datetime> }
+      # SetDoubleAliasExample: { alias: set<double> }
+      # SetIntegerAliasExample: { alias: set<integer> }
+      # SetRidAliasExample: { alias: set<rid> }
+      # SetSafeLongAliasExample: { alias: set<safelong> }
+      # SetStringAliasExample: { alias: set<string> }
+      # SetUuidAliasExample: { alias: set<uuid> }
+      # SetAnyAliasExample: { alias: set<any> }
+
+      # MapBearerTokenAliasExample:
+      #   alias: map<bearertoken, boolean>
+      # MapBinaryAliasExample:
+      #   alias: map<binary, boolean>
+      # MapBooleanAliasExample:
+      #   alias: map<boolean, boolean>
+      # MapDateTimeAliasExample:
+      #   alias: map<datetime, boolean>
+      # MapDoubleAliasExample:
+      #   alias: map<double, boolean>
+      # MapIntegerAliasExample:
+      #   alias: map<integer, boolean>
+      # MapRidAliasExample:
+      #   alias: map<rid, boolean>
+      # MapSafeLongAliasExample:
+      #   alias: map<safelong, boolean>
+      # MapStringAliasExample:
+      #   alias: map<string, boolean>
+      # MapUuidAliasExample:
+      #   alias: map<uuid, boolean>
