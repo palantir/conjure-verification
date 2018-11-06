@@ -367,52 +367,52 @@ services:
         returns: examples.SetAnyAliasExample
         args: { index: integer }
 
-      # receiveMapBearerTokenAliasExample:
-      #   http: GET /receiveMapBearerTokenAliasExample/{index}
-      #   returns: examples.MapBearerTokenAliasExample
-      #   args: { index: integer }
+      receiveMapBearerTokenAliasExample:
+        http: GET /receiveMapBearerTokenAliasExample/{index}
+        returns: examples.MapBearerTokenAliasExample
+        args: { index: integer }
 
-      # receiveMapBinaryAliasExample:
-      #   http: GET /receiveMapBinaryAliasExample/{index}
-      #   returns: examples.MapBinaryAliasExample
-      #   args: { index: integer }
+      receiveMapBinaryAliasExample:
+        http: GET /receiveMapBinaryAliasExample/{index}
+        returns: examples.MapBinaryAliasExample
+        args: { index: integer }
 
-      # receiveMapBooleanAliasExample:
-      #   http: GET /receiveMapBooleanAliasExample/{index}
-      #   returns: examples.MapBooleanAliasExample
-      #   args: { index: integer }
+      receiveMapBooleanAliasExample:
+        http: GET /receiveMapBooleanAliasExample/{index}
+        returns: examples.MapBooleanAliasExample
+        args: { index: integer }
 
-      # receiveMapDateTimeAliasExample:
-      #   http: GET /receiveMapDateTimeAliasExample/{index}
-      #   returns: examples.MapDateTimeAliasExample
-      #   args: { index: integer }
+      receiveMapDateTimeAliasExample:
+        http: GET /receiveMapDateTimeAliasExample/{index}
+        returns: examples.MapDateTimeAliasExample
+        args: { index: integer }
 
-      # receiveMapDoubleAliasExample:
-      #   http: GET /receiveMapDoubleAliasExample/{index}
-      #   returns: examples.MapDoubleAliasExample
-      #   args: { index: integer }
+      receiveMapDoubleAliasExample:
+        http: GET /receiveMapDoubleAliasExample/{index}
+        returns: examples.MapDoubleAliasExample
+        args: { index: integer }
 
-      # receiveMapIntegerAliasExample:
-      #   http: GET /receiveMapIntegerAliasExample/{index}
-      #   returns: examples.MapIntegerAliasExample
-      #   args: { index: integer }
+      receiveMapIntegerAliasExample:
+        http: GET /receiveMapIntegerAliasExample/{index}
+        returns: examples.MapIntegerAliasExample
+        args: { index: integer }
 
-      # receiveMapRidAliasExample:
-      #   http: GET /receiveMapRidAliasExample/{index}
-      #   returns: examples.MapRidAliasExample
-      #   args: { index: integer }
+      receiveMapRidAliasExample:
+        http: GET /receiveMapRidAliasExample/{index}
+        returns: examples.MapRidAliasExample
+        args: { index: integer }
 
-      # receiveMapSafeLongAliasExample:
-      #   http: GET /receiveMapSafeLongAliasExample/{index}
-      #   returns: examples.MapSafeLongAliasExample
-      #   args: { index: integer }
+      receiveMapSafeLongAliasExample:
+        http: GET /receiveMapSafeLongAliasExample/{index}
+        returns: examples.MapSafeLongAliasExample
+        args: { index: integer }
 
-      # receiveMapStringAliasExample:
-      #   http: GET /receiveMapStringAliasExample/{index}
-      #   returns: examples.MapStringAliasExample
-      #   args: { index: integer }
+      receiveMapStringAliasExample:
+        http: GET /receiveMapStringAliasExample/{index}
+        returns: examples.MapStringAliasExample
+        args: { index: integer }
 
-      # receiveMapUuidAliasExample:
-      #   http: GET /receiveMapUuidAliasExample/{index}
-      #   returns: examples.MapUuidAliasExample
-      #   args: { index: integer }
+      receiveMapUuidAliasExample:
+        http: GET /receiveMapUuidAliasExample/{index}
+        returns: examples.MapUuidAliasExample
+        args: { index: integer }

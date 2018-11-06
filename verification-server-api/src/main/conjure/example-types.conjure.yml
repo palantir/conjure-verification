@@ -130,23 +130,23 @@ types:
       SetUuidAliasExample: { alias: set<uuid> }
       SetAnyAliasExample: { alias: set<any> }
 
-      # MapBearerTokenAliasExample:
-      #   alias: map<bearertoken, boolean>
-      # MapBinaryAliasExample:
-      #   alias: map<binary, boolean>
-      # MapBooleanAliasExample:
-      #   alias: map<boolean, boolean>
-      # MapDateTimeAliasExample:
-      #   alias: map<datetime, boolean>
-      # MapDoubleAliasExample:
-      #   alias: map<double, boolean>
-      # MapIntegerAliasExample:
-      #   alias: map<integer, boolean>
-      # MapRidAliasExample:
-      #   alias: map<rid, boolean>
-      # MapSafeLongAliasExample:
-      #   alias: map<safelong, boolean>
-      # MapStringAliasExample:
-      #   alias: map<string, boolean>
-      # MapUuidAliasExample:
-      #   alias: map<uuid, boolean>
+      MapBearerTokenAliasExample:
+        alias: map<bearertoken, boolean>
+      MapBinaryAliasExample:
+        alias: map<binary, boolean>
+      MapBooleanAliasExample:
+        alias: map<boolean, boolean>
+      MapDateTimeAliasExample:
+        alias: map<datetime, boolean>
+      MapDoubleAliasExample:
+        alias: map<double, boolean>
+      MapIntegerAliasExample:
+        alias: map<integer, boolean>
+      MapRidAliasExample:
+        alias: map<rid, boolean>
+      MapSafeLongAliasExample:
+        alias: map<safelong, boolean>
+      MapStringAliasExample:
+        alias: map<string, boolean>
+      MapUuidAliasExample:
+        alias: map<uuid, boolean>

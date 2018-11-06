@@ -602,16 +602,69 @@ client:
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
       negative: []
-    # receiveMapBearerTokenAliasExample:  # WIP
-    # receiveMapBinaryAliasExample:  # WIP
-    # receiveMapBooleanAliasExample:  # WIP
-    # receiveMapDateTimeAliasExample:  # WIP
-    # receiveMapDoubleAliasExample:  # WIP
-    # receiveMapIntegerAliasExample:  # WIP
-    # receiveMapRidAliasExample:  # WIP
-    # receiveMapSafeLongAliasExample:  # WIP
-    # receiveMapStringAliasExample:  # WIP
-    # receiveMapUuidAliasExample:  # WIP
+    receiveMapBearerTokenAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"abc123": true}'
+      negative: []
+    receiveMapBinaryAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"SGVsbG8sIFdvcmxk": true}'
+      negative: []
+    receiveMapBooleanAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"true": true}'
+      negative: []
+    receiveMapDateTimeAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"2017-01-02T03:04:05Z": true}'
+      negative: []
+    receiveMapDoubleAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"10": true}'
+        - '{"10.0": true}'
+        - '{"3e+2": true}'
+        - '{"3e-2": true}'
+        - '{"NaN": true}'
+        - '{"Infinity": true}'
+        - '{"-Infinity": true}'
+        - '{"10": true, "3e2": true}'
+      negative:
+        - '{"10": true, "10e0": false}'
+        - '{"10": true, "10.0": false}'
+    receiveMapIntegerAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"0": true}'
+        - '{"123": true}'
+      negative: []
+    receiveMapRidAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"ri.service.instance.folder.foo": true}'
+      negative: []
+    receiveMapSafeLongAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"-9007199254740991": true}'
+        - '{"0": true}'
+        - '{"9007199254740991": true}'
+      negative: []
+    receiveMapStringAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"": true}'
+        - '{"hello": true}'
+      negative: []
+    receiveMapUuidAliasExample:  # WIP
+      positive:
+        - '{}'
+        - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
+      negative: []
 
   # single-header-service.conjure.yml
   singleHeaderService:
