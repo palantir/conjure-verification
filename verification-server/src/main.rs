@@ -62,11 +62,11 @@ use std::sync::Arc;
 use test_spec::ClientTestCases;
 use test_spec::TestCases;
 
-mod errors;
-mod raw_json;
-mod resolved_test_cases;
-mod resource;
-mod test_spec;
+pub mod errors;
+pub mod raw_json;
+pub mod resolved_test_cases;
+pub mod resource;
+pub mod test_spec;
 
 fn main() {
     pretty_env_logger::init();
