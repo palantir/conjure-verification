@@ -17,19 +17,16 @@ use hyper::header::{HOST, RETRY_AFTER};
 use hyper::server::conn::Http;
 use hyper::service::Service;
 use hyper::{self, Body, Request, Response, StatusCode, Version};
-use openssl::ssl::{self, AlpnError, SslAcceptor, SslAcceptorBuilder, SslFiletype, SslMethod};
 use parking_lot::Mutex;
 use serde_json;
 use std::io::Read;
 use std::net::{SocketAddr, TcpListener};
-use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use tokio::net::TcpStream;
 use tokio::reactor::Handle;
 use tokio::runtime::current_thread::Runtime;
-use tokio_openssl::SslAcceptorExt;
 use zipkin::{Endpoint, Tracer};
 
 use config::{
@@ -53,52 +50,6 @@ where
         let mut f = self.0.lock();
         let f = &mut *f;
         Box::new(future::ok(f(req)))
-    }
-}
-
-fn test_tls_server<F, G>(requests: usize, acceptor_callback: F, callback: G) -> TestTlsServer
-where
-    F: FnOnce(&mut SslAcceptorBuilder),
-    G: FnMut(Request<Body>) -> Response<Body> + 'static + Send,
-{
-    let test_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("test");
-    let key_file = test_dir.join("key.pem");
-    let cert_file = test_dir.join("cert.cer");
-
-    let mut acceptor = SslAcceptor::mozilla_modern(SslMethod::tls()).unwrap();
-    acceptor
-        .set_private_key_file(&key_file, SslFiletype::PEM)
-        .unwrap();
-    acceptor.set_certificate_chain_file(&cert_file).unwrap();
-    acceptor_callback(&mut acceptor);
-    let acceptor = acceptor.build();
-
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let addr = listener.local_addr().unwrap();
-
-    let handle = thread::spawn(move || {
-        let mut runtime = Runtime::new().unwrap();
-        let callback = Arc::new(Mutex::new(callback));
-
-        for _ in 0..requests {
-            let socket = listener.accept().unwrap().0;
-            let f = future::lazy(|| TcpStream::from_std(socket, &Handle::current()))
-                .map_err(|e| panic!("{}", e))
-                .and_then(|s| acceptor.accept_async(s))
-                .map_err(|e| panic!("{}", e))
-                .and_then(|s| {
-                    Http::new()
-                        .keep_alive(false)
-                        .serve_connection(s, TestService(callback.clone()))
-                });
-            runtime.block_on(f).unwrap();
-        }
-    });
-
-    TestTlsServer {
-        handle: Some(handle),
-        addr,
-        cert_file,
     }
 }
 
@@ -137,20 +88,6 @@ struct TestServer {
 }
 
 impl Drop for TestServer {
-    fn drop(&mut self) {
-        if !thread::panicking() {
-            self.handle.take().unwrap().join().unwrap();
-        }
-    }
-}
-
-struct TestTlsServer {
-    handle: Option<JoinHandle<()>>,
-    addr: SocketAddr,
-    cert_file: PathBuf,
-}
-
-impl Drop for TestTlsServer {
     fn drop(&mut self) {
         if !thread::panicking() {
             self.handle.take().unwrap().join().unwrap();
@@ -367,44 +304,6 @@ fn assume_http2() {
         }}
         "#,
         server.addr.port()
-    );
-    let client = client(&config);
-
-    let response = client.get("/").send().unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
-}
-
-#[test]
-fn assume_http2_tls() {
-    let server = test_tls_server(
-        1,
-        |ssl| {
-            ssl.set_alpn_select_callback(|_, client| {
-                ssl::select_next_proto(b"\x02h2", client).ok_or(AlpnError::ALERT_FATAL)
-            });
-        },
-        |request| {
-            assert_eq!(request.version(), Version::HTTP_2);
-            Response::new(Body::empty())
-        },
-    );
-
-    let config = format!(
-        r#"
-        {{
-            "services": {{
-                "service": {{
-                    "uris": ["https://localhost:{}"],
-                    "experimental-assume-http2": true,
-                    "security": {{
-                        "ca-file": "{}"
-                    }}
-                }}
-            }}
-        }}
-        "#,
-        server.addr.port(),
-        server.cert_file.display()
     );
     let client = client(&config);
 
