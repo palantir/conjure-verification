@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Data types and logic that resolves [ClientTestCases] into [ResolvedClientTestCases].
+//!
+//! What is changed between the two is that parsing set of positive tests (lists of strings)
+//! becomes a [ResolvedTestCases].
+//! This type holds the [resolved conjure type][ResolvedType] for that endpoint, as well as a vec
+//! of [ResolvedTestCase] which has the raw test case (string) as well as the parsed [ConjureValue].
+//!
+//! [ClientTestCases]: ../test_cases/struct.ClientTestCases.html
+//! [ResolvedClientTestCases]: ./struct.ResolvedClientTestCases.html
+//! [ResolvedTestCases]: struct.ResolvedTestCases.html
+//! [ResolvedTestCase]: struct.ResolvedTestCase.html
+//! [ResolvedType]: ../../conjure_verification_common/conjure/resolved_type/ResolvedType.t.html
+//! [ConjureValue]: ../../conjure_verification_common/conjure/value/struct.ConjureValue.html
+
 use conjure::resolved_type::ResolvedType;
 use conjure::value::ConjureValue;
 use conjure_verification_common::more_serde_json;
