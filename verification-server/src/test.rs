@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use serde_yaml;
+use conjure_verification_common::conjure::ir::Conjure;
 use serde_json;
+use serde_yaml;
 use std::fs::File;
 use std::path::Path;
 use test_spec::TestCases;
-use conjure_verification_common::conjure::ir::Conjure;
 
 const TEST_CASES_PATH: &str = "../verification-server-api/test-cases.yml";
 const CONJURE_IR_PATH: &str =
