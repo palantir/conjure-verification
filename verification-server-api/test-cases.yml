@@ -227,7 +227,7 @@ client:
       negative:
         - '"not an integer"'
 
-    # complex aliases
+    # named aliases
     receiveStringAliasExample:
       positive:
         - '"exampleOutput"'
@@ -378,6 +378,296 @@ client:
       negative:
       - '{"snakeCasedField":1}'
       - '{"snake-cased-field":1}'
+    receiveOptionalBearerTokenAliasExample:
+      positive:
+        - 'null'
+        - '"abc123"'
+        - '"-._~+/="'
+        - '"abc="'
+        - '"a="'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalBinaryAliasExample:
+      positive:
+        - 'null'
+        # TODO(dfox): binary alias?
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalBooleanAliasExample:
+      positive:
+        - 'null'
+        - 'true'
+        - 'false'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalDateTimeAliasExample:
+      positive:
+        - 'null'
+        - '"2017-01-02T03:04:05Z"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalDoubleAliasExample:
+      positive:
+        - 'null'
+        - '10'
+        - '10.0'
+        - '"NaN"'
+        - '"Infinity"'
+        - '"-Infinity"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalIntegerAliasExample:
+      positive:
+        - 'null'
+        - '0'
+        - '123'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalRidAliasExample:
+      positive:
+        - 'null'
+        - '"ri.service.instance.folder.foo"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalSafeLongAliasExample:
+      positive:
+        - 'null'
+        - '-9007199254740991'
+        - '0'
+        - '9007199254740991'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalStringAliasExample:
+      positive:
+        - 'null'
+        - '""'
+        - '"hello"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalUuidAliasExample:
+      positive:
+        - 'null'
+        - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"'
+        - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"'
+      negative:
+        - '{}'
+        - '[]'
+    receiveOptionalAnyAliasExample:
+      positive:
+        - 'null'
+        - '0'
+        - '"content"'
+        - 'true'
+        - '[1,2,3]'
+        - '{"key":3}'
+      negative: []
+    receiveListBearerTokenAliasExample:
+      positive:
+        - '[]'
+        - '["abc123"]'
+      negative:
+        - 'null'
+    receiveListBinaryAliasExample:
+      positive:
+        - '[]'
+        - '["", "SGVsbG8sIFdvcmxk"]'
+      negative:
+        - 'null'
+    receiveListBooleanAliasExample:
+      positive:
+        - '[]'
+        - '[true]'
+      negative:
+        - 'null'
+    receiveListDateTimeAliasExample:
+      positive:
+        - '[]'
+        - '["2017-01-02T03:04:05Z"]'
+      negative:
+        - 'null'
+    receiveListDoubleAliasExample:
+      positive:
+        - '[]'
+        - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
+      negative:
+        - 'null'
+    receiveListIntegerAliasExample:
+      positive:
+        - '[]'
+        - '[0, 123]'
+      negative:
+        - 'null'
+    receiveListRidAliasExample:
+      positive:
+        - '[]'
+        - '["ri.service.instance.folder.foo"]'
+      negative:
+        - 'null'
+    receiveListSafeLongAliasExample:
+      positive:
+        - '[]'
+        - '[-9007199254740991, 0, 9007199254740991]'
+      negative:
+        - 'null'
+    receiveListStringAliasExample:
+      positive:
+        - '[]'
+        - '["", "hello"]'
+      negative:
+        - 'null'
+    receiveListUuidAliasExample:
+      positive:
+        - '[]'
+        - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
+      negative:
+        - 'null'
+    receiveListAnyAliasExample:
+      positive:
+        - '[]'
+        - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+      negative:
+        - 'null'
+    receiveSetBearerTokenAliasExample:
+      positive:
+        - '[]'
+        - '["abc123"]'
+      negative:
+        - 'null'
+    receiveSetBinaryAliasExample:
+      positive:
+        - '[]'
+        - '["", "SGVsbG8sIFdvcmxk"]'
+      negative:
+        - 'null'
+    receiveSetBooleanAliasExample:
+      positive:
+        - '[]'
+        - '[true]'
+      negative:
+        - 'null'
+    receiveSetDateTimeAliasExample:
+      positive:
+        - '[]'
+        - '["2017-01-02T03:04:05Z"]'
+      negative:
+        - 'null'
+    receiveSetDoubleAliasExample:
+      positive:
+        - '[]'
+        - '[100, 10.0, "NaN", "Infinity", "-Infinity"]'
+        # https://github.com/palantir/conjure-verification/issues/72
+        # - '[+0, -0]'
+      negative:
+        - 'null'
+    receiveSetIntegerAliasExample:
+      positive:
+        - '[]'
+        - '[0, 123]'
+      negative:
+        - 'null'
+    receiveSetRidAliasExample:
+      positive:
+        - '[]'
+        - '["ri.service.instance.folder.foo"]'
+      negative:
+        - 'null'
+    receiveSetSafeLongAliasExample:
+      positive:
+        - '[]'
+        - '[-9007199254740991, 0, 9007199254740991]'
+      negative:
+        - 'null'
+    receiveSetStringAliasExample:
+      positive:
+        - '[]'
+        - '["", "hello"]'
+      negative:
+        - 'null'
+    receiveSetUuidAliasExample:
+      positive:
+        - '[]'
+        - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
+      negative:
+        - 'null'
+    receiveSetAnyAliasExample:
+      positive:
+        - '[]'
+        - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+      negative:
+        - 'null'
+    # https://github.com/palantir/conjure-verification/issues/71
+    receiveMapBearerTokenAliasExample:
+      positive:
+        - '{}'
+        # - '{"abc123": true}'
+      negative: []
+    receiveMapBinaryAliasExample:
+      positive:
+        - '{}'
+        # - '{"SGVsbG8sIFdvcmxk": true}'
+      negative: []
+    receiveMapBooleanAliasExample:
+      positive:
+        - '{}'
+        # - '{"true": true}'
+      negative: []
+    receiveMapDateTimeAliasExample:
+      positive:
+        - '{}'
+        # - '{"2017-01-02T03:04:05Z": true}'
+      negative: []
+    receiveMapDoubleAliasExample:
+      positive:
+        - '{}'
+        # - '{"10": true}'
+        # - '{"10.0": true}'
+        # - '{"3e+2": true}'
+        # - '{"3e-2": true}'
+        # - '{"NaN": true}'
+        # - '{"Infinity": true}'
+        # - '{"-Infinity": true}'
+        # - '{"10": true, "3e2": true}'
+      negative:
+        - '{"10": true, "10e0": false}'
+        - '{"10": true, "10.0": false}'
+    receiveMapIntegerAliasExample:
+      positive:
+        - '{}'
+        # - '{"0": true}'
+        # - '{"123": true}'
+      negative: []
+    receiveMapRidAliasExample:
+      positive:
+        - '{}'
+        # - '{"ri.service.instance.folder.foo": true}'
+      negative: []
+    receiveMapSafeLongAliasExample:
+      positive:
+        - '{}'
+        # - '{"-9007199254740991": true}'
+        # - '{"0": true}'
+        # - '{"9007199254740991": true}'
+      negative: []
+    receiveMapStringAliasExample:
+      positive:
+        - '{}'
+        # - '{"": true}'
+        # - '{"hello": true}'
+      negative: []
+    receiveMapUuidAliasExample:
+      positive:
+        - '{}'
+        # - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
+      negative: []
 
   # single-header-service.conjure.yml
   singleHeaderService:

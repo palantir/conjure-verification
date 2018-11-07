@@ -135,7 +135,7 @@ services:
         returns: examples.RawOptionalExample
         args: { index: integer }
 
-      # complex alias
+      # named alias
       receiveStringAliasExample:
         http: GET /receiveStringAliasExample/{index}
         returns: examples.StringAliasExample
@@ -200,4 +200,219 @@ services:
       receiveSnakeCaseObjectExample:
         http: GET /receiveSnakeCaseObjectExample/{index}
         returns: examples.SnakeCaseObjectExample
+        args: { index: integer }
+
+      receiveOptionalBearerTokenAliasExample:
+        http: GET /receiveOptionalBearerTokenAliasExample/{index}
+        returns: examples.OptionalBearerTokenAliasExample
+        args: { index: integer }
+
+      receiveOptionalBinaryAliasExample:
+        http: GET /receiveOptionalBinaryAliasExample/{index}
+        returns: examples.OptionalBinaryAliasExample
+        args: { index: integer }
+
+      receiveOptionalBooleanAliasExample:
+        http: GET /receiveOptionalBooleanAliasExample/{index}
+        returns: examples.OptionalBooleanAliasExample
+        args: { index: integer }
+
+      receiveOptionalDateTimeAliasExample:
+        http: GET /receiveOptionalDateTimeAliasExample/{index}
+        returns: examples.OptionalDateTimeAliasExample
+        args: { index: integer }
+
+      receiveOptionalDoubleAliasExample:
+        http: GET /receiveOptionalDoubleAliasExample/{index}
+        returns: examples.OptionalDoubleAliasExample
+        args: { index: integer }
+
+      receiveOptionalIntegerAliasExample:
+        http: GET /receiveOptionalIntegerAliasExample/{index}
+        returns: examples.OptionalIntegerAliasExample
+        args: { index: integer }
+
+      receiveOptionalRidAliasExample:
+        http: GET /receiveOptionalRidAliasExample/{index}
+        returns: examples.OptionalRidAliasExample
+        args: { index: integer }
+
+      receiveOptionalSafeLongAliasExample:
+        http: GET /receiveOptionalSafeLongAliasExample/{index}
+        returns: examples.OptionalSafeLongAliasExample
+        args: { index: integer }
+
+      receiveOptionalStringAliasExample:
+        http: GET /receiveOptionalStringAliasExample/{index}
+        returns: examples.OptionalStringAliasExample
+        args: { index: integer }
+
+      receiveOptionalUuidAliasExample:
+        http: GET /receiveOptionalUuidAliasExample/{index}
+        returns: examples.OptionalUuidAliasExample
+        args: { index: integer }
+
+      receiveOptionalAnyAliasExample:
+        http: GET /receiveOptionalAnyAliasExample/{index}
+        returns: examples.OptionalAnyAliasExample
+        args: { index: integer }
+
+      receiveListBearerTokenAliasExample:
+        http: GET /receiveListBearerTokenAliasExample/{index}
+        returns: examples.ListBearerTokenAliasExample
+        args: { index: integer }
+
+      receiveListBinaryAliasExample:
+        http: GET /receiveListBinaryAliasExample/{index}
+        returns: examples.ListBinaryAliasExample
+        args: { index: integer }
+
+      receiveListBooleanAliasExample:
+        http: GET /receiveListBooleanAliasExample/{index}
+        returns: examples.ListBooleanAliasExample
+        args: { index: integer }
+
+      receiveListDateTimeAliasExample:
+        http: GET /receiveListDateTimeAliasExample/{index}
+        returns: examples.ListDateTimeAliasExample
+        args: { index: integer }
+
+      receiveListDoubleAliasExample:
+        http: GET /receiveListDoubleAliasExample/{index}
+        returns: examples.ListDoubleAliasExample
+        args: { index: integer }
+
+      receiveListIntegerAliasExample:
+        http: GET /receiveListIntegerAliasExample/{index}
+        returns: examples.ListIntegerAliasExample
+        args: { index: integer }
+
+      receiveListRidAliasExample:
+        http: GET /receiveListRidAliasExample/{index}
+        returns: examples.ListRidAliasExample
+        args: { index: integer }
+
+      receiveListSafeLongAliasExample:
+        http: GET /receiveListSafeLongAliasExample/{index}
+        returns: examples.ListSafeLongAliasExample
+        args: { index: integer }
+
+      receiveListStringAliasExample:
+        http: GET /receiveListStringAliasExample/{index}
+        returns: examples.ListStringAliasExample
+        args: { index: integer }
+
+      receiveListUuidAliasExample:
+        http: GET /receiveListUuidAliasExample/{index}
+        returns: examples.ListUuidAliasExample
+        args: { index: integer }
+
+      receiveListAnyAliasExample:
+        http: GET /receiveListAnyAliasExample/{index}
+        returns: examples.ListAnyAliasExample
+        args: { index: integer }
+
+      receiveSetBearerTokenAliasExample:
+        http: GET /receiveSetBearerTokenAliasExample/{index}
+        returns: examples.SetBearerTokenAliasExample
+        args: { index: integer }
+
+      receiveSetBinaryAliasExample:
+        http: GET /receiveSetBinaryAliasExample/{index}
+        returns: examples.SetBinaryAliasExample
+        args: { index: integer }
+
+      receiveSetBooleanAliasExample:
+        http: GET /receiveSetBooleanAliasExample/{index}
+        returns: examples.SetBooleanAliasExample
+        args: { index: integer }
+
+      receiveSetDateTimeAliasExample:
+        http: GET /receiveSetDateTimeAliasExample/{index}
+        returns: examples.SetDateTimeAliasExample
+        args: { index: integer }
+
+      receiveSetDoubleAliasExample:
+        http: GET /receiveSetDoubleAliasExample/{index}
+        returns: examples.SetDoubleAliasExample
+        args: { index: integer }
+
+      receiveSetIntegerAliasExample:
+        http: GET /receiveSetIntegerAliasExample/{index}
+        returns: examples.SetIntegerAliasExample
+        args: { index: integer }
+
+      receiveSetRidAliasExample:
+        http: GET /receiveSetRidAliasExample/{index}
+        returns: examples.SetRidAliasExample
+        args: { index: integer }
+
+      receiveSetSafeLongAliasExample:
+        http: GET /receiveSetSafeLongAliasExample/{index}
+        returns: examples.SetSafeLongAliasExample
+        args: { index: integer }
+
+      receiveSetStringAliasExample:
+        http: GET /receiveSetStringAliasExample/{index}
+        returns: examples.SetStringAliasExample
+        args: { index: integer }
+
+      receiveSetUuidAliasExample:
+        http: GET /receiveSetUuidAliasExample/{index}
+        returns: examples.SetUuidAliasExample
+        args: { index: integer }
+
+      receiveSetAnyAliasExample:
+        http: GET /receiveSetAnyAliasExample/{index}
+        returns: examples.SetAnyAliasExample
+        args: { index: integer }
+
+      receiveMapBearerTokenAliasExample:
+        http: GET /receiveMapBearerTokenAliasExample/{index}
+        returns: examples.MapBearerTokenAliasExample
+        args: { index: integer }
+
+      receiveMapBinaryAliasExample:
+        http: GET /receiveMapBinaryAliasExample/{index}
+        returns: examples.MapBinaryAliasExample
+        args: { index: integer }
+
+      receiveMapBooleanAliasExample:
+        http: GET /receiveMapBooleanAliasExample/{index}
+        returns: examples.MapBooleanAliasExample
+        args: { index: integer }
+
+      receiveMapDateTimeAliasExample:
+        http: GET /receiveMapDateTimeAliasExample/{index}
+        returns: examples.MapDateTimeAliasExample
+        args: { index: integer }
+
+      receiveMapDoubleAliasExample:
+        http: GET /receiveMapDoubleAliasExample/{index}
+        returns: examples.MapDoubleAliasExample
+        args: { index: integer }
+
+      receiveMapIntegerAliasExample:
+        http: GET /receiveMapIntegerAliasExample/{index}
+        returns: examples.MapIntegerAliasExample
+        args: { index: integer }
+
+      receiveMapRidAliasExample:
+        http: GET /receiveMapRidAliasExample/{index}
+        returns: examples.MapRidAliasExample
+        args: { index: integer }
+
+      receiveMapSafeLongAliasExample:
+        http: GET /receiveMapSafeLongAliasExample/{index}
+        returns: examples.MapSafeLongAliasExample
+        args: { index: integer }
+
+      receiveMapStringAliasExample:
+        http: GET /receiveMapStringAliasExample/{index}
+        returns: examples.MapStringAliasExample
+        args: { index: integer }
+
+      receiveMapUuidAliasExample:
+        http: GET /receiveMapUuidAliasExample/{index}
+        returns: examples.MapUuidAliasExample
         args: { index: integer }
