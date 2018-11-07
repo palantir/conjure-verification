@@ -102,7 +102,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
         if let PrimitiveType::Double = self.0 {
             Ok(ConjurePrimitiveValue::Double(
                 str.parse::<ConjureDouble>()
-                    .map_err(|e| serde::de::Error::custom(e.to_string()))?,
+                    .map_err(|e| serde::de::Error::custom(e))?,
             ))
         } else {
             let de = serde_plain::Deserializer::from_str(&str);
