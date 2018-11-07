@@ -150,3 +150,5 @@ types:
         alias: map<string, boolean>
       MapUuidAliasExample:
         alias: map<uuid, boolean>
+      MapEnumExample:
+        alias: map<EnumExample, boolean>
