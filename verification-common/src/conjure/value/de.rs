@@ -111,7 +111,14 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
             PrimitiveType::Rid => ConjurePrimitiveValue::Rid(de.deser()?),
             PrimitiveType::Bearertoken => ConjurePrimitiveValue::Bearertoken(de.deser()?),
             PrimitiveType::Datetime => ConjurePrimitiveValue::Datetime(de.deser()?),
-            PrimitiveType::Any => ConjurePrimitiveValue::Any(de.deser()?),
+            PrimitiveType::Any => {
+                let deser = de.deser()?;
+                // We explicitly don't allow 'null' in any.
+                if deser == ::serde_value::Value::Option(None) {
+                    return Err(::serde::de::Error::custom("unexpected 'null' for type any"));
+                }
+                ConjurePrimitiveValue::Any(deser)
+            }
         };
         Ok(out)
     }

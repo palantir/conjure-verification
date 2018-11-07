@@ -37,12 +37,6 @@ pub struct PositiveAndNegativeTestCases {
     pub negative: Vec<String>,
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq, Clone, From)]
-pub struct AutoDeserializePositiveTest(pub String);
-
-#[derive(Deserialize, Debug, Eq, PartialEq, Clone, From)]
-pub struct AutoDeserializeNegativeTest(pub String);
-
 #[cfg(test)]
 mod test {
     use super::*;
