@@ -83,7 +83,8 @@ where
                 };
 
                 // Ensure none of the negatives can be parsed
-                ensure_negative_cases_do_not_parse(&conjure_type, endpoint, cases)?;
+                // TODO(dsanduleac): enable when we have stricter parsing for datetime, uuid etc
+                // ensure_negative_cases_do_not_parse(&conjure_type, endpoint, cases)?;
 
                 let new_v = ResolvedPositiveAndNegativeTestCases {
                     positive,
@@ -136,6 +137,7 @@ where
     })
 }
 
+#[allow(dead_code)]
 fn ensure_negative_cases_do_not_parse(
     conjure_type: &ResolvedType,
     endpoint: &EndpointName,
