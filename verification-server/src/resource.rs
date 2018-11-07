@@ -11,11 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 use bytes::Bytes;
-use conjure::ir::PrimitiveType;
-use conjure::resolved_type::ResolvedType;
-use conjure::value::double::ConjureDouble;
 use conjure::value::*;
+use conjure_verification_common::conjure::value::de_plain::deserialize_plain;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
 use conjure_verification_http::request::Request;
@@ -35,7 +34,6 @@ use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
 use resolved_test_cases::ResolvedTestCase;
 use resolved_test_cases::ResolvedTestCases;
 use serde_json;
-use serde_plain;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::error::Error as StdError;
@@ -108,20 +106,7 @@ impl SpecTestResource {
                         )
                     };
 
-                    // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
-                    // deserializer uses, so we special case that type, knowing that this case only
-                    // supports primitive types anyway.
-                    if let ResolvedType::Primitive(PrimitiveType::Double) = conjure_type {
-                        Ok(ConjureValue::Primitive(ConjurePrimitiveValue::Double(
-                            str.parse::<ConjureDouble>()
-                                .map_err(|e| handle_err(e.into()))?,
-                        )))
-                    } else {
-                        let de = serde_plain::Deserializer::from_str(&str);
-                        conjure_type
-                            .deserialize(de)
-                            .map_err(|e| handle_err(e.into()))
-                    }
+                    deserialize_plain(conjure_type, str.as_str()).map_err(|e| handle_err(e.into()))
                 }).unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
             if param != *expected_param {
                 let error = "Param didn't match expected value";
@@ -417,6 +402,7 @@ mod test {
     use test_spec::ClientTestCases;
     use test_spec::{EndpointName, PositiveAndNegativeTestCases};
     use typed_headers::{ContentType, HeaderMapExt};
+    use conjure::resolved_type::ResolvedType;
 
     type ParamTypes = HashMap<EndpointName, ResolvedType>;
 
