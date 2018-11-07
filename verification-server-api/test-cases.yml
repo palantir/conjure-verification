@@ -472,136 +472,136 @@ client:
       negative: []
     receiveListBearerTokenAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["abc123"]'
-      negative: []
+      negative:
+        - 'null'
     receiveListBinaryAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
-      negative: []
+      negative:
+        - 'null'
     receiveListBooleanAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[true]'
-      negative: []
+      negative:
+        - 'null'
     receiveListDateTimeAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
-      negative: []
+      negative:
+        - 'null'
     receiveListDoubleAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
-      negative: []
+      negative:
+        - 'null'
     receiveListIntegerAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[0, 123]'
-      negative: []
+      negative:
+        - 'null'
     receiveListRidAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["ri.service.instance.folder.foo"]'
-      negative: []
+      negative:
+        - 'null'
     receiveListSafeLongAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
-      negative: []
+      negative:
+        - 'null'
     receiveListStringAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["", "hello"]'
-      negative: []
+      negative:
+        - 'null'
     receiveListUuidAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
-      negative: []
+      negative:
+        - 'null'
     receiveListAnyAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetBearerTokenAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["abc123"]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetBinaryAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetBooleanAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[true]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetDateTimeAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetDoubleAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetIntegerAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[0, 123]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetRidAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["ri.service.instance.folder.foo"]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetSafeLongAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetStringAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["", "hello"]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetUuidAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
-      negative: []
+      negative:
+        - 'null'
     receiveSetAnyAliasExample:
       positive:
-        - 'null'
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
-      negative: []
+      negative:
+        - 'null'
     receiveMapBearerTokenAliasExample:
       positive:
         - '{}'
