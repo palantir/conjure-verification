@@ -29,33 +29,27 @@ use core;
 use either::{Either, Left, Right};
 use errors::*;
 use http::Method;
-use more_serde_json;
 use raw_json::RawJson;
+use resolved_test_cases::ResolvedClientTestCases;
+use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
+use resolved_test_cases::ResolvedTestCase;
+use resolved_test_cases::ResolvedTestCases;
 use serde_json;
 use serde_plain;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::string::ToString;
-use test_spec::AutoDeserializeNegativeTest;
-use test_spec::AutoDeserializePositiveTest;
-use test_spec::ClientTestCases;
 use test_spec::EndpointName;
-use test_spec::PositiveAndNegativeTestCases;
 use DynamicResource;
 
 pub struct SpecTestResource {
-    test_cases: Box<ClientTestCases>,
-    param_types: Box<HashMap<EndpointName, ResolvedType>>,
+    test_cases: Box<ResolvedClientTestCases>,
 }
 
-type ParamTypes = HashMap<EndpointName, ResolvedType>;
-
 impl SpecTestResource {
-    pub fn new(test_cases: Box<ClientTestCases>, param_types: Box<ParamTypes>) -> SpecTestResource {
-        SpecTestResource {
-            test_cases,
-            param_types,
-        }
+    pub fn new(test_cases: Box<ResolvedClientTestCases>) -> SpecTestResource {
+        SpecTestResource { test_cases }
     }
 
     /// Create a test that validates that some param from the request is as expected.
@@ -69,7 +63,7 @@ impl SpecTestResource {
     where
         // TODO return Result<Option<&str>>
         F: Fn(&mut Request) -> Result<Option<String>> + Sync + Send,
-        G: Fn(&ClientTestCases) -> &HashMap<EndpointName, Vec<String>> + Sync + Send,
+        G: Fn(&ResolvedClientTestCases) -> &HashMap<EndpointName, ResolvedTestCases> + Sync + Send,
     {
         move |resource: &SpecTestResource, request: &mut Request| -> Result<_> {
             let index = SpecTestResource::parse_index(request)?;
@@ -79,9 +73,12 @@ impl SpecTestResource {
 
             validate(request)?;
 
-            let conjure_type = get_endpoint(&resource.param_types, &endpoint)?;
-            let test_cases = get_endpoint(get_cases(&resource.test_cases), &endpoint)?;
-            let expected_param_str: &str = {
+            let ResolvedTestCases {
+                test_cases,
+                conjure_type,
+            } = get_endpoint(get_cases(&resource.test_cases), &endpoint)?;
+
+            let resolved_test_case: &ResolvedTestCase = {
                 test_cases.get(index).ok_or_else(|| {
                     Error::new_safe(
                         "Index out of bounds",
@@ -92,8 +89,8 @@ impl SpecTestResource {
                     )
                 })
             }?;
-            let expected_param =
-                deserialize_expected_value(conjure_type, expected_param_str, &endpoint, index)?;
+            let expected_param_str: &str = resolved_test_case.text.as_str();
+            let expected_param = &resolved_test_case.value;
             let param = param_str
                 .as_ref()
                 .map(|str| {
@@ -103,7 +100,7 @@ impl SpecTestResource {
                             e,
                             VerificationError::param_validation_failure(
                                 expected_param_str,
-                                &expected_param,
+                                expected_param,
                                 Some(str.clone()),
                                 None,
                                 error_message,
@@ -126,13 +123,13 @@ impl SpecTestResource {
                             .map_err(|e| handle_err(e.into()))
                     }
                 }).unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
-            if param != expected_param {
+            if param != *expected_param {
                 let error = "Param didn't match expected value";
                 return Err(Error::new_safe(
                     error,
                     VerificationError::param_validation_failure(
                         expected_param_str,
-                        &expected_param,
+                        expected_param,
                         param_str,
                         Some(&param),
                         error,
@@ -178,7 +175,7 @@ impl SpecTestResource {
 
             let cases = get_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
             let reply: Bytes = get_test_case_at_index(cases, &index)?
-                .map_left(|case| case.0)
+                .map_left(|case| case.0.text.as_str())
                 .map_right(|case| case.0)
                 .into_inner()
                 .into();
@@ -203,22 +200,20 @@ impl SpecTestResource {
         let index: usize = SpecTestResource::parse_index(request)?;
         let endpoint = EndpointName::new(request.path_param("endpoint"));
 
-        let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
-        let expected_body_str = {
-            let positive_cases =
-                &get_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
-            positive_cases.get(index).ok_or_else(|| {
-                Error::new_safe(
-                    "Index out of bounds",
-                    VerificationError::IndexOutOfBounds {
-                        index,
-                        max_index: positive_cases.len(),
-                    },
-                )
-            })
-        }?.to_string();
-        let expected_body =
-            deserialize_expected_value(conjure_type, expected_body_str.as_ref(), &endpoint, index)?;
+        let positive_cases = &get_endpoint(&self.test_cases.auto_deserialize, &endpoint)?.positive;
+
+        let conjure_type = &positive_cases.conjure_type;
+        let resolved_test_case = positive_cases.test_cases.get(index).ok_or_else(|| {
+            Error::new_safe(
+                "Index out of bounds",
+                VerificationError::IndexOutOfBounds {
+                    index,
+                    max_index: positive_cases.test_cases.len(),
+                },
+            )
+        })?;
+        let expected_body_str = resolved_test_case.text.to_string();
+        let expected_body: &ConjureValue = &resolved_test_case.value;
         let request_body_value: serde_json::Value = request.body()?;
         let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {
             let error_message = format!("{}", e);
@@ -226,7 +221,7 @@ impl SpecTestResource {
                 e,
                 VerificationError::confirmation_failure(
                     &expected_body_str,
-                    &expected_body,
+                    expected_body,
                     &request_body_value,
                     None,
                     error_message,
@@ -234,13 +229,13 @@ impl SpecTestResource {
             )
         })?;
         // Compare request_body with what the test case says we sent
-        if request_body != expected_body {
+        if request_body != *expected_body {
             let error = "Body didn't match expected Conjure value";
             return Err(Error::new_safe(
                 error,
                 VerificationError::confirmation_failure(
                     &expected_body_str,
-                    &expected_body,
+                    expected_body,
                     &request_body_value,
                     Some(&request_body),
                     error,
@@ -249,20 +244,6 @@ impl SpecTestResource {
         }
         Ok(NoContent)
     }
-}
-
-fn deserialize_expected_value(
-    conjure_type: &ResolvedType,
-    raw: &str,
-    endpoint: &EndpointName,
-    index: usize,
-) -> Result<ConjureValue> {
-    more_serde_json::from_str(conjure_type, raw).map_err(|e| {
-        Error::internal_safe(e)
-            .with_safe_param("endpoint", endpoint.to_string())
-            .with_safe_param("index", index)
-            .with_safe_param("expected_raw", raw)
-    })
 }
 
 impl Resource for SpecTestResource {
@@ -280,11 +261,17 @@ impl Resource for SpecTestResource {
 #[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
 pub struct TestIndex(usize);
 
-fn get_test_case_at_index(
-    cases: &PositiveAndNegativeTestCases,
+#[derive(Debug, From)]
+pub struct AutoDeserializePositiveTest<'a>(pub &'a ResolvedTestCase);
+
+#[derive(Debug, From)]
+pub struct AutoDeserializeNegativeTest<'a>(pub &'a str);
+
+fn get_test_case_at_index<'a>(
+    cases: &'a ResolvedPositiveAndNegativeTestCases,
     index: &TestIndex,
-) -> Result<Either<AutoDeserializePositiveTest, AutoDeserializeNegativeTest>> {
-    let positives = cases.positive.len();
+) -> Result<Either<AutoDeserializePositiveTest<'a>, AutoDeserializeNegativeTest<'a>>> {
+    let positives = cases.positive.test_cases.len();
     let negatives = cases.negative.len();
     let index_out_of_bounds = || {
         Error::new_safe(
@@ -301,9 +288,9 @@ fn get_test_case_at_index(
             .negative
             .get(index.0 - positives)
             .ok_or_else(index_out_of_bounds)?;
-        Right(test.clone().into())
+        Right(test.as_str().into())
     } else {
-        Left(cases.positive[index.0].clone().into())
+        Left(cases.positive.test_cases[index.0].borrow().into())
     };
     Ok(result)
 }
@@ -421,13 +408,17 @@ mod test {
     use hyper::Method;
     use mime::APPLICATION_JSON;
     use register_resource;
+    use resolved_test_cases;
     use router;
     use router::RouteResult;
     use router::Router;
     use std::collections::HashMap;
     use std::sync::Arc;
+    use test_spec::ClientTestCases;
     use test_spec::{EndpointName, PositiveAndNegativeTestCases};
     use typed_headers::{ContentType, HeaderMapExt};
+
+    type ParamTypes = HashMap<EndpointName, ResolvedType>;
 
     /// This exists because `Request` takes references only so it can't be used as a builder.
     #[derive(Clone, Default)]
@@ -608,7 +599,9 @@ mod test {
         let mut test_cases = ClientTestCases::default();
         let mut param_types = HashMap::default();
         f(&mut test_cases, &mut param_types);
-        let (router, _) = create_resource(test_cases, param_types);
+        let resolved_test_cases =
+            resolved_test_cases::resolve_test_cases(&param_types, &test_cases).unwrap();
+        let (router, _) = create_resource(resolved_test_cases);
         router
     }
 
@@ -621,7 +614,7 @@ mod test {
                 negative: vec![],
             }
         );
-        let param_types = hashmap![
+        let param_types: HashMap<EndpointName, ResolvedType> = hashmap![
             EndpointName::new("foo") => ResolvedType::Object(ObjectDefinition {
                 type_name: ir::TypeName { name: "Name".to_string(), package: "com.palantir.package".to_string() },
                 fields: vec![
@@ -632,19 +625,15 @@ mod test {
                 ]
             })
         ];
-        let (router, resource) = create_resource(test_cases, param_types);
+        let resolved_test_cases =
+            resolved_test_cases::resolve_test_cases(&param_types, &test_cases).unwrap();
+        let (router, resource) = create_resource(resolved_test_cases);
         (expected_body, router, resource)
     }
 
-    fn create_resource(
-        test_cases: ClientTestCases,
-        param_types: ParamTypes,
-    ) -> (Router, Arc<SpecTestResource>) {
+    fn create_resource(test_cases: ResolvedClientTestCases) -> (Router, Arc<SpecTestResource>) {
         let mut builder = router::Router::builder();
-        let resource = Arc::new(SpecTestResource::new(
-            Box::new(test_cases),
-            Box::new(param_types),
-        ));
+        let resource = Arc::new(SpecTestResource::new(Box::new(test_cases)));
         register_resource(&mut builder, &resource);
         (builder.build(), resource)
     }
