@@ -43,6 +43,7 @@ jobs:
     - *RESTORE_DEPS
     - run: rustup component add rustfmt-preview
     - run: cargo fmt --all -- --check
+    - attach_workspace: { at: . } # need the compiled conjure IR from `gradle-build`
     - run: cargo test && cargo build --release
     - *SAVE_DEPS
     - *SAVE_REGISTRY
@@ -152,6 +153,10 @@ jobs:
             - ~/.gradle/caches
       - store_artifacts:
           path: ~/poms
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./*/build/
 
 workflows:
   version: 2
@@ -159,6 +164,8 @@ workflows:
     jobs:
       - cargo-build-linux:
           filters: { tags: { only: /.*/ } }
+          requires:
+            - gradle-build
       - cargo-build-osx:
           filters: { tags: { only: /.*/ } }
       - gradle-build:

@@ -68,6 +68,9 @@ pub mod resolved_test_cases;
 pub mod resource;
 pub mod test_spec;
 
+#[cfg(test)]
+pub mod test;
+
 fn main() {
     pretty_env_logger::init();
     let args = &env::args().collect::<Vec<_>>()[..];
