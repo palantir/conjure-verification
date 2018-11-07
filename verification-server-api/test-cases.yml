@@ -563,7 +563,9 @@ client:
     receiveSetDoubleAliasExample:
       positive:
         - '[]'
-        - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
+        - '[100, 10.0, "NaN", "Infinity", "-Infinity"]'
+        # https://github.com/palantir/conjure-verification/issues/72
+        # - '[+0, -0]'
       negative:
         - 'null'
     receiveSetIntegerAliasExample:
