@@ -67,6 +67,15 @@ pub enum VerificationError {
     },
     #[error_type(code = "CustomClient")]
     ClientIo,
+    #[error_type(code = "CustomServer")]
+    BadTestCase {
+        #[error_type(safe)]
+        endpoint: EndpointName,
+        #[error_type(safe)]
+        index: usize,
+        #[error_type(safe)]
+        value: String,
+    },
 }
 
 impl VerificationError {

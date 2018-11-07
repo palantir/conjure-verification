@@ -39,15 +39,16 @@ extern crate typed_headers;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
-use conjure_verification_common::more_serde_json;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::type_of_non_index_arg;
 use conjure_verification_common::type_mapping::TypeForEndpointFn;
+use conjure_verification_error::Result;
 pub use conjure_verification_http_server::*;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
+use resolved_test_cases::ResolvedClientTestCases;
 use resource::SpecTestResource;
 use router::Router;
 use std::collections::HashMap;
@@ -58,10 +59,12 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
+use test_spec::ClientTestCases;
 use test_spec::TestCases;
 
 mod errors;
 mod raw_json;
+mod resolved_test_cases;
 mod resource;
 mod test_spec;
 
@@ -94,18 +97,11 @@ fn main() {
     let ir = File::open(Path::new(ir_path)).unwrap();
     let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
-    let mut services_mapping: HashMap<String, TypeForEndpointFn> = HashMap::new();
-    services_mapping.insert("AutoDeserializeService".to_string(), return_type);
-    services_mapping.insert("SingleHeaderService".to_string(), type_of_non_index_arg);
-    services_mapping.insert("SinglePathParamService".to_string(), type_of_non_index_arg);
-    services_mapping.insert("SingleQueryParamService".to_string(), type_of_non_index_arg);
-
     let mut builder = router::Router::builder();
     register_resource(
         &mut builder,
         &Arc::new(SpecTestResource::new(
-            test_cases.client.into(),
-            type_mapping::resolve_types(&ir, &services_mapping),
+            resolve_test_cases(&ir, &test_cases.client).unwrap().into(),
         )),
     );
     let router = builder.build();
@@ -115,6 +111,21 @@ fn main() {
 
 fn print_usage(arg0: &str) {
     eprintln!("Usage: {} <test-cases.json> <verification-api.json>", arg0);
+}
+
+pub fn resolve_test_cases(
+    ir: &Conjure,
+    client_test_cases: &ClientTestCases,
+) -> Result<ResolvedClientTestCases> {
+    let mut services_mapping: HashMap<String, TypeForEndpointFn> = HashMap::new();
+    services_mapping.insert("AutoDeserializeService".to_string(), return_type);
+    services_mapping.insert("SingleHeaderService".to_string(), type_of_non_index_arg);
+    services_mapping.insert("SinglePathParamService".to_string(), type_of_non_index_arg);
+    services_mapping.insert("SingleQueryParamService".to_string(), type_of_non_index_arg);
+
+    let type_mapping = type_mapping::resolve_types(ir, &services_mapping);
+
+    resolved_test_cases::resolve_test_cases(type_mapping.as_ref(), client_test_cases)
 }
 
 fn start_server(router: Router, port: u16) {
