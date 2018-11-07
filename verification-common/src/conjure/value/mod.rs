@@ -70,7 +70,7 @@ pub enum ConjureValue {
     // anonymous
     List(Vec<ConjureValue>),
     Set(BTreeSet<ConjureValue>),
-    Map(BTreeMap<ConjurePrimitiveValue, ConjureValue>),
+    Map(BTreeMap<ConjureValue, ConjureValue>),
 }
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]

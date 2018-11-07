@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
-use conjure::value::de_plain::deserialize_plain_primitive;
+use conjure::value::de_plain::deserialize_plain;
 use conjure::value::*;
 use core::fmt;
 use serde;
@@ -30,12 +29,12 @@ use std::collections::BTreeMap;
 /// This visitor also supports being visited as an option using `Deserializer::deserialize_option`,
 /// whereby it will return a default.
 pub struct ConjureMapVisitor<'a> {
-    pub key_type: &'a PrimitiveType,
+    pub key_type: &'a ResolvedType,
     pub value_type: &'a ResolvedType,
 }
 
 impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
-    type Value = BTreeMap<ConjurePrimitiveValue, ConjureValue>;
+    type Value = BTreeMap<ConjureValue, ConjureValue>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("map")
@@ -79,14 +78,14 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
     }
 }
 
-/// A map key is a conjure [PrimitiveType] that should be deserialized only from a string
+/// A map key is a conjure [ResolvedType] that should be deserialized only from a string
 /// representation.
 ///
-/// [PrimitiveType]: ../../../ir/enum.PrimitiveType.html
-pub struct MapKey<'a>(&'a PrimitiveType);
+/// [ResolvedType]: ../../../ir/enum.ResolvedType.html
+pub struct MapKey<'a>(&'a ResolvedType);
 
 impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
-    type Value = ConjurePrimitiveValue;
+    type Value = ConjureValue;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
     where
@@ -96,7 +95,6 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
         let str = <&'a str as Deserialize<'de>>::deserialize(deserializer)
             .map_err(|e| serde::de::Error::custom(e))?;
 
-        // TODO(dsanduleac): we should support enums too, using deserialize_plain
-        deserialize_plain_primitive(self.0, &str).map_err(|e| serde::de::Error::custom(e))
+        deserialize_plain(self.0, &str).map_err(|e| serde::de::Error::custom(e))
     }
 }

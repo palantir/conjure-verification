@@ -78,7 +78,7 @@ pub fn set_type(item_type: ResolvedType) -> ResolvedType {
     })
 }
 
-pub fn map_type(key_type: ir::PrimitiveType, value_type: ResolvedType) -> ResolvedType {
+pub fn map_type(key_type: ResolvedType, value_type: ResolvedType) -> ResolvedType {
     ResolvedType::Map(MapType {
         key_type: key_type.into(),
         value_type: value_type.into(),

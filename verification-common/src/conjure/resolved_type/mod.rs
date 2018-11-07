@@ -47,7 +47,7 @@ pub struct SetType {
 
 #[derive(Debug, Clone)]
 pub struct MapType {
-    pub key_type: Box<PrimitiveType>,
+    pub key_type: Box<ResolvedType>,
     pub value_type: Box<ResolvedType>,
 }
 

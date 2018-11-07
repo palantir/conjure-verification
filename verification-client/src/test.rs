@@ -114,7 +114,7 @@ fn test_response_empty_missing_fields_ok() {
             field_definition(
                 "missing_map",
                 map_type(
-                    ir::PrimitiveType::String,
+                    primitive_type(ir::PrimitiveType::String),
                     primitive_type(ir::PrimitiveType::Integer),
                 ),
             ),
