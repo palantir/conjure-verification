@@ -14,7 +14,7 @@
 
 use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
-use conjure::value::double::ConjureDouble;
+use conjure::value::de_plain::deserialize_plain_primitive;
 use conjure::value::*;
 use core::fmt;
 use serde;
@@ -24,7 +24,6 @@ use serde::de::Visitor;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde_json;
-use serde_plain;
 use std::collections::btree_map;
 use std::collections::BTreeMap;
 
@@ -83,7 +82,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
 /// A map key is a conjure [PrimitiveType] that should be deserialized only from a string
 /// representation.
 ///
-/// [PrimitiveType]: ../../ir/enum.PrimitiveType.html
+/// [PrimitiveType]: ../../../ir/enum.PrimitiveType.html
 pub struct MapKey<'a>(&'a PrimitiveType);
 
 impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
@@ -94,21 +93,10 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
         D: Deserializer<'de>,
     {
         // Step 1. deserialize a string
-        let str = <&'a str as Deserialize<'de>>::deserialize(deserializer)?;
+        let str = <&'a str as Deserialize<'de>>::deserialize(deserializer)
+            .map_err(|e| serde::de::Error::custom(e))?;
 
-        // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
-        // deserializer uses, so we special case that type, knowing that this case only
-        // supports primitive types anyway.
-        if let PrimitiveType::Double = self.0 {
-            Ok(ConjurePrimitiveValue::Double(
-                str.parse::<ConjureDouble>()
-                    .map_err(|e| serde::de::Error::custom(e))?,
-            ))
-        } else {
-            let de = serde_plain::Deserializer::from_str(&str);
-            self.0
-                .deserialize(de)
-                .map_err(|e| serde::de::Error::custom(e))
-        }
+        // TODO(dsanduleac): we should support enums too, using deserialize_plain
+        deserialize_plain_primitive(self.0, &str).map_err(|e| serde::de::Error::custom(e))
     }
 }

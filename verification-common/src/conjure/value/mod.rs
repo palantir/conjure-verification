@@ -29,6 +29,7 @@ use std::collections::BTreeSet;
 use uuid::Uuid;
 
 pub mod de;
+pub mod de_plain;
 pub mod double;
 mod util;
 mod visitors;
