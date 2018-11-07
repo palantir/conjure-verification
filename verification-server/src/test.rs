@@ -27,10 +27,10 @@ const CONJURE_IR_PATH: &str =
 #[test]
 fn can_parse_all_test_cases() {
     let test_cases_file = File::open(Path::new(TEST_CASES_PATH)).unwrap();
-    let test_cases = serde_yaml::from_reader::<_, TestCases>(test_cases_file).unwrap();
+    let test_cases: TestCases = serde_yaml::from_reader(test_cases_file).unwrap();
 
     let ir_file = File::open(Path::new(CONJURE_IR_PATH)).unwrap();
-    let ir = serde_json::from_reader::<_, Conjure>(ir_file).unwrap();
+    let ir: Conjure = serde_json::from_reader(ir_file).unwrap();
 
     ::resolve_test_cases(&ir, &test_cases.client).unwrap();
 }
