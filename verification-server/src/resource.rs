@@ -388,6 +388,7 @@ mod test {
     use conjure::resolved_type::FieldDefinition;
     use conjure::resolved_type::ObjectDefinition;
     use conjure::resolved_type::OptionalType;
+    use conjure::resolved_type::ResolvedType;
     use hyper::header::HeaderValue;
     use hyper::HeaderMap;
     use hyper::Method;
@@ -402,7 +403,6 @@ mod test {
     use test_spec::ClientTestCases;
     use test_spec::{EndpointName, PositiveAndNegativeTestCases};
     use typed_headers::{ContentType, HeaderMapExt};
-    use conjure::resolved_type::ResolvedType;
 
     type ParamTypes = HashMap<EndpointName, ResolvedType>;
 

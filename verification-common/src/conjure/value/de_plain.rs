@@ -70,7 +70,7 @@ mod test {
 
     #[test]
     fn test_deserialize_enum() {
-        let enum_def  = enum_definition("whatev", &["foo", "bar"]);
+        let enum_def = enum_definition("whatev", &["foo", "bar"]);
         deserialize_plain(&enum_def, "foo").unwrap();
         deserialize_plain(&enum_def, "bar").unwrap();
         deserialize_plain(&enum_def, "baz").expect_err("Should fail");

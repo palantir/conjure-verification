@@ -45,7 +45,11 @@ pub fn object_definition(name: &str, fields: &[FieldDefinition]) -> ResolvedType
 pub fn enum_definition(name: &str, variants: &[&str]) -> ResolvedType {
     ResolvedType::Enum(ir::EnumDefinition {
         type_name: type_name(name),
-        values: variants.iter().map(|value| ir::EnumValueDefinition { value: value.to_string() }).collect(),
+        values: variants
+            .iter()
+            .map(|value| ir::EnumValueDefinition {
+                value: value.to_string(),
+            }).collect(),
     })
 }
 
