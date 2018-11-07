@@ -668,7 +668,7 @@ client:
         - '{}'
         # - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
       negative: []
-    receiveMapEnumExample:
+    receiveMapEnumAliasExample:
       positive:
         - '{}'
         - '{"ONE": true, "TWO": false}'
