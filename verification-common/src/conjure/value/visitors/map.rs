@@ -14,14 +14,17 @@
 
 use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
+use conjure::value::double::ConjureDouble;
 use conjure::value::*;
 use core::fmt;
 use serde;
 use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::Visitor;
+use serde::Deserialize;
 use serde::Deserializer;
 use serde_json;
+use serde_plain;
 use std::collections::btree_map;
 use std::collections::BTreeMap;
 
@@ -58,7 +61,8 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
         A: MapAccess<'de>,
     {
         let mut result = BTreeMap::new();
-        while let Some(key) = items.next_key_seed(self.key_type)? {
+
+        while let Some(key) = items.next_key_seed(MapKey(self.key_type))? {
             let value = items.next_value_seed(self.value_type)?;
             match result.entry(key) {
                 btree_map::Entry::Occupied(entry) => {
@@ -73,5 +77,38 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
             }
         }
         Ok(result)
+    }
+}
+
+/// A map key is a conjure [PrimitiveType] that should be deserialized only from a string
+/// representation.
+///
+/// [PrimitiveType]: ../../ir/enum.PrimitiveType.html
+pub struct MapKey<'a>(&'a PrimitiveType);
+
+impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
+    type Value = ConjurePrimitiveValue;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // Step 1. deserialize a string
+        let str = <&'a str as Deserialize<'de>>::deserialize(deserializer)?;
+
+        // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
+        // deserializer uses, so we special case that type, knowing that this case only
+        // supports primitive types anyway.
+        if let PrimitiveType::Double = self.0 {
+            Ok(ConjurePrimitiveValue::Double(
+                str.parse::<ConjureDouble>()
+                    .map_err(|e| serde::de::Error::custom(e.to_string()))?,
+            ))
+        } else {
+            let de = serde_plain::Deserializer::from_str(&str);
+            self.0
+                .deserialize(de)
+                .map_err(|e| serde::de::Error::custom(e))
+        }
     }
 }
