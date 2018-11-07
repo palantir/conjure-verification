@@ -30,7 +30,7 @@ use serde_plain;
 pub fn deserialize_plain(
     conjure_type: &ResolvedType,
     str: &str,
-) -> Result<ConjureValue, Box<::std::error::Error>> {
+) -> Result<ConjureValue, Box<::std::error::Error + Send + Sync>> {
     match *conjure_type {
         ResolvedType::Primitive(ref primitive_type) => Ok(ConjureValue::Primitive(
             deserialize_plain_primitive(primitive_type, str)?,
@@ -51,7 +51,7 @@ pub fn deserialize_plain(
 pub fn deserialize_plain_primitive(
     conjure_type: &PrimitiveType,
     str: &str,
-) -> Result<ConjurePrimitiveValue, Box<::std::error::Error>> {
+) -> Result<ConjurePrimitiveValue, Box<::std::error::Error + Send + Sync>> {
     // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
     // deserializer uses, so we special case that type, knowing that this case only
     // supports primitive types anyway.
