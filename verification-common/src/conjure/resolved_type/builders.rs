@@ -42,6 +42,20 @@ pub fn object_definition(name: &str, fields: &[FieldDefinition]) -> ResolvedType
     })
 }
 
+pub fn enum_definition(name: &str, variants: &[&str]) -> ResolvedType {
+    ResolvedType::Enum(ir::EnumDefinition {
+        type_name: type_name(name),
+        values: variants.iter().map(|value| ir::EnumValueDefinition { value: value.to_string() }).collect(),
+    })
+}
+
+pub fn type_name(name: &str) -> ir::TypeName {
+    ir::TypeName {
+        name: name.to_string(),
+        package: PACKAGE.to_string(),
+    }
+}
+
 pub fn optional_type(item_type: ResolvedType) -> ResolvedType {
     ResolvedType::Optional(OptionalType {
         item_type: item_type.into(),
