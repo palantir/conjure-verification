@@ -615,7 +615,8 @@ client:
     receiveMapBooleanAliasExample:
       positive:
         - '{}'
-        - '{"true": true}'
+        # https://github.com/palantir/conjure-verification/issues/71
+        # - '{"true": true}'
       negative: []
     receiveMapDateTimeAliasExample:
       positive:
