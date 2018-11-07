@@ -16,6 +16,8 @@ use conjure::ir::EnumDefinition;
 use conjure::ir::PrimitiveType;
 use conjure::ir::TypeName;
 
+pub mod builders;
+
 /// Similar to the conjure::ir::Type, but doesn't have a `Reference` variant.
 /// Instead, these are inlined.
 #[derive(Debug, Clone)]

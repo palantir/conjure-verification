@@ -15,9 +15,9 @@
 #[allow(unused_imports)]
 use conjure_verification_common::conjure;
 
-use self::type_builders::*;
 use bytes::Bytes;
 use conjure::ir;
+use conjure::resolved_type::builders::*;
 use conjure::resolved_type::ResolvedType;
 use conjure_verification_error::Result;
 use conjure_verification_http::request::Request;
@@ -199,66 +199,6 @@ fn run_test_case_against_server<F, R>(
             };
         });
     });
-}
-
-/// Convenient methods that construct [ResolvedType]s.
-mod type_builders {
-    use conjure::ir;
-    use conjure::resolved_type::FieldDefinition;
-    use conjure::resolved_type::ListType;
-    use conjure::resolved_type::MapType;
-    use conjure::resolved_type::ObjectDefinition;
-    use conjure::resolved_type::OptionalType;
-    use conjure::resolved_type::ResolvedType;
-    use conjure::resolved_type::SetType;
-
-    const PACKAGE: &'static str = "com.palantir.package";
-
-    pub fn field_definition(field_name: &str, type_: ResolvedType) -> FieldDefinition {
-        FieldDefinition {
-            field_name: field_name.into(),
-            type_,
-        }
-    }
-
-    pub fn object_definition(name: &str, fields: &[FieldDefinition]) -> ResolvedType {
-        ResolvedType::Object(ObjectDefinition {
-            type_name: ir::TypeName {
-                name: name.to_string(),
-                package: PACKAGE.to_string(),
-            },
-            fields: fields.to_vec(),
-        })
-    }
-
-    pub fn optional_type(item_type: ResolvedType) -> ResolvedType {
-        ResolvedType::Optional(OptionalType {
-            item_type: item_type.into(),
-        })
-    }
-
-    pub fn list_type(item_type: ResolvedType) -> ResolvedType {
-        ResolvedType::List(ListType {
-            item_type: item_type.into(),
-        })
-    }
-
-    pub fn set_type(item_type: ResolvedType) -> ResolvedType {
-        ResolvedType::Set(SetType {
-            item_type: item_type.into(),
-        })
-    }
-
-    pub fn map_type(key_type: ir::PrimitiveType, value_type: ResolvedType) -> ResolvedType {
-        ResolvedType::Map(MapType {
-            key_type: key_type.into(),
-            value_type: value_type.into(),
-        })
-    }
-
-    pub fn primitive_type(primitive_type: ir::PrimitiveType) -> ResolvedType {
-        ResolvedType::Primitive(primitive_type)
-    }
 }
 
 /// Contains logic for setting up the [VerificationClientResource].
