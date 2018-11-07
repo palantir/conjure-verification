@@ -667,6 +667,11 @@ client:
         - '{}'
         - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
       negative: []
+    receiveMapEnumExampleAlias:
+      positive:
+        - '{"ONE": "", "TWO": ""}'
+      negative:
+        - '{"ONE": "", "TWO": "", "BAD VARIANT": ""}'
 
   # single-header-service.conjure.yml
   singleHeaderService:
