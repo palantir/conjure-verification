@@ -30,12 +30,12 @@ extern crate hyper;
 extern crate mime;
 extern crate pretty_env_logger;
 extern crate serde_conjure;
-#[macro_use]
-extern crate serde_derive;
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_yaml;
 extern crate typed_headers;
+#[macro_use]
+extern crate serde_conjure_derive;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;

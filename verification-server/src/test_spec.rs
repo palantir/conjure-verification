@@ -15,14 +15,12 @@
 pub use conjure_verification_common::test_spec::EndpointName;
 use std::collections::HashMap;
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(ConjureDeserialize, Debug)]
 pub struct TestCases {
     pub client: ClientTestCases,
 }
 
-#[derive(Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
+#[derive(ConjureDeserialize, Debug, Default)]
 pub struct ClientTestCases {
     pub auto_deserialize: HashMap<EndpointName, PositiveAndNegativeTestCases>,
     pub single_path_param_service: HashMap<EndpointName, Vec<String>>,
@@ -30,8 +28,7 @@ pub struct ClientTestCases {
     pub single_header_service: HashMap<EndpointName, Vec<String>>,
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(ConjureDeserialize, Debug)]
 pub struct PositiveAndNegativeTestCases {
     pub positive: Vec<String>,
     pub negative: Vec<String>,
@@ -40,15 +37,50 @@ pub struct PositiveAndNegativeTestCases {
 #[cfg(test)]
 mod test {
     use super::*;
+    use serde_json;
     use serde_yaml;
     use std::fs::File;
     use std::path::Path;
 
     const TEST_CASES_PATH: &str = "../verification-server-api/test-cases.yml";
+    const TEST_CASES_JSON: &str = "../verification-server-api/build/test-cases.json";
 
     #[test]
     fn deserializes_test_cases() {
         let f = File::open(Path::new(TEST_CASES_PATH)).unwrap();
         serde_yaml::from_reader::<_, TestCases>(f).unwrap();
+    }
+
+    #[test]
+    fn deserializes_test_cases_json() {
+        let path = Path::new(TEST_CASES_JSON);
+        assert_eq!(
+            path.exists(),
+            true,
+            "file missing, run ./gradlew compileTestCasesJson to generate it"
+        );
+
+        let f = File::open(path).unwrap();
+        let test_cases: TestCases = serde_json::from_reader(f).unwrap();
+
+        eprintln!(
+            "Deserialized {} testcases",
+            count_test_cases(&test_cases.client)
+        );
+    }
+
+    fn count_test_cases(test_cases: &ClientTestCases) -> usize {
+        let auto_deserialize: usize = test_cases
+            .auto_deserialize
+            .iter()
+            .map(|(_, v)| v.negative.len() + v.positive.len())
+            .sum();
+
+        let count = |map: &HashMap<_, Vec<_>>| map.iter().map(|(_, v)| v.len()).sum::<usize>();
+
+        auto_deserialize
+            + count(&test_cases.single_header_service)
+            + count(&test_cases.single_path_param_service)
+            + count(&test_cases.single_query_param_service)
     }
 }
