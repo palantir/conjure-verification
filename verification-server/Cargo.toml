@@ -11,6 +11,7 @@ conjure-verification-http-server = { path = "../verification-http-server" }
 conjure-verification-error = { path = "../verification-error" }
 conjure-verification-error-derive = { path = "../verification-error-derive" }
 serde-conjure = { path = "../serde-conjure" }
+serde-conjure-derive = { path = "../serde-conjure-derive" }
 
 bytes = "0.4"
 derive_more = "0.11"

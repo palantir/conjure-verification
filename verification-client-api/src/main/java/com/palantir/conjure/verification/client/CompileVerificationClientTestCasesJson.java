@@ -18,7 +18,6 @@ package com.palantir.conjure.verification.client;
 
 import static java.util.stream.Collectors.toSet;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Sets;
@@ -45,9 +44,7 @@ public final class CompileVerificationClientTestCasesJson {
 
         ServerTestCases serverTestCases = testCases.getServer();
 
-        ObjectMapper jsonMapper = ObjectMappers.newServerObjectMapper()
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        ObjectMapper jsonMapper = ObjectMappers.newServerObjectMapper();
 
         long total = countPositiveAndNegative(serverTestCases.getAutoDeserialize());
 
