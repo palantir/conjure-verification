@@ -44,8 +44,12 @@ pub fn resolve_type(types: &[TypeDefinition], t: &Type) -> ResolvedType {
             value_type,
         }) => ResolvedType::Map(MapType {
             key_type: (match resolve_type(types, &key_type) {
-                ResolvedType::Primitive(prim) => prim,
-                it => panic!("Map key type should be primitive but found: {:?}", it),
+                it @ ResolvedType::Primitive(_) => it,
+                it @ ResolvedType::Enum(_) => it,
+                it => panic!(
+                    "Map key type should be primitive or enum but found: {:?}",
+                    it
+                ),
             }).into(),
             value_type: resolve_type(types, &value_type).into(),
         }),

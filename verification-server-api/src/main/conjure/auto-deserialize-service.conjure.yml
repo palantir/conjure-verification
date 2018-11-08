@@ -416,3 +416,8 @@ services:
         http: GET /receiveMapUuidAliasExample/{index}
         returns: examples.MapUuidAliasExample
         args: { index: integer }
+
+      receiveMapEnumExampleAlias:
+        http: GET /receiveMapEnumExampleAlias/{index}
+        returns: examples.MapEnumExampleAlias
+        args: { index: integer }

@@ -16,6 +16,8 @@ use conjure::ir::EnumDefinition;
 use conjure::ir::PrimitiveType;
 use conjure::ir::TypeName;
 
+pub mod builders;
+
 /// Similar to the conjure::ir::Type, but doesn't have a `Reference` variant.
 /// Instead, these are inlined.
 #[derive(Debug, Clone)]
@@ -45,7 +47,7 @@ pub struct SetType {
 
 #[derive(Debug, Clone)]
 pub struct MapType {
-    pub key_type: Box<PrimitiveType>,
+    pub key_type: Box<ResolvedType>,
     pub value_type: Box<ResolvedType>,
 }
 

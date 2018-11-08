@@ -93,6 +93,29 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
     }
 }
 
+impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a EnumDefinition {
+    type Value = String;
+
+    fn deserialize<D>(self, de: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let ident = String::deserialize(de)?;
+        if self
+            .values
+            .iter()
+            .find(|&x| x.value == ident.as_str())
+            .is_none()
+        {
+            return Err(unknown_variant(
+                ident.as_str(),
+                self.values.iter().map(|vdef| &*vdef.value).collect(),
+            ));
+        }
+        Ok(ident)
+    }
+}
+
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
     type Value = ConjurePrimitiveValue;
 
@@ -297,7 +320,7 @@ mod test {
                 FieldDefinition {
                     field_name: "map".to_string(),
                     type_: ResolvedType::Map(MapType {
-                        key_type: PrimitiveType::String.into(),
+                        key_type: ResolvedType::Primitive(PrimitiveType::String).into(),
                         value_type: ResolvedType::Primitive(PrimitiveType::Integer).into(),
                     }),
                 },

@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::ir::*;
 use conjure::resolved_type::ResolvedType;
+use conjure::value::de_plain::deserialize_plain;
 use conjure::value::*;
 use core::fmt;
 use serde;
 use serde::de::Error;
 use serde::de::MapAccess;
 use serde::de::Visitor;
+use serde::Deserialize;
 use serde::Deserializer;
 use serde_json;
 use std::collections::btree_map;
@@ -28,12 +29,12 @@ use std::collections::BTreeMap;
 /// This visitor also supports being visited as an option using `Deserializer::deserialize_option`,
 /// whereby it will return a default.
 pub struct ConjureMapVisitor<'a> {
-    pub key_type: &'a PrimitiveType,
+    pub key_type: &'a ResolvedType,
     pub value_type: &'a ResolvedType,
 }
 
 impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
-    type Value = BTreeMap<ConjurePrimitiveValue, ConjureValue>;
+    type Value = BTreeMap<ConjureValue, ConjureValue>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("map")
@@ -58,7 +59,8 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
         A: MapAccess<'de>,
     {
         let mut result = BTreeMap::new();
-        while let Some(key) = items.next_key_seed(self.key_type)? {
+
+        while let Some(key) = items.next_key_seed(MapKey(self.key_type))? {
             let value = items.next_value_seed(self.value_type)?;
             match result.entry(key) {
                 btree_map::Entry::Occupied(entry) => {
@@ -73,5 +75,26 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureMapVisitor<'a> {
             }
         }
         Ok(result)
+    }
+}
+
+/// A map key is a conjure [ResolvedType] that should be deserialized only from a string
+/// representation.
+///
+/// [ResolvedType]: ../../../ir/enum.ResolvedType.html
+pub struct MapKey<'a>(&'a ResolvedType);
+
+impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
+    type Value = ConjureValue;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // Step 1. deserialize a string
+        let str = <&'a str as Deserialize<'de>>::deserialize(deserializer)
+            .map_err(|e| serde::de::Error::custom(e))?;
+
+        deserialize_plain(self.0, &str).map_err(|e| serde::de::Error::custom(e))
     }
 }
