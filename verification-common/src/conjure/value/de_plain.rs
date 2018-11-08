@@ -32,9 +32,9 @@ pub fn deserialize_plain(
     str: &str,
 ) -> Result<ConjureValue, Box<::std::error::Error + Send + Sync>> {
     match *conjure_type {
-        ResolvedType::Primitive(ref primitive_type) => Ok(ConjureValue::Primitive(
-            deserialize_plain_primitive(primitive_type, str)?,
-        )),
+        ResolvedType::Primitive(ref primitive_type) if *primitive_type != PrimitiveType::Any => Ok(
+            ConjureValue::Primitive(deserialize_plain_primitive(primitive_type, str)?),
+        ),
         ResolvedType::Enum(ref enum_def) => {
             let de = serde_plain::Deserializer::from_str(&str);
             Ok(ConjureValue::Enum(enum_def.deserialize(de)?))
@@ -80,5 +80,36 @@ mod test {
         deserialize_plain(&enum_def, "foo").unwrap();
         deserialize_plain(&enum_def, "bar").unwrap();
         deserialize_plain(&enum_def, "baz").expect_err("Should fail");
+    }
+
+    #[test]
+    fn test_deserialize_option() {
+        let value = deserialize_plain(
+            &optional_type(primitive_type(PrimitiveType::Integer)),
+            "123",
+        ).expect("Should parse optional<integer>");
+        assert_eq!(
+            value,
+            ConjureValue::Optional(Some(
+                ConjureValue::Primitive(ConjurePrimitiveValue::Integer(123)).into()
+            ))
+        );
+
+        let value = deserialize_plain(&optional_type(primitive_type(PrimitiveType::String)), "123")
+            .expect("Should parse optional<string>");
+        assert_eq!(
+            value,
+            ConjureValue::Optional(Some(
+                ConjureValue::Primitive(ConjurePrimitiveValue::String("123".to_string())).into()
+            ))
+        );
+    }
+
+    #[test]
+    fn test_deserialize_any() {
+        deserialize_plain(&primitive_type(PrimitiveType::Any), "123")
+            .expect_err("Should not deserialize any");
+        deserialize_plain(&optional_type(primitive_type(PrimitiveType::Any)), "123")
+            .expect_err("Should not deserialize option<any>");
     }
 }

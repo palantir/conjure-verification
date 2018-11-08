@@ -20,7 +20,7 @@ pub mod builders;
 
 /// Similar to the conjure::ir::Type, but doesn't have a `Reference` variant.
 /// Instead, these are inlined.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResolvedType {
     // named types
     Object(ObjectDefinition),
@@ -35,40 +35,40 @@ pub enum ResolvedType {
     Map(MapType),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListType {
     pub item_type: Box<ResolvedType>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetType {
     pub item_type: Box<ResolvedType>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MapType {
     pub key_type: Box<ResolvedType>,
     pub value_type: Box<ResolvedType>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldDefinition {
     pub field_name: String,
     pub type_: ResolvedType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OptionalType {
     pub item_type: Box<ResolvedType>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ObjectDefinition {
     pub type_name: TypeName,
     pub fields: Vec<FieldDefinition>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnionDefinition {
     pub type_name: TypeName,
     pub union: Vec<FieldDefinition>,
