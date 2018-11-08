@@ -17,7 +17,7 @@
 //!
 //! [ir]: https://github.com/palantir/conjure/blob/develop/docs/intermediate_representation.md
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, PartialEq, Eq)]
 pub struct Conjure {
     pub types: Vec<TypeDefinition>,
     pub services: Vec<ServiceDefinition>,
@@ -25,7 +25,7 @@ pub struct Conjure {
 
 // Types
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, PartialEq, Eq)]
 pub enum TypeDefinition {
     Object(ObjectDefinition),
     Alias(AliasDefinition),
@@ -44,36 +44,36 @@ impl TypeDefinition {
     }
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, PartialEq, Eq)]
 pub struct ObjectDefinition {
     pub type_name: TypeName,
     pub fields: Vec<FieldDefinition>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, PartialEq, Eq)]
 pub struct AliasDefinition {
     pub type_name: TypeName,
     pub alias: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct EnumDefinition {
     pub type_name: TypeName,
     pub values: Vec<EnumValueDefinition>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct EnumValueDefinition {
     pub value: String,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct UnionDefinition {
     pub type_name: TypeName,
     pub union: Vec<FieldDefinition>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Reference(TypeName),
     Primitive(PrimitiveType),
@@ -89,12 +89,12 @@ pub struct TypeName {
     pub package: String,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct OptionalType {
     pub item_type: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub enum PrimitiveType {
     String,
     Integer,
@@ -109,23 +109,23 @@ pub enum PrimitiveType {
     Any,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct ListType {
     pub item_type: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct SetType {
     pub item_type: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct MapType {
     pub key_type: Box<Type>,
     pub value_type: Box<Type>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, Clone, PartialEq, Eq)]
 pub struct FieldDefinition {
     pub field_name: String,
     pub type_: Box<Type>,
@@ -133,7 +133,7 @@ pub struct FieldDefinition {
 
 // Services
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, PartialEq, Eq)]
 pub struct ServiceDefinition {
     pub service_name: ServiceName,
     pub endpoints: Vec<EndpointDefinition>,
@@ -145,14 +145,14 @@ pub struct ServiceName {
     pub package: String,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, PartialEq, Eq)]
 pub struct EndpointDefinition {
     pub endpoint_name: String,
     pub args: Vec<ArgumentDefinition>,
     pub returns: Option<Type>,
 }
 
-#[derive(ConjureDeserialize, ConjureSerialize, Debug)]
+#[derive(ConjureDeserialize, ConjureSerialize, Debug, PartialEq, Eq)]
 pub struct ArgumentDefinition {
     pub arg_name: String,
     pub type_: Type,
