@@ -37,12 +37,12 @@ pub enum VerificationError {
     ConfirmationFailure {
         #[error_type(safe)]
         expected_body_raw: String,
-         #[error_type(safe)]
-         expected_body_conjure: String,
+        #[error_type(safe)]
+        expected_body_conjure: String,
         #[error_type(safe)]
         response_body_raw: String,
-         #[error_type(safe)]
-         response_body_conjure: String,
+        #[error_type(safe)]
+        response_body_conjure: String,
         #[error_type(safe)]
         cause: String,
     },
@@ -89,11 +89,11 @@ impl VerificationError {
         E: Display,
     {
         VerificationError::ConfirmationFailure {
-             expected_body_conjure: VerificationError::display_conjure_value(expected_body),
+            expected_body_conjure: VerificationError::display_conjure_value(expected_body),
             expected_body_raw: expected_body_str.to_string(),
-             response_body_conjure: response_body
-                 .map(VerificationError::display_conjure_value)
-                 .unwrap_or_else(|| "<undefined>".to_string()),
+            response_body_conjure: response_body
+                .map(VerificationError::display_conjure_value)
+                .unwrap_or_else(|| "<undefined>".to_string()),
             response_body_raw: response_body_str.to_string(),
             cause: format!("{}", cause),
         }
