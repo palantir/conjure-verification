@@ -91,7 +91,10 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
     where
         D: Deserializer<'de>,
     {
-        // Step 1. deserialize a string
+        // Deserialize a string key, then deserialize it into the right type using deserialize_plain.
+
+        // Maintainer warning: don't try to deserialize into `&'a str` because it will fail with
+        // Deserializers that don't support visit_borrowed_str (like `&serde_json::Value`)
         let str = String::deserialize(deserializer).map_err(|e| serde::de::Error::custom(e))?;
 
         deserialize_plain(self.0, str.as_str()).map_err(|e| serde::de::Error::custom(e))
