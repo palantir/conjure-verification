@@ -36,24 +36,24 @@ pub enum VerificationError {
     ConfirmationFailure {
         #[error_type(safe)]
         expected_body_raw: String,
-        // #[error_type(safe)]
-        // expected_body_conjure: String,
+         #[error_type(safe)]
+         expected_body_conjure: String,
         #[error_type(safe)]
         request_body_raw: String,
-        // #[error_type(safe)]
-        // request_body_conjure: String,
+         #[error_type(safe)]
+         request_body_conjure: String,
         #[error_type(safe)]
         cause: String,
     },
     #[error_type(code = "InvalidArgument")]
     ParamValidationFailure {
-        // #[error_type(safe)]
-        // expected_param_conjure: String,
+         #[error_type(safe)]
+         expected_param_conjure: String,
         #[error_type(safe)]
         expected_param_raw: String,
         #[error_type(safe)]
-        // request_param_conjure: String,
-        // #[error_type(safe)]
+         request_param_conjure: String,
+         #[error_type(safe)]
         request_param_raw: String,
         #[error_type(safe)]
         cause: String,
@@ -81,21 +81,21 @@ pub enum VerificationError {
 impl VerificationError {
     pub fn param_validation_failure<E>(
         expected_param_str: &str,
-        _expected_param: &ConjureValue,
+        expected_param: &ConjureValue,
         // Option because it might be undefined
         request_param_str: Option<String>,
-        _request_param: Option<&ConjureValue>,
+        request_param: Option<&ConjureValue>,
         cause: E,
     ) -> VerificationError
     where
         E: Display,
     {
         VerificationError::ParamValidationFailure {
-            // expected_param_conjure: serde_json::ser::to_string(expected_param).unwrap(),
+             expected_param_conjure: VerificationError::display_conjure_value(expected_param),
             expected_param_raw: expected_param_str.to_string(),
-            // request_param_conjure: request_param
-            //     .map(|rp| serde_json::ser::to_string(rp).unwrap())
-            //     .unwrap_or_else(|| "<undefined>".to_string()),
+             request_param_conjure: request_param
+                 .map(VerificationError::display_conjure_value)
+                 .unwrap_or_else(|| "<undefined>".to_string()),
             request_param_raw: request_param_str.unwrap_or_else(|| "<undefined>".to_string()),
             cause: format!("{}", cause),
         }
@@ -103,23 +103,27 @@ impl VerificationError {
 
     pub fn confirmation_failure<E>(
         expected_body_str: &str,
-        _expected_body: &ConjureValue,
+        expected_body: &ConjureValue,
         request_body_str: &serde_json::Value,
         // Option because it might be un-parseable as ConjureValue
-        _request_body: Option<&ConjureValue>,
+        request_body: Option<&ConjureValue>,
         cause: E,
     ) -> VerificationError
     where
         E: Display,
     {
         VerificationError::ConfirmationFailure {
-            // expected_body_conjure: serde_json::ser::to_string(expected_body).unwrap(),
+             expected_body_conjure: VerificationError::display_conjure_value(expected_body),
             expected_body_raw: expected_body_str.to_string(),
-            // request_body_conjure: request_body
-            //     .map(|rp| serde_json::ser::to_string(rp).unwrap())
-            //     .unwrap_or_else(|| "<undefined>".to_string()),
+             request_body_conjure: request_body
+                 .map(VerificationError::display_conjure_value)
+                 .unwrap_or_else(|| "<undefined>".to_string()),
             request_body_raw: request_body_str.to_string(),
             cause: format!("{}", cause),
         }
+    }
+
+    fn display_conjure_value(value: &ConjureValue) -> String {
+        format!("{:?}", value)
     }
 }
