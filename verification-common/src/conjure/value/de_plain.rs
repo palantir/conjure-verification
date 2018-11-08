@@ -32,9 +32,9 @@ pub fn deserialize_plain(
     str: &str,
 ) -> Result<ConjureValue, Box<::std::error::Error + Send + Sync>> {
     match *conjure_type {
-        ResolvedType::Primitive(ref primitive_type) => Ok(ConjureValue::Primitive(
-            deserialize_plain_primitive(primitive_type, str)?,
-        )),
+        ResolvedType::Primitive(ref primitive_type) if *primitive_type != PrimitiveType::Any => Ok(
+            ConjureValue::Primitive(deserialize_plain_primitive(primitive_type, str)?),
+        ),
         ResolvedType::Enum(ref enum_def) => {
             let de = serde_plain::Deserializer::from_str(&str);
             Ok(ConjureValue::Enum(enum_def.deserialize(de)?))
