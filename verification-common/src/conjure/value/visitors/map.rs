@@ -92,9 +92,9 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for MapKey<'a> {
         D: Deserializer<'de>,
     {
         // Step 1. deserialize a string
-        let str = <&'a str as Deserialize<'de>>::deserialize(deserializer)
+        let str = String::deserialize(deserializer)
             .map_err(|e| serde::de::Error::custom(e))?;
 
-        deserialize_plain(self.0, &str).map_err(|e| serde::de::Error::custom(e))
+        deserialize_plain(self.0, str.as_str()).map_err(|e| serde::de::Error::custom(e))
     }
 }
