@@ -39,6 +39,12 @@ pub fn deserialize_plain(
             let de = serde_plain::Deserializer::from_str(&str);
             Ok(ConjureValue::Enum(enum_def.deserialize(de)?))
         }
+        // TODO(dsanduleac): should verify thing inside optional is also plain-serializable
+        // Otherwise, it will still fail but with a less explicit error inside serde_plain
+        ResolvedType::Optional(_) => {
+            let de = serde_plain::Deserializer::from_str(&str);
+            conjure_type.deserialize(de).map_err(From::from)
+        }
         _ => Err(format!("Unsupported conjure type: {:?}", conjure_type).into()),
     }
 }

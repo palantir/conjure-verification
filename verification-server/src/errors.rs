@@ -91,10 +91,10 @@ impl VerificationError {
         E: Display,
     {
         VerificationError::ParamValidationFailure {
-            expected_param_conjure: serde_json::ser::to_string(expected_param).unwrap(),
+            expected_param_conjure: VerificationError::display_conjure_value(expected_param),
             expected_param_raw: expected_param_str.to_string(),
             request_param_conjure: request_param
-                .map(|rp| serde_json::ser::to_string(rp).unwrap())
+                .map(VerificationError::display_conjure_value)
                 .unwrap_or_else(|| "<undefined>".to_string()),
             request_param_raw: request_param_str.unwrap_or_else(|| "<undefined>".to_string()),
             cause: format!("{}", cause),
@@ -113,13 +113,17 @@ impl VerificationError {
         E: Display,
     {
         VerificationError::ConfirmationFailure {
-            expected_body_conjure: serde_json::ser::to_string(expected_body).unwrap(),
+            expected_body_conjure: VerificationError::display_conjure_value(expected_body),
             expected_body_raw: expected_body_str.to_string(),
             request_body_conjure: request_body
-                .map(|rp| serde_json::ser::to_string(rp).unwrap())
+                .map(VerificationError::display_conjure_value)
                 .unwrap_or_else(|| "<undefined>".to_string()),
             request_body_raw: request_body_str.to_string(),
             cause: format!("{}", cause),
         }
+    }
+
+    fn display_conjure_value(value: &ConjureValue) -> String {
+        format!("{:?}", value)
     }
 }
