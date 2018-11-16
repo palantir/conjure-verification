@@ -92,7 +92,7 @@ _Fox maximum logging, add `-e RUST_LOG=debug` to the docker run command._
 
 ### Running the server locally
 
-- Ensure you've installed `rustup` as indicated in the [Development](#development) sectionsick
+- Ensure you've installed `rustup` as indicated in the [Development](/README.md#development) section
 - Generate all `test-cases.json` and `verification-server-api.json` files
     ```
     ./gradlew compileTestCasesJson compileIr
