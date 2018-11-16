@@ -27,7 +27,7 @@ The [server under test][] also needs to be implemented and made available to the
 
 Using the generator and runtime that are being tested:
 1. generate server bindings for services found in the verification-client-api IR (`verification-client-api.conjure.json`).
-1. Implement all the test services mentioned in the table under [workflow](#workflow). Every endpoint should have exactly one argument and one return type. The implementations should just return the argument.
+1. Implement all the test services mentioned under [Types of test cases][]. Every endpoint should have exactly one argument and one return type. The implementations should just return the argument.
 
 #### Test harness
 
@@ -40,6 +40,7 @@ For each test found in the [test-cases.yml][] file, the harness should invoke th
 Note: For negative [Auto-deserialize tests][], the index should be set to (number of positive tests) + the 0-indexed position of the negative test.
 
 ### Types of test cases
+[Types of test cases]: #types-of-test-cases
 
 | Test type | Service definition | Service to implement | Comment |
 | --------- | ------------------ | -------------------- | ------- |
