@@ -36,7 +36,7 @@ before running the tests, then stop them after it's done running the tests.
 
 To run the verification client, extract the executable out of the `verification-client.tgz` and run it. There should only be one file inside the archive.
 
-For each test found in the [test-cases.yml][] file, the harness should invoke the `VerificationClientService`'s `runTestCase` endpoint, passing the endpoint name, test index (0-indexed) and URL to the _server under test_.
+For each test found in the [test-cases.yml][] file, the harness should invoke the [`VerificationClientService`](/verification-client-api/src/main/conjure/verification-client.conjure.yml)'s `runTestCase` endpoint, passing the endpoint name, test index (0-indexed) and URL of the _server under test_.
 Note: For negative [Auto-deserialize tests][], the index should be set to (number of positive tests) + the 0-indexed position of the negative test.
 
 ### Types of test cases
