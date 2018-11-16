@@ -3,8 +3,8 @@
 Behaviour aims to satisfy [RFC 004: Consistent wire-format test cases](https://github.com/palantir/conjure/blob/develop/docs/rfc/004-consistent-wire-format-test-cases.md), but there are a few differences.
 
 This project has two main components:
-* a [_client verifier_](/docs/client_verifier.md), used to verify conjure client generators and libraries.
-* a [_server verifier_](/docs/server_verifier.md), used to verify conjure server generators and libraries.
+* a [_verification server_](/docs/verification_server.md), is a reference server used to test Conjure client generators and libraries.
+* a [_verification client_](/docs/verification_client.md), is a server that employs a reference client implementation to test Conjure server generators and libraries.
 
 ## Development
 
