@@ -4,7 +4,7 @@ Behaviour aims to satisfy [RFC 004: Consistent wire-format test cases](https://g
 
 This project has two main components:
 * a [_verification server_](/docs/verification_server.md), is a reference server used to test Conjure client generators and libraries.
-* a [_verification client_](/docs/verification_client.md), is a server that employs a reference client implementation to test Conjure server generators and libraries.
+* a [_verification client_](/docs/verification_client.md), is used to test Conjure server generators and libraries.
 
 ## Development
 
