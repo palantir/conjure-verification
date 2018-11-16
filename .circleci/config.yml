@@ -158,10 +158,21 @@ jobs:
           paths:
             - ./*/build/
 
+  markdown:
+    docker:
+      - image: iamdanfox/docker-liche:latest
+    steps:
+      - checkout
+      - run: liche -d . -r . -v
+
 workflows:
   version: 2
   build:
     jobs:
+      - markdown:
+          filters:
+            tags:
+              only: /.*/
       - cargo-build-linux:
           filters: { tags: { only: /.*/ } }
           requires:

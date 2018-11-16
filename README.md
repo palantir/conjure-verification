@@ -1,39 +1,10 @@
 # conjure-verification
 
-Behaviour defined in [RFC 004: Consistent wire-format test cases](https://github.com/palantir/conjure/blob/develop/docs/rfc/004-consistent-wire-format-test-cases.md)
+Behaviour aims to satisfy [RFC 004: Consistent wire-format test cases](https://github.com/palantir/conjure/blob/develop/docs/rfc/004-consistent-wire-format-test-cases.md), but there are a few differences.
 
-[test-cases.yml](./test-cases.yml) contains a variety of positive and negative tests.  It refers to various Conjure-defined services defined in the API project.
-
-## docker image
-
-A docker image containing the server along with embedded `test-cases.json` and `verification-api.json` are published to: https://hub.docker.com/r/palantirtechnologies/conjure-verification-server/.
-
-```
-$ docker run -p 8000:8000 palantirtechnologies/conjure-verification-server:latest
-Listening on http://0.0.0.0:8000
-
-# in another terminal:
-$ curl http://localhost:8000/receiveDoubleExample/0
-{"value":1.23}
-$ curl --data '{"value":1.23}' http://0.0.0.0:8000/confirm/receiveDoubleExample/0 -H 'Content-Type: application/json'
-curl --data 'broken' http://0.0.0.0:8000/confirm/receiveDoubleExample/1 -H 'Content-Type: application/json'
-```
-
-_Fox maximum logging, add `-e RUST_LOG=debug` to the docker run command._
-
-## Running the server
-
-- Ensure you've installed `rustup` as indicated in the [Development](#development) section
-- Generate the `test-cases.json` and `verification-api.json` files
-    ```
-    ./gradlew compileTestCasesJson compileIr
-    ```
-- Start the server on http://0.0.0.0:8000
-    ```
-    cargo run --package conjure-verification-server -- \
-        verification-api/build/test-cases.json \
-        verification-api/build/conjure-ir/verification-api.json
-    ```
+This project has two main components:
+* a [_verification server_](/docs/verification_server.md), is a reference server used to test Conjure client generators and libraries.
+* a [_verification client_](/docs/verification_client.md), is used to test Conjure server generators and libraries.
 
 ## Development
 
@@ -57,3 +28,7 @@ _Fox maximum logging, add `-e RUST_LOG=debug` to the docker run command._
     ```
     rustup component add rustfmt-preview
     ```
+
+## License
+
+This project is made available under the [Apache 2.0 License](/LICENSE).
