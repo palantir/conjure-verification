@@ -52,12 +52,6 @@ Note: For negative [Auto-deserialize tests][], the index should be set to (numbe
 
 The tests are grouped by `endpoint`, then into positive and negative tests.
 
-Java example:
-```java
-Object result = service.receiveDoubleExample(0);
-service.confirm(EndpointName.of("receiveDoubleExample"), 0, result);
-```
-
 The test harness doesn't need to assert that negative test cases failed. The `VerificationClientService` encapsulates
 all of that logic, and will return an error if a test didn't behave as expected. 
 
