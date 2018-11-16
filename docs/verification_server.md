@@ -1,5 +1,6 @@
-## Client verifier
-[Client verifier]: #client-verifier
+## Verification server
+
+This is a reference server used to test Conjure client generators and libraries.
 
 [test-cases.yml](/verification-server-api/test-cases.yml) contains a variety of tests, grouped by type, then endpoint name.
 The conjure-defined format for this file is defined [here](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
@@ -59,7 +60,7 @@ All of these tests are positive, i.e. they should all pass.
 
 The workflow is:
 1. deserialize the test from the test cases JSON file.
-1. call the test's endpoint from the associated service for that parameter type (see [Client verifier][]) and pass it 
+1. call the test's endpoint from the associated service for that parameter type, and pass it the deserialized value above.
 
 Note: Because the parameter tests in each service & endpoint have the same structure, if the language allows, it's simpler to generate the tests using reflection, rather than hand-rolling a new test for every endpoint.
 
