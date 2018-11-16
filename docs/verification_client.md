@@ -52,7 +52,7 @@ Note: For negative [Auto-deserialize tests][], the index should be set to (numbe
 #### Auto-deserialize tests
 [Auto-deserialize tests]: #auto-deserialize-tests
 
-The tests are grouped by `endpoint`, then into positive and negative tests.
+The tests include positive and negative tests for each endpoint.
 
 The test harness doesn't need to assert that negative test cases failed. The `VerificationClientService` encapsulates
 all of that logic, and will return an error if a test didn't behave as expected. 
