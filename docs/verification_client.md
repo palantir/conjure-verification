@@ -42,7 +42,7 @@ Note: For negative [Auto-deserialize tests][], the index should be set to (numbe
 
 | Test type | Service definition | Service to implement | Comment |
 | --------- | ------------------ | -------------------- | ------- |
-| auto-deserialize | [auto-deserialize-service.yml](/verification-client-api/src/main/conjure/auto-deserialize-service.yml) | `AutoDeserializeService` | See [Server auto-deserialize tests][] |
+| auto-deserialize | [auto-deserialize-service.yml](/verification-client-api/src/main/conjure/auto-deserialize-service.yml) | `AutoDeserializeService` | See [Auto-deserialize tests][] |
 | single header | not implemented yet | | Tests the ability to deserialize a header param correctly.
 | single query param | not implemented yet | | Tests the ability to deserialize a query param correctly.
 | single path param | not implemented yet | | Tests the ability to deserialize a path param correctly.
