@@ -77,7 +77,7 @@ Please see [the Partial Compliance section of RFC 004](https://github.com/palant
 
 A docker image containing the server along with embedded `test-cases.json` and `verification-server-api.conjure.json` are published to: https://hub.docker.com/r/palantirtechnologies/conjure-verification-server/.
 
-```
+```bash
 $ docker run -p 8000:8000 palantirtechnologies/conjure-verification-server:latest
 Listening on http://0.0.0.0:8000
 
@@ -94,11 +94,11 @@ _Fox maximum logging, add `-e RUST_LOG=debug` to the docker run command._
 
 - Ensure you've installed `rustup` as indicated in the [Development](/README.md#development) section
 - Generate all `test-cases.json` and `verification-server-api.json` files
-    ```
+    ```bash
     ./gradlew compileTestCasesJson compileIr
     ```
 - Start the server on `http://0.0.0.0:8000`
-    ```
+    ```bash
     cargo run --package conjure-verification-server -- \
         verification-server-api/build/test-cases.json \
         verification-server-api/build/conjure-ir/verification-server-api.conjure.json
