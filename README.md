@@ -100,7 +100,7 @@ _Fox maximum logging, add `-e RUST_LOG=debug` to the docker run command._
     ```
     ./gradlew compileTestCasesJson compileIr
     ```
-- Start the server on http://0.0.0.0:8000
+- Start the server on `http://0.0.0.0:8000`
     ```
     cargo run --package conjure-verification-server -- \
         verification-server-api/build/test-cases.json \
