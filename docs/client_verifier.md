@@ -11,9 +11,7 @@ The conjure-defined format for this file is defined [here](/verification-server-
 | single query param | [single-query-param-service.conjure.yml](/verification-server-api/src/main/conjure/single-query-param-service.conjure.yml) | Tests the ability to serialize a query param correctly. See [Parameter tests][].
 | single path param | [single-path-param-service.conjure.yml](/verification-server-api/src/main/conjure/single-path-param-service.conjure.yml) | Tests the ability to serialize a path param correctly. See [Parameter tests][].
 
-### Workflow
-
-The steps below mostly follow the [RFC 004 workflow](https://github.com/palantir/conjure/blob/develop/docs/rfc/004-consistent-wire-format-test-cases.md#workflow).
+### Prerequisites
 
 First, ensure the necessary artifacts are available in your testing environment:
 
@@ -22,6 +20,10 @@ First, ensure the necessary artifacts are available in your testing environment:
 | `verification-server.tgz` | `com.palantir.conjure.verification:verification-server::${classifier}@tgz` | `osx` or `linux` | 
 | `verification-server-test-cases.json` | `com.palantir.conjure.verification:verification-server-test-cases` |
 | `verification-server-api.conjure.json` | `com.palantir.conjure.verification:verification-server-api` | 
+
+### Workflow
+
+The steps below mostly follow the [RFC 004 workflow](https://github.com/palantir/conjure/blob/develop/docs/rfc/004-consistent-wire-format-test-cases.md#workflow).
 
 #### Auto-deserialize tests
 [Auto-deserialize tests]: #auto-deserialize-tests
