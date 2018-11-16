@@ -37,24 +37,24 @@ before running the tests, then stop them after it's done running the tests.
 To run the verification client, extract the executable out of the `verification-client.tgz` and run it. There should only be one file inside the archive.
 
 For each test found in the [test-cases.yml][] file, the harness should invoke the [`VerificationClientService`](/verification-client-api/src/main/conjure/verification-client.conjure.yml)'s `runTestCase` endpoint, passing the endpoint name, test index (0-indexed) and URL of the _server under test_.
-Note: For negative [Auto-deserialize tests][], the index should be set to (number of positive tests) + the 0-indexed position of the negative test.
+Note: For negative [Body tests][], the index should be set to (number of positive tests) + the 0-indexed position of the negative test.
 
 ### Types of test cases
 [Types of test cases]: #types-of-test-cases
 
 | Test type | Service definition | Service to implement | Comment |
 | --------- | ------------------ | -------------------- | ------- |
-| auto-deserialize | [auto-deserialize-service.yml](/verification-client-api/src/main/conjure/auto-deserialize-service.yml) | `AutoDeserializeService` | See [Auto-deserialize tests][] |
+| auto-deserialize | [auto-deserialize-service.yml](/verification-client-api/src/main/conjure/auto-deserialize-service.yml) | `AutoDeserializeService` | See [Body tests][] |
 | single header | not implemented yet | | Tests the ability to deserialize a header param correctly.
 | single query param | not implemented yet | | Tests the ability to deserialize a query param correctly.
 | single path param | not implemented yet | | Tests the ability to deserialize a path param correctly.
 
-#### Auto-deserialize tests
-[Auto-deserialize tests]: #auto-deserialize-tests
+#### Body tests
+[Body tests]: #body-tests
 
 The tests include positive and negative tests for each endpoint.
 
-The test harness doesn't need to assert that negative test cases failed. The `VerificationClientService` encapsulates
+The test harness does not need to assert that negative test cases failed. The `VerificationClientService` encapsulates
 all of that logic, and will return an error if a test didn't behave as expected. 
 
 Note: Because the tests in each endpoint have the same structure, if the language allows, it's simpler to generate the tests using reflection, rather than hand-rolling a new test for every endpoint.
