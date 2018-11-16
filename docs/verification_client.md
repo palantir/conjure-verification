@@ -2,7 +2,8 @@
 [test-cases.yml]: /verification-client-api/test-cases.yml
 [verification-client.conjure.yml]: /verification-client-api/src/main/conjure/verification-client.conjure.yml
 
-The _verification client_ is a server that can be used to run test cases against a server-under-test using a reference client implementation.
+The _verification client_ makes requests to a user-provided server-under-test.
+The _verification client_ also binds to a port, so that test requests can be driven by a user's test harness (i.e. it is, in fact, a server).
 
 [test-cases.yml][] contains a variety of tests, grouped by type, then endpoint name.
 The conjure-defined format for this file is defined [here](/verification-client-api/src/main/conjure/test-cases.conjure.yml).
