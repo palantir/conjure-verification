@@ -34,7 +34,7 @@ These tests should verify two things, via the two services defined in [auto-dese
 * response bodies are deserialized correctly (via `AutoDeserializeService`)
 * previously deserialized conjure values serialized correctly into request bodies (via `AutoDeserializeConfirmService`)
 
-The tests are grouped by `endpoint`, then into positive and negative tests.
+The tests include positive and negative tests for each endpoint.
 
 The workflow for positive tests is:
 1. call the test's endpoint from `AutoDeserializeService`, setting the index to the 0-indexed position of the test.
