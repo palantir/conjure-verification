@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.palantir.conjure.java.serialization.ObjectMappers;
+import com.palantir.conjure.parser.types.ConjureType;
+import com.palantir.parsec.ParseException;
 import java.io.File;
 import java.io.IOException;
 
@@ -31,5 +33,15 @@ public final class TestCasesUtils {
 
     public static AllTestCases parseTestCases(File file) throws IOException {
         return YAML_MAPPER.readValue(file, AllTestCases.class);
+    }
+
+    public static ConjureType parseConjureType(ConjureTypeRepr typeRepr) {
+        ConjureType conjureType;
+        try {
+            conjureType = ConjureType.fromString(typeRepr.get());
+        } catch (ParseException e) {
+            throw new RuntimeException("Failed to parse conjure type: " + typeRepr.get(), e);
+        }
+        return conjureType;
     }
 }

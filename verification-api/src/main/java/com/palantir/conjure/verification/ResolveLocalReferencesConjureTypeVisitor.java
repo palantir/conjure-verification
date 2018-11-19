@@ -54,7 +54,7 @@ public class ResolveLocalReferencesConjureTypeVisitor implements ConjureTypeVisi
 
     @Override
     public String visitPrimitive(PrimitiveType type) {
-        return type.name();
+        return type.type().name();
     }
 
     @Override

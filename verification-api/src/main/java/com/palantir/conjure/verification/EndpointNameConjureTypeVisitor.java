@@ -28,6 +28,7 @@ import com.palantir.conjure.parser.types.collect.SetType;
 import com.palantir.conjure.parser.types.primitive.PrimitiveType;
 import com.palantir.conjure.parser.types.reference.ForeignReferenceType;
 import com.palantir.conjure.parser.types.reference.LocalReferenceType;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Convert the {@link ConjureType} into a string that can be used as an endpoint name (without special characters).
@@ -40,17 +41,18 @@ public class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<String
 
     @Override
     public String visitList(ListType type) {
-        return "listOf" + type.itemType().visit(this);
+        return "listOf" + StringUtils.capitalize(type.itemType().visit(this));
     }
 
     @Override
     public String visitMap(MapType type) {
-        return "mapOf" + type.keyType().visit(this) + "To" + type.valueType().visit(this);
+        return "mapOf" + StringUtils.capitalize(type.keyType().visit(this))
+                + "To" + StringUtils.capitalize(type.valueType().visit(this));
     }
 
     @Override
     public String visitOptional(OptionalType type) {
-        return "optionalOf" + type.itemType().visit(this);
+        return "optionalOf" + StringUtils.capitalize(type.itemType().visit(this));
     }
 
     @Override
@@ -70,7 +72,7 @@ public class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<String
 
     @Override
     public String visitSet(SetType type) {
-        return "setOf" + type.itemType().visit(this);
+        return "setOf" + StringUtils.capitalize(type.itemType().visit(this));
     }
 
     @Override
