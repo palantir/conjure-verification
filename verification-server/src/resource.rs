@@ -12,11 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use core;
+use std::borrow::Borrow;
+use std::collections::HashMap;
+use std::error::Error as StdError;
+use std::string::ToString;
+
 use bytes::Bytes;
+use either::{Either, Left, Right};
+use http::Method;
+use serde_json;
+
 use conjure::value::*;
 use conjure_verification_common::conjure::value::de_plain::deserialize_plain;
-use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
+use conjure_verification_error::Result;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
@@ -24,22 +34,14 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http_server::RouteWithOptions;
-use core;
-use either::{Either, Left, Right};
+use DynamicResource;
 use errors::*;
-use http::Method;
 use raw_json::RawJson;
 use resolved_test_cases::ResolvedClientTestCases;
 use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
 use resolved_test_cases::ResolvedTestCase;
 use resolved_test_cases::ResolvedTestCases;
-use serde_json;
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::error::Error as StdError;
-use std::string::ToString;
 use test_spec::EndpointName;
-use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ResolvedClientTestCases>,
@@ -298,7 +300,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in automatic_endpoint_names.cloned() {
             router.route_with_options(
                 Method::GET,
-                format!("/{}/:index", endpoint_name.0).as_str(),
+                format!("/body/{}/:index", endpoint_name.0).as_str(),
                 SpecTestResource::create_test(endpoint_name),
             );
         }
@@ -306,7 +308,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in self.test_cases.single_path_param_service.keys().cloned() {
             router.route_with_options(
                 Method::POST,
-                format!("/{}/:index/:param", endpoint_name.0).as_str(),
+                format!("/single-path-param/{}/:index/:param", endpoint_name.0).as_str(),
                 SpecTestResource::create_param_test(
                     endpoint_name,
                     |req| Ok(Some(req.path_param("param").into())),
@@ -318,7 +320,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in self.test_cases.single_query_param_service.keys().cloned() {
             router.route_with_options(
                 Method::POST,
-                format!("/{}/:index", endpoint_name.0).as_str(),
+                format!("/single-query-param/{}/:index", endpoint_name.0).as_str(),
                 SpecTestResource::create_param_test(
                     endpoint_name,
                     |req| req.opt_query_param::<String>("foo"),
@@ -330,7 +332,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in self.test_cases.single_header_service.keys().cloned() {
             router.route_with_options(
                 Method::POST,
-                format!("/{}/:index", endpoint_name.0).as_str(),
+                format!("/single-header-param/{}/:index", endpoint_name.0).as_str(),
                 SpecTestResource::create_param_test(
                     endpoint_name,
                     |req| match req.headers().get::<String>("Some-Header".into()).map(|hv| {
@@ -383,26 +385,29 @@ impl OrErr<(), Error> for bool {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
+    use hyper::header::HeaderValue;
+    use hyper::HeaderMap;
+    use hyper::Method;
+    use mime::APPLICATION_JSON;
+    use typed_headers::{ContentType, HeaderMapExt};
+
     use conjure::ir;
     use conjure::resolved_type::FieldDefinition;
     use conjure::resolved_type::ObjectDefinition;
     use conjure::resolved_type::OptionalType;
     use conjure::resolved_type::ResolvedType;
-    use hyper::header::HeaderValue;
-    use hyper::HeaderMap;
-    use hyper::Method;
-    use mime::APPLICATION_JSON;
     use register_resource;
     use resolved_test_cases;
     use router;
-    use router::RouteResult;
     use router::Router;
-    use std::collections::HashMap;
-    use std::sync::Arc;
-    use test_spec::ClientTestCases;
+    use router::RouteResult;
     use test_spec::{EndpointName, PositiveAndNegativeTestCases};
-    use typed_headers::{ContentType, HeaderMapExt};
+    use test_spec::ClientTestCases;
+
+    use super::*;
 
     type ParamTypes = HashMap<EndpointName, ResolvedType>;
 
