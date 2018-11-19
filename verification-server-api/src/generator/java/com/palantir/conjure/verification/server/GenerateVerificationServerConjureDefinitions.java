@@ -30,6 +30,7 @@ import com.palantir.conjure.verification.SingleQueryParamTests;
 import com.palantir.conjure.verification.TestCasesUtils;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ public final class GenerateVerificationServerConjureDefinitions {
         AllTestCases testCases = TestCasesUtils.parseTestCases(file);
 
         // Delete old contents
+        Files.createDirectories(outputDir.toPath());
         MoreFiles.deleteDirectoryContents(outputDir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
 
         TestCasesUtils.YAML_MAPPER.writeValue(new File(outputDir, "services.conjure.yml"),
