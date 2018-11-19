@@ -1,55 +1,51 @@
-client:
-  # auto-deserialize-service.conjure.yml
-  autoDeserialize:
-
-    # primitives
-    receiveBearerTokenExample:
-      positive:
-        - '{"value":"abc123"}'
-        - '{"value":"-._~+/="}'
-        - '{"value":"abc="}'
-        - '{"value":"a="}'
-      negative:
-        - '{"value":null}'
-        - '{}'
-        - '{"value":" space"}'
-        - '{"value":"space "}'
-        - '{"value":"with space"}'
-        - '{"value":""}'
-        - '{"value":"#"}'
-        - '{"value":" "}'
-        - '{"value":"("}'
-        - '{"value":"="}'
-        - '{"value":"=a"}'
-    # receiveBinaryExample: # TODO
-      # positive:
-      # negative:
+body:
+  # primitives
+  - type: BearerTokenExample
+    bothPositive:
+      - '{"value":"abc123"}'
+      - '{"value":"-._~+/="}'
+      - '{"value":"abc="}'
+      - '{"value":"a="}'
+    bothNegative:
+      - '{"value":null}'
+      - '{}'
+      - '{"value":" space"}'
+      - '{"value":"space "}'
+      - '{"value":"with space"}'
+      - '{"value":""}'
+      - '{"value":"#"}'
+      - '{"value":" "}'
+      - '{"value":"("}'
+      - '{"value":"="}'
+      - '{"value":"=a"}'
+    # type: BinaryExample
+    # bothNegative:
     #   - '{"value":}'
-    receiveBooleanExample:
-      positive:
+  - type: BooleanExample
+    bothPositive:
         - '{"value":false}'
         - '{"value":true}'
-      negative:
+    bothNegative:
         - '{}'
         - '{"value":null}'
         - '{"value":0}'
         - '{"value":"true"}'
-    receiveDateTimeExample:
-      positive:
+  - type: DateTimeExample
+    bothPositive:
         - '{"value":"2017-01-02T03:04:05Z"}'
         - '{"value":"2017-01-02T03:04:05.000Z"}'
         - '{"value":"2017-01-02T03:04:05.000000Z"}'
         - '{"value":"2017-01-02T03:04:05.000000000Z"}'
         - '{"value":"2017-01-02T04:04:05.000000000+01:00"}'
         - '{"value":"2017-01-02T05:04:05.000000000+02:00"}'
-      negative:
+    bothNegative:
         - '{"value":"4/3/2018"}'
         - '{"value":"1523040070"}'
         - '{"value":1523040070}'
         - '{"value":"2017-01-02T03:04:05.0000000000Z"}'
         - '{"value":"2017-01-02T04:04:05.000000000+01:00[Europe/Berlin]"}'
-    receiveDoubleExample:
-      positive:
+  - type: DoubleExample
+    bothPositive:
         - '{"value":1.23}'
         - '{"value":0.0}'
         - '{"value":-0.0}'
@@ -59,33 +55,33 @@ client:
         - '{"value":"NaN"}'
         - '{"value":"Infinity"}'
         - '{"value":"-Infinity"}'
-      negative:
+    bothNegative:
         - '{"value":null}'
         - '{}'
         - '{"value":"1.23"}'
         - '{"value":"nan"}'
         - '{"value":nan}'
-    receiveIntegerExample:
-      positive:
+  - type: IntegerExample
+    bothPositive:
         - '{"value":-2147483648}'
         - '{"value":0}'
         - '{"value":2147483647}'
-      negative:
+    bothNegative:
         - '{"value":-2147483649}'
         - '{"value":2147483648}'
         - '{"value":null}'
         - '{}'
         - '{"value":1.23}'
         - '{"value":"12"}'
-    receiveRidExample:
-      positive:
+  - type: RidExample
+    bothPositive:
         - '{"value":"ri.service.instance.folder.foo"}'
         - '{"value":"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"}'
         - '{"value":"ri.my-service.instance1.graph-node.._"}'
         - '{"value":"ri.service.1instance.type.emptyname"}'
         - '{"value":"ri.my-service..graph-node.noInstance"}'
         - '{"value":"ri.my-service..graph-node.noInstance.multiple.extra.dots"}'
-      negative:
+    bothNegative:
         - '{"value":null}'
         - '{}'
         - '{"value":""}'
@@ -98,152 +94,152 @@ client:
         - '{"value":"ri:service::instance:type:name"}'
         - '{"value":"ri.service.instance.type.name!@#"}'
         - '{"value":"ri.service(name)..folder.foo"}'
-    receiveSafeLongExample:
-      positive:
+  - type: SafeLongExample
+    bothPositive:
         - '{"value":-9007199254740991}'
         - '{"value":0}'
         - '{"value":9007199254740991}'
-      negative:
+    bothNegative:
         - '{"value":null}'
         - '{}'
         - '{"value":-9007199254740992}'
         - '{"value":9007199254740992}'
         - '{"value":1.23}'
         - '{"value":"12"}'
-    receiveStringExample:
-      positive:
+  - type: StringExample
+    bothPositive:
         - '{"value":"exampleOutput"}'
         - '{"value":""}'
-      negative:
+    bothNegative:
         - '{"value":null}'
         - '{}'
         - '{"value":8}'
-    receiveUuidExample:
-      positive:
+  - type: UuidExample
+    bothPositive:
         - '{"value":"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"}' # UUID v1
         - '{"value":"80e6dd13-5f42-4e33-ad18-f73875540c8b"}' # UUID v4
-      negative:
+    bothNegative:
         - '{"value":null}'
         - '{}'
         - '{"value":""}'
         - '{"value":"80e6dd13-5f42-4e33-ad18"}'
-    receiveAnyExample:
-      positive:
+  - type: AnyExample
+    bothPositive:
         - '{"value":0}'
         - '{"value":"content"}'
         - '{"value":true}'
         - '{"value":[1,2,3]}'
         - '{"value":{"key":3}}'
         - '{"value":{"key":{"inner-key":[1,2,3]}}}'
-      negative:
+    bothNegative:
         - '{"value":null}'
 
 
     # collections
-    receiveListExample:
-      positive:
+  - type: ListExample
+    bothPositive:
         - '{"value":[]}'
         - '{"value":["","a","b","c","a"]}'
         - '{}'
         # - '{"value":null}'
         #   tag: "lenient"
-      negative:
+    bothNegative:
         - '{"value":{}}'
         # - '{"value":null}'
         #   tag: "!lenient"
-    receiveSetStringExample:
-      positive:
+  - type: SetStringExample
+    bothPositive:
         - '{"value":[]}'
         - '{"value":["","a","b","c"]}'
         - '{}'
         # - '{"value":null}'
         #   tag: "lenient"
-      negative:
+    bothNegative:
         # - '{"value":null}'
         #   tag: "!lenient"
         # TODO SPEC: behavior for an object declared as a "Set" that receives a list with multiple elements that are equal.
         - '{"value":["a","a"]}'
-    receiveSetDoubleExample:
-      positive:
+  - type: SetDoubleExample
+    bothPositive:
         - '{"value":[]}'
         - '{"value":[1.100, 1.2, 1.3]}'
         - '{}'
-      negative:
+    bothNegative:
         - '{"value":[1.1, 1.10, 01.100]}'
-    receiveMapExample:
-      positive:
+  - type: MapExample
+    bothPositive:
         - '{"value":{"key":"value","key2":"value2"}}'
         - '{}'
         - '{"value":{}}'
         # - '{"value":null}'
         #   tag: "lenient"
-      negative:
+    bothNegative:
         - '{"value":{"key":[1,2,3]}}'
         - '{"value":"not a map"}'
         # - '{"value":null}'
         #   tag: "!lenient"
-    receiveOptionalExample:
-      positive:
+  - type: OptionalExample
+    bothPositive:
         - '{}'
         - '{"value":null}'
         - '{"value":""}'
         - '{"value":"foo"}'
-      negative:
+    bothNegative:
         - '{"value":{}}'
         - '{"value":[]}'
-    receiveOptionalBooleanExample:
-      positive:
+  - type: OptionalBooleanExample
+    bothPositive:
         - '{}'
         - '{"value":null}'
         - '{"value":true}'
         - '{"value":false}'
-      negative:
+    bothNegative:
         - '{"value":{}}'
         - '{"value":[]}'
         - '{"value":"true"}'
-    receiveOptionalIntegerExample:
-      positive:
+  - type: OptionalIntegerExample
+    bothPositive:
         - '{}'
         - '{"value":null}'
         - '{"value":0}'
         - '{"value":1234}'
-      negative:
+    bothNegative:
         - '{"value":{}}'
         - '{"value":[]}'
         - '{"value":"1234"}'
-    receiveLongFieldNameOptionalExample:
-      positive:
+  - type: LongFieldNameOptionalExample
+    bothPositive:
         - '{}'
         - '{"someLongName":null}'
         - '{"someLongName":""}'
         - '{"someLongName":"foo"}'
-      negative:
+    bothNegative:
         - '{"someLongName":{}}'
         - '{"someLongName":[]}'
-    receiveRawOptionalExample:
-      positive:
+  - type: RawOptionalExample
+    bothPositive:
         - 'null'
         - '1'
-      negative:
+    bothNegative:
         - '"not an integer"'
 
     # named aliases
-    receiveStringAliasExample:
-      positive:
+  - type: StringAliasExample
+    bothPositive:
         - '"exampleOutput"'
         - '""'
-      negative:
+    bothNegative:
         - 'null'
         - '{}'
         - '[]'
-    receiveDoubleAliasExample:
-      positive:
+  - type: DoubleAliasExample
+    bothPositive:
         - '10'
         - '10.0'
         - '"NaN"'
         - '"Infinity"'
         - '"-Infinity"'
-      negative:
+    bothNegative:
         - 'null'
         - '{}'
         - '[]'
@@ -253,46 +249,46 @@ client:
         - '"infinity"'
         - '"-infinity"'
         - '"+Infinity"'
-    receiveIntegerAliasExample:
-      positive:
+  - type: IntegerAliasExample
+    bothPositive:
         - '0'
         - '123'
-      negative:
+    bothNegative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
         - '123.4'
-    receiveBooleanAliasExample:
-      positive:
+  - type: BooleanAliasExample
+    bothPositive:
         - 'true'
         - 'false'
-      negative:
+    bothNegative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
-    receiveSafeLongAliasExample:
-      positive:
+  - type: SafeLongAliasExample
+    bothPositive:
         - '-9007199254740991'
         - '0'
         - '9007199254740991'
-      negative:
+    bothNegative:
         - '-9007199254740992'
         - '9007199254740992'
         - 'null'
         - '{}'
         - '[]'
         - '""'
-    receiveRidAliasExample:
-      positive:
+  - type: RidAliasExample
+    bothPositive:
         - '"ri.service.instance.folder.foo"'
         - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
         - '"ri.my-service.instance1.graph-node.._"'
         - '"ri.service.1instance.type.emptyname"'
         - '"ri.my-service..graph-node.noInstance"'
         - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
-      negative:
+    bothNegative:
         - 'null'
         - '{}'
         - '""'
@@ -308,47 +304,47 @@ client:
         - '{}'
         - '[]'
         - '""'
-    receiveBearerTokenAliasExample:
-      positive:
+  - type: BearerTokenAliasExample
+    bothPositive:
         - '"abc123"'
         - '"-._~+/="'
         - '"abc="'
         - '"a="'
-      negative:
+    bothNegative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
-    receiveUuidAliasExample:
-      positive:
+  - type: UuidAliasExample
+    bothPositive:
         - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
         - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
-      negative:
+    bothNegative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
         - '"80e6dd13-5f42-4e33-ad18"'
-    receiveReferenceAliasExample:
-      positive:
+  - type: ReferenceAliasExample
+    bothPositive:
         - '{"value":0}'
         - '{"value":"content"}'
         - '{"value":true}'
         - '{"value":[1,2,3]}'
         - '{"value":{"key":3}}'
         - '{"value":{"key":{"inner-key":[1,2,3]}}}'
-      negative:
+    bothNegative:
         - 'null'
         - '{{'
-    receiveDateTimeAliasExample:
-      positive:
+  - type: DateTimeAliasExample
+    bothPositive:
         - '"2017-01-02T03:04:05Z"'
         - '"2017-01-02T03:04:05.000Z"'
         - '"2017-01-02T03:04:05.000000Z"'
         - '"2017-01-02T03:04:05.000000000Z"'
         - '"2017-01-02T04:04:05.000000000+01:00"'
         - '"2017-01-02T05:04:05.000000000+02:00"'
-      negative:
+    bothNegative:
         - '"4/3/2018"'
         - '"1523040070"'
         - '"1523040070'
@@ -359,273 +355,273 @@ client:
         - '[]'
         - '""'
     # receiveBinaryAliasExample:
-    #   positive:
+    # bothPositive:
     #     - ''
-    #   negative:
+    # bothNegative:
     #     - 'null'
     #     - '{}'
     #     - '[]'
     #     - '""'
-    receiveKebabCaseObjectExample:
-      positive:
-      - '{"kebab-cased-field":1}'
-      negative:
-      - '{"kebabCasedField":1}'
-      - '{"kebab_cased_field":1}'
-    receiveSnakeCaseObjectExample:
-      positive:
-      - '{"snake_cased_field":1}'
-      negative:
-      - '{"snakeCasedField":1}'
-      - '{"snake-cased-field":1}'
-    receiveOptionalBearerTokenAliasExample:
-      positive:
+  - type: KebabCaseObjectExample
+    bothPositive:
+        - '{"kebab-cased-field":1}'
+    bothNegative:
+        - '{"kebabCasedField":1}'
+        - '{"kebab_cased_field":1}'
+  - type: SnakeCaseObjectExample
+    bothPositive:
+        - '{"snake_cased_field":1}'
+    bothNegative:
+        - '{"snakeCasedField":1}'
+        - '{"snake-cased-field":1}'
+  - type: OptionalBearerTokenAliasExample
+    bothPositive:
         - 'null'
         - '"abc123"'
         - '"-._~+/="'
         - '"abc="'
         - '"a="'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalBinaryAliasExample:
-      positive:
+  - type: OptionalBinaryAliasExample
+    bothPositive:
         - 'null'
         # TODO(dfox): binary alias?
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalBooleanAliasExample:
-      positive:
+  - type: OptionalBooleanAliasExample
+    bothPositive:
         - 'null'
         - 'true'
         - 'false'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalDateTimeAliasExample:
-      positive:
+  - type: OptionalDateTimeAliasExample
+    bothPositive:
         - 'null'
         - '"2017-01-02T03:04:05Z"'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalDoubleAliasExample:
-      positive:
+  - type: OptionalDoubleAliasExample
+    bothPositive:
         - 'null'
         - '10'
         - '10.0'
         - '"NaN"'
         - '"Infinity"'
         - '"-Infinity"'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalIntegerAliasExample:
-      positive:
+  - type: OptionalIntegerAliasExample
+    bothPositive:
         - 'null'
         - '0'
         - '123'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalRidAliasExample:
-      positive:
+  - type: OptionalRidAliasExample
+    bothPositive:
         - 'null'
         - '"ri.service.instance.folder.foo"'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalSafeLongAliasExample:
-      positive:
+  - type: OptionalSafeLongAliasExample
+    bothPositive:
         - 'null'
         - '-9007199254740991'
         - '0'
         - '9007199254740991'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalStringAliasExample:
-      positive:
+  - type: OptionalStringAliasExample
+    bothPositive:
         - 'null'
         - '""'
         - '"hello"'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalUuidAliasExample:
-      positive:
+  - type: OptionalUuidAliasExample
+    bothPositive:
         - 'null'
         - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"'
         - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"'
-      negative:
+    bothNegative:
         - '{}'
         - '[]'
-    receiveOptionalAnyAliasExample:
-      positive:
+  - type: OptionalAnyAliasExample
+    bothPositive:
         - 'null'
         - '0'
         - '"content"'
         - 'true'
         - '[1,2,3]'
         - '{"key":3}'
-      negative: []
-    receiveListBearerTokenAliasExample:
-      positive:
+    bothNegative: []
+  - type: ListBearerTokenAliasExample
+    bothPositive:
         - '[]'
         - '["abc123"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListBinaryAliasExample:
-      positive:
+  - type: ListBinaryAliasExample
+    bothPositive:
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListBooleanAliasExample:
-      positive:
+  - type: ListBooleanAliasExample
+    bothPositive:
         - '[]'
         - '[true]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListDateTimeAliasExample:
-      positive:
+  - type: ListDateTimeAliasExample
+    bothPositive:
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListDoubleAliasExample:
-      positive:
+  - type: ListDoubleAliasExample
+    bothPositive:
         - '[]'
         - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListIntegerAliasExample:
-      positive:
+  - type: ListIntegerAliasExample
+    bothPositive:
         - '[]'
         - '[0, 123]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListRidAliasExample:
-      positive:
+  - type: ListRidAliasExample
+    bothPositive:
         - '[]'
         - '["ri.service.instance.folder.foo"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListSafeLongAliasExample:
-      positive:
+  - type: ListSafeLongAliasExample
+    bothPositive:
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListStringAliasExample:
-      positive:
+  - type: ListStringAliasExample
+    bothPositive:
         - '[]'
         - '["", "hello"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListUuidAliasExample:
-      positive:
+  - type: ListUuidAliasExample
+    bothPositive:
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveListAnyAliasExample:
-      positive:
+  - type: ListAnyAliasExample
+    bothPositive:
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetBearerTokenAliasExample:
-      positive:
+  - type: SetBearerTokenAliasExample
+    bothPositive:
         - '[]'
         - '["abc123"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetBinaryAliasExample:
-      positive:
+  - type: SetBinaryAliasExample
+    bothPositive:
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetBooleanAliasExample:
-      positive:
+  - type: SetBooleanAliasExample
+    bothPositive:
         - '[]'
         - '[true]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetDateTimeAliasExample:
-      positive:
+  - type: SetDateTimeAliasExample
+    bothPositive:
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetDoubleAliasExample:
-      positive:
+  - type: SetDoubleAliasExample
+    bothPositive:
         - '[]'
         - '[100, 10.0, "NaN", "Infinity", "-Infinity"]'
         # https://github.com/palantir/conjure-verification/issues/72
         # - '[+0, -0]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetIntegerAliasExample:
-      positive:
+  - type: SetIntegerAliasExample
+    bothPositive:
         - '[]'
         - '[0, 123]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetRidAliasExample:
-      positive:
+  - type: SetRidAliasExample
+    bothPositive:
         - '[]'
         - '["ri.service.instance.folder.foo"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetSafeLongAliasExample:
-      positive:
+  - type: SetSafeLongAliasExample
+    bothPositive:
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetStringAliasExample:
-      positive:
+  - type: SetStringAliasExample
+    bothPositive:
         - '[]'
         - '["", "hello"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetUuidAliasExample:
-      positive:
+  - type: SetUuidAliasExample
+    bothPositive:
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveSetAnyAliasExample:
-      positive:
+  - type: SetAnyAliasExample
+    bothPositive:
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
-      negative:
+    bothNegative:
         - 'null'
-    receiveMapBearerTokenAliasExample:
-      positive:
+  - type: MapBearerTokenAliasExample
+    bothPositive:
         - '{}'
         - '{"abc123": true}'
-      negative: []
-    receiveMapBinaryAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapBinaryAliasExample
+    bothPositive:
         - '{}'
         - '{"SGVsbG8sIFdvcmxk": true}'
-      negative: []
-    receiveMapBooleanAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapBooleanAliasExample
+    bothPositive:
         - '{}'
         - '{"true": true}'
-      negative: []
-    receiveMapDateTimeAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapDateTimeAliasExample
+    bothPositive:
         - '{}'
         - '{"2017-01-02T03:04:05Z": true}'
-      negative: []
-    receiveMapDoubleAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapDoubleAliasExample
+    bothPositive:
         - '{}'
         - '{"10": true}'
         - '{"10.0": true}'
@@ -635,153 +631,177 @@ client:
         - '{"Infinity": true}'
         - '{"-Infinity": true}'
         - '{"10": true, "3e2": true}'
-      negative:
+    bothNegative:
         - '{"10": true, "10e0": false}'
         - '{"10": true, "10.0": false}'
-    receiveMapIntegerAliasExample:
-      positive:
+  - type: MapIntegerAliasExample
+    bothPositive:
         - '{}'
         - '{"0": true}'
         - '{"123": true}'
-      negative: []
-    receiveMapRidAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapRidAliasExample
+    bothPositive:
         - '{}'
         - '{"ri.service.instance.folder.foo": true}'
-      negative: []
-    receiveMapSafeLongAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapSafeLongAliasExample
+    bothPositive:
         - '{}'
         - '{"-9007199254740991": true}'
         - '{"0": true}'
         - '{"9007199254740991": true}'
-      negative: []
-    receiveMapStringAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapStringAliasExample
+    bothPositive:
         - '{}'
         - '{"": true}'
         - '{"hello": true}'
-      negative: []
-    receiveMapUuidAliasExample:
-      positive:
+    bothNegative: []
+  - type: MapUuidAliasExample
+    bothPositive:
         - '{}'
         - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
-      negative: []
-    receiveMapEnumExampleAlias:
-      positive:
+    bothNegative: []
+  - type: MapEnumExampleAlias
+    bothPositive:
         - '{"ONE": "", "TWO": ""}'
-      negative:
+    bothNegative:
         - '{"ONE": "", "TWO": "", "BAD VARIANT": ""}'
 
-  # single-header-service.conjure.yml
-  singleHeaderService:
-    headerBearertoken:
-      - '"bearertoken"'
-    headerBoolean:
-      - 'true'
-      - 'false'
-    headerDatetime:
-      - '"2017-01-02T03:04:05Z"'
-    headerDouble:
-      - '10'
-      - '10.0'
-    headerInteger:
-      - '0'
-      - '123'
-    headerRid:
-      - '"ri.service.instance.folder.foo"'
-      - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
-      - '"ri.my-service.instance1.graph-node.._"'
-      - '"ri.service.1instance.type.emptyname"'
-      - '"ri.my-service..graph-node.noInstance"'
-      - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
-    headerSafelong:
-      - '-9007199254740991'
-      - '0'
-      - '9007199254740991'
-    headerString:
-      - '""'
-      - '"hello"'
-    headerUuid:
-      - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
-      - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
-    headerOptionalString:
-      - 'null'
-      - '"foo"'
-    headerAliasString:
-      - '""'
-      - '"hello"'
+singleHeaderParam:
+- type: bearertoken
+  bothPositive:
+    - '"bearertoken"'
+- type: boolean
+  bothPositive:
+    - 'true'
+    - 'false'
+- type: datetime
+  bothPositive:
+    - '"2017-01-02T03:04:05Z"'
+- type: double
+  bothPositive:
+    - '10'
+    - '10.0'
+- type: integer
+  bothPositive:
+    - '0'
+    - '123'
+- type: rid
+  bothPositive:
+    - '"ri.service.instance.folder.foo"'
+    - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
+    - '"ri.my-service.instance1.graph-node.._"'
+    - '"ri.service.1instance.type.emptyname"'
+    - '"ri.my-service..graph-node.noInstance"'
+    - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
+- type: safelong
+  bothPositive:
+    - '-9007199254740991'
+    - '0'
+    - '9007199254740991'
+- type: string
+  bothPositive:
+    - '""'
+    - '"hello"'
+- type: uuid
+  bothPositive:
+    - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
+    - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
+- type: OptionalString
+  bothPositive:
+    - 'null'
+    - '"foo"'
+- type: AliasString
+  bothPositive:
+    - '""'
+    - '"hello"'
 
-  # single-path-param-service.conjure.yml
-  singlePathParamService:
+singlePathParam:
+- type: boolean
+  bothPositive:
+    - 'true'
+    - 'false'
+- type: datetime
+  bothPositive:
+    - '"2017-01-02T03:04:05Z"'
+- type: double
+  bothPositive:
+    - '10'
+    - '10.0'
+- type: integer
+  bothPositive:
+    - '0'
+    - '123'
+- type: rid
+  bothPositive:
+    - '"ri.service.instance.folder.foo"'
+    - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
+    - '"ri.my-service.instance1.graph-node.._"'
+    - '"ri.service.1instance.type.emptyname"'
+    - '"ri.my-service..graph-node.noInstance"'
+    - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
+- type: safelong
+  bothPositive:
+    - '-9007199254740991'
+    - '0'
+    - '9007199254740991'
+- type: string
+  bothPositive:
+    - '""'
+    - '"hello"'
+- type: uuid
+  bothPositive:
+    - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
+    - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
+- type: AliasString
+  bothPositive:
+    - '""'
+    - '"hello"'
 
-    pathParamBoolean:
-      - 'true'
-      - 'false'
-    pathParamDatetime:
-      - '"2017-01-02T03:04:05Z"'
-    pathParamDouble:
-      - '10'
-      - '10.0'
-    pathParamInteger:
-      - '0'
-      - '123'
-    pathParamRid:
-      - '"ri.service.instance.folder.foo"'
-      - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
-      - '"ri.my-service.instance1.graph-node.._"'
-      - '"ri.service.1instance.type.emptyname"'
-      - '"ri.my-service..graph-node.noInstance"'
-      - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
-    pathParamSafelong:
-      - '-9007199254740991'
-      - '0'
-      - '9007199254740991'
-    pathParamString:
-      - '""'
-      - '"hello"'
-    pathParamUuid:
-      - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
-      - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
-    pathParamAliasString:
-      - '""'
-      - '"hello"'
-
-  # single-query-param-service.conjure.yml
-  singleQueryParamService:
-
-    queryParamBoolean:
-      - 'true'
-      - 'false'
-    # TODO(dfox): this should definitely be allowed!
-    # queryParamDatetime:
-    #   - '"2017-01-02T03:04:05Z"'
-    queryParamDouble:
-      - '10'
-      - '10.0'
-    queryParamInteger:
-      - '0'
-      - '123'
-    queryParamRid:
-      - '"ri.service.instance.folder.foo"'
-      - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
-      - '"ri.my-service.instance1.graph-node.._"'
-      - '"ri.service.1instance.type.emptyname"'
-      - '"ri.my-service..graph-node.noInstance"'
-      - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
-    queryParamSafelong:
-      - '-9007199254740991'
-      - '0'
-      - '9007199254740991'
-    queryParamString:
-      - '""'
-      - '"hello"'
-    queryParamUuid:
-      - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
-      - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
-    queryParamOptionalString:
-      - 'null'
-      - '"foo"'
-    queryParamAliasString:
-      - '""'
-      - '"hello"'
+singleQueryParam:
+- type: boolean
+  bothPositive:
+    - 'true'
+    - 'false'
+  # TODO(dfox): this should definitely be allowed!
+  # queryParamDatetime:
+  #   - '"2017-01-02T03:04:05Z"'
+- type: double
+  bothPositive:
+    - '10'
+    - '10.0'
+- type: integer
+  bothPositive:
+    - '0'
+    - '123'
+- type: rid
+  bothPositive:
+    - '"ri.service.instance.folder.foo"'
+    - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
+    - '"ri.my-service.instance1.graph-node.._"'
+    - '"ri.service.1instance.type.emptyname"'
+    - '"ri.my-service..graph-node.noInstance"'
+    - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
+- type: safelong
+  bothPositive:
+    - '-9007199254740991'
+    - '0'
+    - '9007199254740991'
+- type: string
+  bothPositive:
+    - '""'
+    - '"hello"'
+- type: uuid
+  bothPositive:
+    - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
+    - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
+- type: OptionalString
+  bothPositive:
+    - 'null'
+    - '"foo"'
+- type: AliasString
+  bothPositive:
+    - '""'
+    - '"hello"'

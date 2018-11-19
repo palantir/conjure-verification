@@ -26,14 +26,14 @@ types:
         docs: Tests verifying the behaviour of a single path parameter of the given type.
         fields:
           type: ConjureTypeRepr
-          tests: list<TestCase>
+          bothPositive: list<TestCase>
       SingleQueryParamTests:
         docs: Tests verifying the behaviour of a single query parameter of the given type.
         fields:
           type: ConjureTypeRepr
-          tests: list<TestCase>
+          bothPositive: list<TestCase>
       SingleHeaderParamTests:
         docs: Tests verifying the behaviour of a single header parameter of the given type.
         fields:
           type: ConjureTypeRepr
-          tests: list<TestCase>
+          bothPositive: list<TestCase>
