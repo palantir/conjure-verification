@@ -2,10 +2,10 @@ apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
 apply plugin: 'com.palantir.conjure'
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
-    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6'
-    compile 'com.palantir.conjure:conjure-core:4.0.0'
-    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization:4.5.1'
+    compile 'com.fasterxml.jackson.core:jackson-databind'
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    compile 'com.palantir.conjure:conjure-core'
+    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
     compile project('verification-client-api-objects')
 }
 
