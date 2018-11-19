@@ -55,7 +55,7 @@ public class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<String
 
     @Override
     public String visitPrimitive(PrimitiveType type) {
-        return type.name();
+        return type.type().name();
     }
 
     @Override
