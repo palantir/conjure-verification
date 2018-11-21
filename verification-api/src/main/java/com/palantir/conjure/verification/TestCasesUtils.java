@@ -19,6 +19,7 @@ package com.palantir.conjure.verification;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.parser.types.ConjureType;
 import com.palantir.parsec.ParseException;
@@ -27,7 +28,7 @@ import java.io.IOException;
 
 public final class TestCasesUtils {
     public static final ObjectMapper YAML_MAPPER = ObjectMappers
-            .withDefaultModules(new ObjectMapper(new YAMLFactory()))
+            .withDefaultModules(new ObjectMapper(new YAMLFactory().enable(Feature.MINIMIZE_QUOTES)))
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     private TestCasesUtils() {}
