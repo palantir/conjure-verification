@@ -1,15 +1,54 @@
 apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
 apply plugin: 'com.palantir.conjure'
 
+sourceSets {
+    generator
+}
+
 dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind'
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     compile 'com.palantir.conjure:conjure-core'
     compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
-    compile project('verification-client-api-objects')
+    compile project("${project.name}-objects")
+    compile project(':verification-api')
+    compile sourceSets.generator.output
+
+    generatorImplementation project(':verification-api')
+    generatorImplementation project(':verification-api:verification-api-objects')
+    generatorImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    generatorImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    generatorImplementation 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
+    generatorImplementation 'com.google.guava:guava'
+}
+
+task generateConjureDefinitions(type: JavaExec) {
+    description = "Generate the conjure service definition files"
+    main = "com.palantir.conjure.verification.client.GenerateVerificationClientConjureDefinitions"
+    classpath = sourceSets.generator.runtimeClasspath
+    args rootProject.file('test-cases.yml'), 'src/main/conjure'
+
+    inputs.file rootProject.file('test-cases.yml')
+    outputs.dir 'src/main/conjure/generated'
+}
+
+// Ensure we generate definitions first before conjure tries to compile them
+tasks.copyConjureSourcesIntoBuild {
+    dependsOn tasks.generateConjureDefinitions
+}
+
+task generateTestCases(type: JavaExec) {
+    description = "Generate client-specific test cases"
+    main = "com.palantir.conjure.verification.client.GenerateVerificationClientTestCases"
+    classpath = sourceSets.main.runtimeClasspath
+    args rootProject.file('test-cases.yml'), 'test-cases.yml'
+
+    inputs.file rootProject.file('test-cases.yml')
+    outputs.file 'test-cases.yml'
 }
 
 task compileTestCasesJson(type: JavaExec) {
+    dependsOn 'generateTestCases'
     main = "com.palantir.conjure.verification.client.CompileVerificationClientTestCasesJson"
     classpath = sourceSets.main.runtimeClasspath
 
