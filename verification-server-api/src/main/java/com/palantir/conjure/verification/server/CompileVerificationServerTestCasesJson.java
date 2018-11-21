@@ -74,13 +74,13 @@ public final class CompileVerificationServerTestCasesJson {
         ConjureDefinition ir = Conjure.parse(files);
 
         checkEndpointNamesMatchPaths(ir);
-        checkNoLeftovers(clientTestCases.getAutoDeserialize().keySet(),
+        checkNoLeftovers(outputFile, clientTestCases.getAutoDeserialize().keySet(),
                 serviceByName(ir, "AutoDeserializeService"));
-        checkNoLeftovers(clientTestCases.getSingleHeaderService().keySet(),
+        checkNoLeftovers(outputFile, clientTestCases.getSingleHeaderService().keySet(),
                 serviceByName(ir, "SingleHeaderService"));
-        checkNoLeftovers(clientTestCases.getSinglePathParamService().keySet(),
+        checkNoLeftovers(outputFile, clientTestCases.getSinglePathParamService().keySet(),
                 serviceByName(ir, "SinglePathParamService"));
-        checkNoLeftovers(clientTestCases.getSingleQueryParamService().keySet(),
+        checkNoLeftovers(outputFile, clientTestCases.getSingleQueryParamService().keySet(),
                 serviceByName(ir, "SingleQueryParamService"));
     }
 
@@ -113,8 +113,7 @@ public final class CompileVerificationServerTestCasesJson {
     }
 
     private static void checkNoLeftovers(
-            Set<EndpointName> testCases,
-            ServiceDefinition serviceDefinition) {
+            File outputFile, Set<EndpointName> testCases, ServiceDefinition serviceDefinition) {
 
         Set<String> fromTestCasesYml = testCases.stream().map(EndpointName::get).collect(toSet());
 
@@ -124,13 +123,13 @@ public final class CompileVerificationServerTestCasesJson {
 
         Sets.SetView<String> missing1 = Sets.difference(realApiDefinition, fromTestCasesYml);
         if (!missing1.isEmpty()) {
-            throw new RuntimeException("Conjure API defines some endpoints but they are not used in test-cases.yml: "
-                    + missing1);
+            throw new RuntimeException("Conjure API defines some endpoints but they are not used in the generated "
+                    + outputFile + ": " + missing1);
         }
 
         Sets.SetView<String> missing2 = Sets.difference(fromTestCasesYml, realApiDefinition);
         if (!missing2.isEmpty()) {
-            throw new RuntimeException("test-cases.yml mentions some endpoints, "
+            throw new RuntimeException("The generated " + outputFile + " mentions some endpoints, "
                     + "but they are not present in any conjure API definition: " + missing2);
         }
     }

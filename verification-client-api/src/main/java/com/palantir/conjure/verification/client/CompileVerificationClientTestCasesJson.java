@@ -77,7 +77,7 @@ public final class CompileVerificationClientTestCasesJson {
         ConjureDefinition ir = Conjure.parse(files);
 
         checkEndpointNamesMatchPaths(ir);
-        checkNoLeftovers(serverTestCases.getAutoDeserialize().keySet(),
+        checkNoLeftovers(outputFile, serverTestCases.getAutoDeserialize().keySet(),
                 serviceByName(ir, "AutoDeserializeService"));
     }
 
@@ -104,6 +104,7 @@ public final class CompileVerificationClientTestCasesJson {
     }
 
     private static void checkNoLeftovers(
+            File outputFile,
             Set<EndpointName> testCases,
             ServiceDefinition serviceDefinition) {
 
@@ -115,13 +116,13 @@ public final class CompileVerificationClientTestCasesJson {
 
         Sets.SetView<String> missing1 = Sets.difference(realApiDefinition, fromTestCasesYml);
         if (!missing1.isEmpty()) {
-            throw new RuntimeException("Conjure API defines some endpoints but they are not used in test-cases.yml: "
-                    + missing1);
+            throw new RuntimeException("Conjure API defines some endpoints but they are not used in the generated "
+                    + outputFile + ": " + missing1);
         }
 
         Sets.SetView<String> missing2 = Sets.difference(fromTestCasesYml, realApiDefinition);
         if (!missing2.isEmpty()) {
-            throw new RuntimeException("test-cases.yml mentions some endpoints, "
+            throw new RuntimeException("The generated " + outputFile + " mentions some endpoints, "
                     + "but they are not present in any conjure API definition: " + missing2);
         }
     }
