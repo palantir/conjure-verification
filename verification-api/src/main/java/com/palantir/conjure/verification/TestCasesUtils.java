@@ -26,10 +26,11 @@ import java.io.File;
 import java.io.IOException;
 
 public final class TestCasesUtils {
+    public static final ObjectMapper YAML_MAPPER = ObjectMappers
+            .withDefaultModules(new ObjectMapper(new YAMLFactory()))
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-    public static final ObjectMapper YAML_MAPPER =
-            ObjectMappers.withDefaultModules(new ObjectMapper(new YAMLFactory()))
-                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private TestCasesUtils() {}
 
     public static AllTestCases parseTestCases(File file) throws IOException {
         return YAML_MAPPER.readValue(file, AllTestCases.class);

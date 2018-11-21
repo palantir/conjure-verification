@@ -31,7 +31,7 @@ import com.palantir.conjure.parser.types.reference.LocalReferenceType;
 /**
  * Recursively prefixes all local references with the {@code examples.} namespace.
  */
-public class ResolveLocalReferencesConjureTypeVisitor implements ConjureTypeVisitor<String> {
+public final class ResolveLocalReferencesConjureTypeVisitor implements ConjureTypeVisitor<String> {
     @Override
     public String visitAny(AnyType type) {
         return "any";
@@ -65,7 +65,8 @@ public class ResolveLocalReferencesConjureTypeVisitor implements ConjureTypeVisi
 
     @Override
     public String visitForeignReference(ForeignReferenceType type) {
-        throw new UnsupportedOperationException("Verification endpoints do not support foreign references: " + type.toString());
+        throw new UnsupportedOperationException(
+                "Verification endpoints do not support foreign references: " + type.toString());
     }
 
     @Override

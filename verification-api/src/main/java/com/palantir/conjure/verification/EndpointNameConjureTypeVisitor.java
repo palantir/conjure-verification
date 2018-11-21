@@ -33,7 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Convert the {@link ConjureType} into a string that can be used as an endpoint name (without special characters).
  */
-public class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<String> {
+public final class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<String> {
     @Override
     public String visitAny(AnyType type) {
         return "any";
@@ -67,7 +67,8 @@ public class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<String
 
     @Override
     public String visitForeignReference(ForeignReferenceType type) {
-        throw new UnsupportedOperationException("Verification endpoints do not support foreign references: " + type.toString());
+        throw new UnsupportedOperationException(
+                "Verification endpoints do not support foreign references: " + type.toString());
     }
 
     @Override

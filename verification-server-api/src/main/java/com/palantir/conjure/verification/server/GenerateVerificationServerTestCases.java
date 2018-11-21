@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class GenerateVerificationServerTestCases {
+    private GenerateVerificationServerTestCases() {}
+
     public static void main(String... args) throws IOException {
         Preconditions.checkArgument(args.length == 2, "Usage: <test-cases.yml> <server-test-cases.yml>");
         File file = new File(args[0]);
@@ -68,7 +70,8 @@ public final class GenerateVerificationServerTestCases {
         return builder.build();
     }
 
-    private static Map<EndpointName, List<String>> generateSingleHeaderParamTestCases(List<SingleHeaderParamTests> singleHeaderParam) {
+    private static Map<EndpointName, List<String>> generateSingleHeaderParamTestCases(
+            List<SingleHeaderParamTests> singleHeaderParam) {
         Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleHeaderParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
@@ -76,7 +79,8 @@ public final class GenerateVerificationServerTestCases {
         return builder.build();
     }
 
-    private static Map<EndpointName, List<String>> generateSingleQueryParamTestCases(List<SingleQueryParamTests> singleQueryParam) {
+    private static Map<EndpointName, List<String>> generateSingleQueryParamTestCases(
+            List<SingleQueryParamTests> singleQueryParam) {
         Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleQueryParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
@@ -84,7 +88,8 @@ public final class GenerateVerificationServerTestCases {
         return builder.build();
     }
 
-    private static Map<EndpointName, List<String>> generateSinglePathParamTestCases(List<SinglePathParamTests> singlePathParam) {
+    private static Map<EndpointName, List<String>> generateSinglePathParamTestCases(
+            List<SinglePathParamTests> singlePathParam) {
         Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singlePathParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
