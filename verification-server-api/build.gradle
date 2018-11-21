@@ -32,6 +32,7 @@ task generateConjureDefinitions(type: JavaExec) {
     outputs.dir 'src/main/conjure/generated'
 }
 
+// Ensure we generate definitions first before conjure tries to compile them
 tasks.copyConjureSourcesIntoBuild {
     dependsOn tasks.generateConjureDefinitions
 }
