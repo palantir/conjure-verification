@@ -47,7 +47,14 @@ mod test {
 
     #[test]
     fn deserializes_test_cases() {
-        let f = File::open(Path::new(TEST_CASES_PATH)).unwrap();
+        let path = Path::new(TEST_CASES_PATH);
+        assert_eq!(
+            path.exists(),
+            true,
+            "file missing, run ./gradlew generateTestCases to generate it"
+        );
+
+        let f = File::open(path).unwrap();
         serde_yaml::from_reader::<_, TestCases>(f).unwrap();
     }
 
