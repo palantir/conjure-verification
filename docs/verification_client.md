@@ -1,12 +1,18 @@
 # Verification client
-[test-cases.yml]: /verification-client-api/test-cases.yml
+[test-cases.yml]: /test-cases.yml
 [verification-client.conjure.yml]: /verification-client-api/src/main/conjure/verification-client.conjure.yml
 
 The _verification client_ makes requests to a user-provided server-under-test.
 The _verification client_ also binds to a port, so that test requests can be driven by a user's test harness (i.e. it is, in fact, a server).
 
-[test-cases.yml][] contains a variety of tests, grouped by type, then endpoint name.
-The conjure-defined format for this file is defined [here](/verification-client-api/src/main/conjure/test-cases.conjure.yml).
+[test-cases.yml][] contains a variety of tests applicable to both verification client and [verification server](/docs/verification_server.md).
+To compile the verification-client test cases, run:
+
+```bash
+./gradlew generateTestCases
+``` 
+
+That will generate a file `/verification-client-api/test-cases.yml`, which conforms to [this conjure-defined format](/verification-client-api/src/main/conjure/test-cases.conjure.yml).
 
 ### Prerequisites
 

@@ -2,8 +2,14 @@
 
 This is a reference server used to test Conjure client generators and libraries.
 
-[test-cases.yml](/verification-server-api/test-cases.yml) contains a variety of tests, grouped by type, then endpoint name.
-The conjure-defined format for this file is defined [here](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
+[test-cases.yml][] contains a variety of tests applicable to both [verification client](/docs/verification_client.md) and verification server.
+To compile the verification-server test cases, run:
+
+```bash
+./gradlew generateTestCases
+``` 
+
+That will generate a file `/verification-server-api/test-cases.yml`, which conforms to [this conjure-defined format](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
 
 | Test type | Service definition | Comment |
 | --------- | ------------------ | ------- |
