@@ -60,12 +60,12 @@ public final class GenerateVerificationServerTestCases {
                 PositiveAndNegativeTestCases
                         .builder()
                         .positive(t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList()))
+                        .negative(t.getBothNegative().stream().map(TestCase::get).collect(Collectors.toList()))
                         .addAllPositive(t
                                 .getClientPositiveServerFail()
                                 .stream()
                                 .map(TestCase::get)
                                 .collect(Collectors.toList()))
-                        .negative(t.getBothNegative().stream().map(TestCase::get).collect(Collectors.toList()))
                         .build()));
         return builder.build();
     }
