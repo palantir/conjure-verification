@@ -25,8 +25,8 @@ use serde_json;
 
 use conjure::value::*;
 use conjure_verification_common::conjure::value::de_plain::deserialize_plain;
-use conjure_verification_error::{Code, Error};
 use conjure_verification_error::Result;
+use conjure_verification_error::{Code, Error};
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
@@ -34,7 +34,6 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http_server::RouteWithOptions;
-use DynamicResource;
 use errors::*;
 use raw_json::RawJson;
 use resolved_test_cases::ResolvedClientTestCases;
@@ -42,6 +41,7 @@ use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
 use resolved_test_cases::ResolvedTestCase;
 use resolved_test_cases::ResolvedTestCases;
 use test_spec::EndpointName;
+use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ResolvedClientTestCases>,
@@ -402,10 +402,10 @@ mod test {
     use register_resource;
     use resolved_test_cases;
     use router;
-    use router::Router;
     use router::RouteResult;
-    use test_spec::{EndpointName, PositiveAndNegativeTestCases};
+    use router::Router;
     use test_spec::ClientTestCases;
+    use test_spec::{EndpointName, PositiveAndNegativeTestCases};
 
     use super::*;
 
@@ -462,16 +462,40 @@ mod test {
             );
         });
         let header_name: &'static str = "Some-Header";
-        send_request(&router, Method::POST, "/string/0", 0, |req| {
-            req.headers.insert(header_name, "yo".parse().unwrap());
-        }).unwrap();
-        send_request(&router, Method::POST, "/int/0", 0, |req| {
-            req.headers.insert(header_name, "-1234".parse().unwrap());
-        }).unwrap();
-        send_request(&router, Method::POST, "/bool/0", 0, |req| {
-            req.headers.insert(header_name, "false".parse().unwrap());
-        }).unwrap();
-        send_request(&router, Method::POST, "/opt/0", 0, |_| {}).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/string/0",
+            0,
+            |req| {
+                req.headers.insert(header_name, "yo".parse().unwrap());
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/int/0",
+            0,
+            |req| {
+                req.headers.insert(header_name, "-1234".parse().unwrap());
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/bool/0",
+            0,
+            |req| {
+                req.headers.insert(header_name, "false".parse().unwrap());
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/opt/0",
+            0,
+            |_| {},
+        ).unwrap();
     }
 
     #[test]
@@ -502,23 +526,47 @@ mod test {
                 }),
             );
         });
-        send_request(&router, Method::POST, "/string/0", 0, |req| {
-            req.query_params.insert("foo".into(), vec!["yo".into()]);
-        }).unwrap();
-        send_request(&router, Method::POST, "/int/0", 0, |req| {
-            req.query_params.insert("foo".into(), vec!["-1234".into()]);
-        }).unwrap();
-        send_request(&router, Method::POST, "/bool/0", 0, |req| {
-            req.query_params.insert("foo".into(), vec!["false".into()]);
-        }).unwrap();
-        send_request(&router, Method::POST, "/opt/0", 0, |_| {}).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/string/0",
+            0,
+            |req| {
+                req.query_params.insert("foo".into(), vec!["yo".into()]);
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/int/0",
+            0,
+            |req| {
+                req.query_params.insert("foo".into(), vec!["-1234".into()]);
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/bool/0",
+            0,
+            |req| {
+                req.query_params.insert("foo".into(), vec!["false".into()]);
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/opt/0",
+            0,
+            |_| {},
+        ).unwrap();
     }
 
     #[test]
     fn test_validation_error() {
         let (_, router, _) = setup_simple_auto_positive();
 
-        match send_request(&router, Method::GET, "/foo/0", 0, |req| {
+        match send_request(&router, Method::GET, "/body/foo/0", 0, |req| {
             req.body = "bad body".into();
         }) {
             Err(err) => assert_eq!(err.name(), "ConjureVerification:UnexpectedBody"),
@@ -571,7 +619,7 @@ mod test {
                 .insert("index".into(), index.to_string());
             builder.with_request(|req| endpoint.handler.handle(req))
         } else {
-            panic!("Failed to route!")
+            panic!("Failed to route: {}", path)
         }
     }
 
