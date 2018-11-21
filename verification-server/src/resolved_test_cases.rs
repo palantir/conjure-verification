@@ -29,6 +29,7 @@
 use conjure::resolved_type::ResolvedType;
 use conjure::value::ConjureValue;
 use conjure_verification_common::more_serde_json;
+use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Error;
 use conjure_verification_error::Result;
 use errors::VerificationError;
@@ -61,12 +62,13 @@ pub struct ResolvedTestCase {
     pub text: String,
 }
 
-pub fn resolve_test_cases<'a, I>(
+pub fn resolve_test_cases<'a, I, I2>(
     type_mapping: &'a I,
     client_test_cases: &'a ClientTestCases,
 ) -> Result<ResolvedClientTestCases>
 where
-    I: Index<&'a EndpointName, Output = ResolvedType>,
+    I: Index<&'a TestType, Output = I2>,
+    I2: Index<&'a EndpointName, Output = ResolvedType>,
 {
     Ok(ResolvedClientTestCases {
         auto_deserialize: client_test_cases
@@ -74,7 +76,7 @@ where
             .iter()
             .map(|(endpoint, cases)| {
                 // Get the conjure type
-                let conjure_type = &type_mapping[endpoint];
+                let conjure_type = &type_mapping[&TestType::Body][endpoint];
                 // Parse the positive test cases
                 let positive = ResolvedTestCases {
                     test_cases: resolve_cases(&cases.positive, &conjure_type, endpoint)
@@ -96,7 +98,7 @@ where
             .single_path_param_service
             .iter()
             .map(|(endpoint, cases)| {
-                let conjure_type = &type_mapping[endpoint];
+                let conjure_type = &type_mapping[&TestType::SinglePathParam][endpoint];
                 Ok((
                     endpoint.clone(),
                     ResolvedTestCases {
@@ -110,7 +112,7 @@ where
             .single_query_param_service
             .iter()
             .map(|(endpoint, cases)| {
-                let conjure_type = &type_mapping[endpoint];
+                let conjure_type = &type_mapping[&TestType::SingleQueryParam][endpoint];
                 Ok((
                     endpoint.clone(),
                     ResolvedTestCases {
@@ -124,7 +126,7 @@ where
             .single_header_service
             .iter()
             .map(|(endpoint, cases)| {
-                let conjure_type = &type_mapping[endpoint];
+                let conjure_type = &type_mapping[&TestType::SingleHeaderParam][endpoint];
                 Ok((
                     endpoint.clone(),
                     ResolvedTestCases {

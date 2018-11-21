@@ -20,6 +20,8 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate derive_more;
+#[macro_use]
+extern crate derive_new;
 
 extern crate base64;
 extern crate chrono;

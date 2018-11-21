@@ -60,6 +60,8 @@ use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
+use conjure_verification_common::type_mapping::ServiceTypeMapping;
+use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_common::type_mapping::TypeForEndpointFn;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http_server::router::Binder;
@@ -116,8 +118,11 @@ fn main() {
     let ir = File::open(Path::new(ir_path)).unwrap();
     let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
-    let mut services_mapping: HashMap<String, TypeForEndpointFn> = HashMap::new();
-    services_mapping.insert("AutoDeserializeService".to_string(), return_type);
+    let services_mapping: vec![ServiceTypeMapping::new(
+        "AutoDeserializeService",
+        TestType::Body,
+        return_type,
+    )];
 
     let resource = Arc::new(VerificationClientResource::new(
         test_cases.server.into(),

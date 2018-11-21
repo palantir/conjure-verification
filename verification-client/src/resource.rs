@@ -54,10 +54,10 @@ lazy_static! {
 
 pub struct VerificationClientResource {
     test_cases: Box<ServerTestCases>,
-    param_types: Box<HashMap<EndpointName, ResolvedType>>,
+    param_types: Box<HashMap<ServiceEndpointName, ResolvedType>>,
 }
 
-pub type ParamTypes = HashMap<EndpointName, ResolvedType>;
+pub type ParamTypes = HashMap<ServiceEndpointName, ResolvedType>;
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub(crate) struct ClientRequest {
@@ -367,10 +367,14 @@ impl Resource for VerificationClientResource {
 }
 
 fn get_endpoint<'a, V>(
-    map: &'a HashMap<EndpointName, V>,
+    map: &'a HashMap<ServiceEndpointName, V>,
+    service_name: &str,
     endpoint: &EndpointName,
 ) -> Result<&'a V> {
-    map.get(endpoint).ok_or_else(|| {
+    map.get(&ServiceEndpointName {
+        service_name: service_name.to_string(),
+        endpoint_name: endpoint.clone(),
+    }).ok_or_else(|| {
         Error::new_safe(
             "No such endpoint",
             VerificationError::InvalidEndpointParameter {

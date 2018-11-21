@@ -42,7 +42,8 @@ use conjure_verification_common::conjure;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::type_of_non_index_arg;
-use conjure_verification_common::type_mapping::TypeForEndpointFn;
+use conjure_verification_common::type_mapping::ServiceTypeMapping;
+use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Result;
 pub use conjure_verification_http_server::*;
 use futures::{future, Future};
@@ -51,7 +52,6 @@ use hyper::Server;
 use resolved_test_cases::ResolvedClientTestCases;
 use resource::SpecTestResource;
 use router::Router;
-use std::collections::HashMap;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
@@ -120,11 +120,24 @@ pub fn resolve_test_cases(
     ir: &Conjure,
     client_test_cases: &ClientTestCases,
 ) -> Result<ResolvedClientTestCases> {
-    let mut services_mapping: HashMap<String, TypeForEndpointFn> = HashMap::new();
-    services_mapping.insert("AutoDeserializeService".to_string(), return_type);
-    services_mapping.insert("SingleHeaderService".to_string(), type_of_non_index_arg);
-    services_mapping.insert("SinglePathParamService".to_string(), type_of_non_index_arg);
-    services_mapping.insert("SingleQueryParamService".to_string(), type_of_non_index_arg);
+    let services_mapping = vec![
+        ServiceTypeMapping::new("AutoDeserializeService", TestType::Body, return_type),
+        ServiceTypeMapping::new(
+            "SingleHeaderService",
+            TestType::SingleHeaderParam,
+            type_of_non_index_arg,
+        ),
+        ServiceTypeMapping::new(
+            "SinglePathParamService",
+            TestType::SinglePathParam,
+            type_of_non_index_arg,
+        ),
+        ServiceTypeMapping::new(
+            "SingleQueryParamService",
+            TestType::SingleQueryParam,
+            type_of_non_index_arg,
+        ),
+    ];
 
     let type_mapping = type_mapping::resolve_types(ir, &services_mapping);
 

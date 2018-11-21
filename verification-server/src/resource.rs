@@ -395,8 +395,7 @@ mod test {
     use typed_headers::{ContentType, HeaderMapExt};
 
     use conjure::ir;
-    use conjure::resolved_type::FieldDefinition;
-    use conjure::resolved_type::ObjectDefinition;
+    use conjure::resolved_type::builders::*;
     use conjure::resolved_type::OptionalType;
     use conjure::resolved_type::ResolvedType;
     use register_resource;
@@ -408,8 +407,31 @@ mod test {
     use test_spec::{EndpointName, PositiveAndNegativeTestCases};
 
     use super::*;
+    use conjure_verification_common::type_mapping::TestType;
 
-    type ParamTypes = HashMap<EndpointName, ResolvedType>;
+    type ParamTypes = HashMap<TestType, HashMap<EndpointName, ResolvedType>>;
+
+    #[derive(Default)]
+    struct ParamTypesBuilder(ParamTypes);
+
+    impl ParamTypesBuilder {
+        fn add(
+            &mut self,
+            tt: TestType,
+            endpoint_name: EndpointName,
+            resolved_type: ResolvedType,
+        ) -> &mut Self {
+            self.0
+                .entry(tt)
+                .or_default()
+                .insert(endpoint_name, resolved_type);
+            self
+        }
+
+        fn build(self) -> ParamTypes {
+            self.0
+        }
+    }
 
     /// This exists because `Request` takes references only so it can't be used as a builder.
     #[derive(Clone, Default)]
@@ -442,19 +464,23 @@ mod test {
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("string"),
                 ResolvedType::Primitive(ir::PrimitiveType::String),
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("int"),
                 ResolvedType::Primitive(ir::PrimitiveType::Integer),
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("bool"),
                 ResolvedType::Primitive(ir::PrimitiveType::Boolean),
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("opt"),
                 ResolvedType::Optional(OptionalType {
                     item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
@@ -507,19 +533,23 @@ mod test {
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("string"),
                 ResolvedType::Primitive(ir::PrimitiveType::String),
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("int"),
                 ResolvedType::Primitive(ir::PrimitiveType::Integer),
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("bool"),
                 ResolvedType::Primitive(ir::PrimitiveType::Boolean),
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("opt"),
                 ResolvedType::Optional(OptionalType {
                     item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
@@ -623,23 +653,17 @@ mod test {
         }
     }
 
-    fn field_definition(field_name: &str, type_: ResolvedType) -> FieldDefinition {
-        FieldDefinition {
-            field_name: field_name.into(),
-            type_,
-        }
-    }
-
     /// Sets up a router handling the desired client test cases.
     fn setup_routes<F>(f: F) -> Router
     where
-        F: FnOnce(&mut ClientTestCases, &mut ParamTypes),
+        F: FnOnce(&mut ClientTestCases, &mut ParamTypesBuilder),
     {
         let mut test_cases = ClientTestCases::default();
-        let mut param_types = HashMap::default();
-        f(&mut test_cases, &mut param_types);
+        let mut param_types_builder = ParamTypesBuilder::default();
+        f(&mut test_cases, &mut param_types_builder);
         let resolved_test_cases =
-            resolved_test_cases::resolve_test_cases(&param_types, &test_cases).unwrap();
+            resolved_test_cases::resolve_test_cases(&param_types_builder.build(), &test_cases)
+                .unwrap();
         let (router, _) = create_resource(resolved_test_cases);
         router
     }
@@ -653,19 +677,20 @@ mod test {
                 negative: vec![],
             }
         );
-        let param_types: HashMap<EndpointName, ResolvedType> = hashmap![
-            EndpointName::new("foo") => ResolvedType::Object(ObjectDefinition {
-                type_name: ir::TypeName { name: "Name".to_string(), package: "com.palantir.package".to_string() },
-                fields: vec![
-                    field_definition(
-                        "heyo",
-                        ResolvedType::Primitive(ir::PrimitiveType::Integer)
-                    )
-                ]
-            })
-        ];
+        let mut param_types = ParamTypesBuilder::default();
+        param_types.add(
+            TestType::Body,
+            EndpointName::new("foo"),
+            object_definition(
+                "Name",
+                &[field_definition(
+                    "heyo",
+                    ResolvedType::Primitive(ir::PrimitiveType::Integer),
+                )],
+            ),
+        );
         let resolved_test_cases =
-            resolved_test_cases::resolve_test_cases(&param_types, &test_cases).unwrap();
+            resolved_test_cases::resolve_test_cases(&param_types.build(), &test_cases).unwrap();
         let (router, resource) = create_resource(resolved_test_cases);
         (expected_body, router, resource)
     }
