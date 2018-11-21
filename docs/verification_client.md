@@ -44,10 +44,16 @@ Note: For negative [Body tests][], the index should be set to (number of positiv
 
 | Test type | Service definition | Service to implement | Comment |
 | --------- | ------------------ | -------------------- | ------- |
-| auto-deserialize | [auto-deserialize-service.yml](/verification-client-api/src/main/conjure/auto-deserialize-service.yml) | `AutoDeserializeService` | See [Body tests][] |
+| auto-deserialize | `auto-deserialize-service.yml` | `AutoDeserializeService` | See [Body tests][] |
 | single header | not implemented yet | | Tests the ability to deserialize a header param correctly.
 | single query param | not implemented yet | | Tests the ability to deserialize a query param correctly.
 | single path param | not implemented yet | | Tests the ability to deserialize a path param correctly.
+
+Service definitions are generated into `/verification-client-api/src/main/conjure/generated` by running
+
+```bash
+./gradlew generateConjureDefinitions
+``` 
 
 #### Body tests
 [Body tests]: #body-tests

@@ -7,10 +7,16 @@ The conjure-defined format for this file is defined [here](/verification-server-
 
 | Test type | Service definition | Comment |
 | --------- | ------------------ | ------- |
-| body | [auto-deserialize-service.conjure.yml][] | See [Body tests][] |
-| single header | [single-header-service.conjure.yml](/verification-server-api/src/main/conjure/single-header-service.conjure.yml) | Tests the ability to serialize a header param correctly. See [Parameter tests][].
-| single query param | [single-query-param-service.conjure.yml](/verification-server-api/src/main/conjure/single-query-param-service.conjure.yml) | Tests the ability to serialize a query param correctly. See [Parameter tests][].
-| single path param | [single-path-param-service.conjure.yml](/verification-server-api/src/main/conjure/single-path-param-service.conjure.yml) | Tests the ability to serialize a path param correctly. See [Parameter tests][].
+| body | `auto-deserialize-service.conjure.yml` | See [Body tests][] |
+| single header | `single-header-service.conjure.yml` | Tests the ability to serialize a header param correctly. See [Parameter tests][].
+| single query param | `single-query-param-service.conjure.yml` | Tests the ability to serialize a query param correctly. See [Parameter tests][].
+| single path param | `single-path-param-service.conjure.yml` | Tests the ability to serialize a path param correctly. See [Parameter tests][].
+
+Service definitions are generated into `/verification-server-api/src/main/conjure/generated` by running
+
+```bash
+./gradlew generateConjureDefinitions
+``` 
 
 ### Prerequisites
 
@@ -28,9 +34,8 @@ The steps below mostly follow the [RFC 004 workflow](https://github.com/palantir
 
 #### Body tests
 [Body tests]: #body-tests
-[auto-deserialize-service.conjure.yml]: /verification-server-api/src/main/conjure/auto-deserialize-service.conjure.yml
 
-These tests should verify two things, via the two services defined in [auto-deserialize-service.conjure.yml][]: 
+These tests should verify two things, via the two services defined in `auto-deserialize-service.conjure.yml`: 
 * response bodies are deserialized correctly (via `AutoDeserializeService`)
 * previously deserialized conjure values serialized correctly into request bodies (via `AutoDeserializeConfirmService`)
 
