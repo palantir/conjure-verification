@@ -38,7 +38,6 @@ pub struct PositiveAndNegativeTestCases {
 mod test {
     use super::*;
     use serde_json;
-    use serde_yaml;
     use std::fs::File;
     use std::path::Path;
 
