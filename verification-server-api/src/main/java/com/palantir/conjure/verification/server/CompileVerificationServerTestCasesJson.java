@@ -7,7 +7,8 @@ package com.palantir.conjure.verification.server;
 import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.io.MoreFiles;
@@ -15,6 +16,14 @@ import com.palantir.conjure.defs.Conjure;
 import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
+import com.palantir.conjure.verification.AllTestCases;
+import com.palantir.conjure.verification.BodyTests;
+import com.palantir.conjure.verification.ConjureTypeRepr;
+import com.palantir.conjure.verification.SingleHeaderParamTests;
+import com.palantir.conjure.verification.SinglePathParamTests;
+import com.palantir.conjure.verification.SingleQueryParamTests;
+import com.palantir.conjure.verification.TestCase;
+import com.palantir.conjure.verification.TestCasesUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -31,9 +40,18 @@ public final class CompileVerificationServerTestCasesJson {
 
     public static void main(String... args) throws IOException {
 
-        TestCases testCases = ObjectMappers
-                .withDefaultModules(new ObjectMapper(new YAMLFactory()))
-                .readValue(new File("test-cases.yml"), TestCases.class);
+        Preconditions.checkArgument(args.length == 2, "Usage: <test-cases.yml> <server-test-cases.json>");
+        File file = new File(args[0]);
+        File outputFile = new File(args[1]);
+
+        AllTestCases allTestCases = TestCasesUtils.parseTestCases(file);
+
+        TestCases testCases = TestCases.of(ClientTestCases.builder()
+                .autoDeserialize(generateBodyTestCases(allTestCases.getBody()))
+                .singleHeaderService(generateSingleHeaderParamTestCases(allTestCases.getSingleHeaderParam()))
+                .singleQueryParamService(generateSingleQueryParamTestCases(allTestCases.getSingleQueryParam()))
+                .singlePathParamService(generateSinglePathParamTestCases(allTestCases.getSinglePathParam()))
+                .build());
 
         ClientTestCases clientTestCases = testCases.getClient();
 
@@ -45,7 +63,7 @@ public final class CompileVerificationServerTestCasesJson {
                 + countTestCases(clientTestCases.getSingleQueryParamService());
 
         System.out.println("Total test cases: " + total);
-        jsonMapper.writerWithDefaultPrettyPrinter().writeValue(new File("build/test-cases.json"), testCases);
+        jsonMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, testCases);
 
         List<File> files = Streams
                 .stream(MoreFiles.fileTraverser().breadthFirst(Paths.get("src/main/conjure")))
@@ -119,5 +137,54 @@ public final class CompileVerificationServerTestCasesJson {
 
     private static ServiceDefinition serviceByName(ConjureDefinition ir, String name) {
         return ir.getServices().stream().filter(s -> s.getServiceName().getName().equals(name)).findFirst().get();
+    }
+
+    private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
+        ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
+        bodyTests.forEach(t ->
+                builder.put(endpointName(t.getType()),
+                        PositiveAndNegativeTestCases
+                                .builder()
+                                .positive(t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .negative(t.getBothNegative().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .addAllPositive(t
+                                        .getClientPositiveServerFail()
+                                        .stream()
+                                        .map(TestCase::get)
+                                        .collect(Collectors.toList()))
+                                .build()));
+        return builder.build();
+    }
+
+    private static Map<EndpointName, List<String>> generateSingleHeaderParamTestCases(
+            List<SingleHeaderParamTests> singleHeaderParam) {
+        ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
+        singleHeaderParam.forEach(t -> builder.put(
+                endpointName(t.getType()),
+                t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
+        return builder.build();
+    }
+
+    private static Map<EndpointName, List<String>> generateSingleQueryParamTestCases(
+            List<SingleQueryParamTests> singleQueryParam) {
+        ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
+        singleQueryParam.forEach(t -> builder.put(
+                endpointName(t.getType()),
+                t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
+        return builder.build();
+    }
+
+    private static Map<EndpointName, List<String>> generateSinglePathParamTestCases(
+            List<SinglePathParamTests> singlePathParam) {
+        ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
+        singlePathParam.forEach(t -> builder.put(
+                endpointName(t.getType()),
+                t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
+        return builder.build();
+    }
+
+    private static EndpointName endpointName(ConjureTypeRepr type) {
+        return EndpointName.of(
+                ServerTestCasesUtils.typeToEndpointName(TestCasesUtils.parseConjureType(type)));
     }
 }

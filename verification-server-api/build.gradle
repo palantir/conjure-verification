@@ -37,22 +37,13 @@ tasks.copyConjureSourcesIntoBuild {
     dependsOn tasks.generateConjureDefinitions
 }
 
-task generateTestCases(type: JavaExec) {
-    description = "Generate server-specific test cases"
-    main = "com.palantir.conjure.verification.server.GenerateVerificationServerTestCases"
-    classpath = sourceSets.main.runtimeClasspath
-    args rootProject.file('test-cases.yml'), 'test-cases.yml'
-
-    inputs.file rootProject.file('test-cases.yml')
-    outputs.file 'test-cases.yml'
-}
-
 task compileTestCasesJson(type: JavaExec) {
-    dependsOn 'generateTestCases'
+    description = "Generate server-specific test cases"
     main = "com.palantir.conjure.verification.server.CompileVerificationServerTestCasesJson"
     classpath = sourceSets.main.runtimeClasspath
+    args rootProject.file('test-cases.yml'), "$buildDir/test-cases.json"
 
-    inputs.file 'test-cases.yml'
+    inputs.file rootProject.file('test-cases.yml')
     outputs.file "$buildDir/test-cases.json"
 }
 

@@ -157,9 +157,7 @@ jobs:
           root: .
           paths:
             - ./*/build/
-            - ./verification-client-api/test-cases.yml
             - ./verification-client-api/src/main/conjure/generated
-            - ./verification-server-api/test-cases.yml
             - ./verification-server-api/src/main/conjure/generated
 
   markdown:

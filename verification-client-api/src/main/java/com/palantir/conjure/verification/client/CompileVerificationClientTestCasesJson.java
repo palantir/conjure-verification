@@ -19,7 +19,8 @@ package com.palantir.conjure.verification.client;
 import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.io.MoreFiles;
@@ -27,6 +28,11 @@ import com.palantir.conjure.defs.Conjure;
 import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
+import com.palantir.conjure.verification.AllTestCases;
+import com.palantir.conjure.verification.BodyTests;
+import com.palantir.conjure.verification.ConjureTypeRepr;
+import com.palantir.conjure.verification.TestCase;
+import com.palantir.conjure.verification.TestCasesUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,9 +49,15 @@ public final class CompileVerificationClientTestCasesJson {
 
     public static void main(String... args) throws IOException {
 
-        TestCases testCases = ObjectMappers
-                .withDefaultModules(new ObjectMapper(new YAMLFactory()))
-                .readValue(new File("test-cases.yml"), TestCases.class);
+        Preconditions.checkArgument(args.length == 2, "Usage: <test-cases.yml> <client-test-cases.json>");
+        File file = new File(args[0]);
+        File outputFile = new File(args[1]);
+
+        AllTestCases allTestCases = TestCasesUtils.parseTestCases(file);
+
+        TestCases testCases = TestCases.of(ServerTestCases.builder()
+                .autoDeserialize(generateBodyTestCases(allTestCases.getBody()))
+                .build());
 
         ServerTestCases serverTestCases = testCases.getServer();
 
@@ -54,7 +66,7 @@ public final class CompileVerificationClientTestCasesJson {
         long total = countPositiveAndNegative(serverTestCases.getAutoDeserialize());
 
         System.out.println("Total test cases: " + total);
-        jsonMapper.writerWithDefaultPrettyPrinter().writeValue(new File("build/test-cases.json"), testCases);
+        jsonMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, testCases);
 
         List<File> files = Streams
                 .stream(MoreFiles.fileTraverser().breadthFirst(Paths.get("src/main/conjure")))
@@ -116,5 +128,27 @@ public final class CompileVerificationClientTestCasesJson {
 
     private static ServiceDefinition serviceByName(ConjureDefinition ir, String name) {
         return ir.getServices().stream().filter(s -> s.getServiceName().getName().equals(name)).findFirst().get();
+    }
+
+    private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
+        ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
+        bodyTests.forEach(t ->
+                builder.put(endpointName(t.getType()),
+                        PositiveAndNegativeTestCases
+                                .builder()
+                                .positive(t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .negative(t.getBothNegative().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .addAllNegative(t
+                                        .getClientPositiveServerFail()
+                                        .stream()
+                                        .map(TestCase::get)
+                                        .collect(Collectors.toList()))
+                                .build()));
+        return builder.build();
+    }
+
+    private static EndpointName endpointName(ConjureTypeRepr type) {
+        return EndpointName.of(
+                ClientTestCasesUtils.typeToEndpointName(TestCasesUtils.parseConjureType(type)));
     }
 }
