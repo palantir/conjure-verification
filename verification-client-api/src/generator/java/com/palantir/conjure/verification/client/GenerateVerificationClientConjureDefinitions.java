@@ -46,11 +46,16 @@ public final class GenerateVerificationClientConjureDefinitions {
         Files.createDirectories(outputDir.toPath());
         MoreFiles.deleteDirectoryContents(outputDir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
 
-        TestCasesUtils.YAML_MAPPER.writeValue(new File(outputDir, "services.conjure.yml"),
-                createConjureYmlBuilder()
-                        .put("services", ImmutableMap.of(
-                                "AutoDeserializeService", generateAutoDeserializeService(testCases.getBody())))
-                        .build());
+        writeServiceDefinition(
+                new File(outputDir, "auto-deserialize-service.conjure.yml"),
+                "AutoDeserializeService",
+                generateAutoDeserializeService(testCases.getBody()));
+    }
+
+    private static void writeServiceDefinition(
+            File fileName, String serviceName, Map<String, Object> service) throws IOException {
+        TestCasesUtils.YAML_MAPPER.writeValue(fileName,
+                createConjureYmlBuilder().put("services", ImmutableMap.of(serviceName, service)));
     }
 
     private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {

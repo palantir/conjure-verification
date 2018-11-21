@@ -49,19 +49,24 @@ public final class GenerateVerificationServerConjureDefinitions {
         Files.createDirectories(outputDir.toPath());
         MoreFiles.deleteDirectoryContents(outputDir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
 
-        TestCasesUtils.YAML_MAPPER.writeValue(new File(outputDir, "services.conjure.yml"),
-                createConjureYmlBuilder()
-                        .put("services", ImmutableMap.of(
-                                "AutoDeserializeService",
-                                        generateAutoDeserializeService(testCases.getBody()),
-                                "SingleHeaderService",
-                                        generateSingleHeaderService(testCases.getSingleHeaderParam()),
-                                "SinglePathParamService",
-                                        generateSinglePathParamService(testCases.getSinglePathParam()),
-                                "SingleQueryParamService",
-                                        generateSingleQueryParamService(testCases.getSingleQueryParam())
-                        ))
-                        .build());
+        writeServiceDefinition(new File(outputDir, "auto-deserialize-service.conjure.yml"),
+                "AutoDeserializeService",
+                generateAutoDeserializeService(testCases.getBody()));
+        writeServiceDefinition(new File(outputDir, "single-header-service.conjure.yml"),
+                "SingleHeaderService",
+                generateSingleHeaderService(testCases.getSingleHeaderParam()));
+        writeServiceDefinition(new File(outputDir, "single-path-param-service.conjure.yml"),
+                "SinglePathParamService",
+                generateSinglePathParamService(testCases.getSinglePathParam()));
+        writeServiceDefinition(new File(outputDir, "single-query-param-service.conjure.yml"),
+                "SingleQueryParamService",
+                generateSingleQueryParamService(testCases.getSingleQueryParam()));
+    }
+
+    private static void writeServiceDefinition(
+            File fileName, String serviceName, Map<String, Object> service) throws IOException {
+        TestCasesUtils.YAML_MAPPER.writeValue(fileName,
+                createConjureYmlBuilder().put("services", ImmutableMap.of(serviceName, service)));
     }
 
     private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {
