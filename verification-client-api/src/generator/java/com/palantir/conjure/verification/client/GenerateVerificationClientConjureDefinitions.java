@@ -55,7 +55,7 @@ public final class GenerateVerificationClientConjureDefinitions {
     private static void writeServiceDefinition(
             File fileName, String serviceName, Map<String, Object> service) throws IOException {
         TestCasesUtils.YAML_MAPPER.writeValue(fileName,
-                createConjureYmlBuilder().put("services", ImmutableMap.of(serviceName, service)));
+                createConjureYmlBuilder().put("services", ImmutableMap.of(serviceName, service)).build());
     }
 
     private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {
