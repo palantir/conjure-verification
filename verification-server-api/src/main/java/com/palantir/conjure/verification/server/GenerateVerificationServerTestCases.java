@@ -18,7 +18,6 @@ package com.palantir.conjure.verification.server;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.palantir.conjure.verification.AllTestCases;
 import com.palantir.conjure.verification.BodyTests;
 import com.palantir.conjure.verification.ConjureTypeRepr;
@@ -54,7 +53,7 @@ public final class GenerateVerificationServerTestCases {
     }
 
     private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
-        Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
         bodyTests.forEach(t ->
                 builder.put(endpointName(t.getType()),
                 PositiveAndNegativeTestCases
@@ -72,7 +71,7 @@ public final class GenerateVerificationServerTestCases {
 
     private static Map<EndpointName, List<String>> generateSingleHeaderParamTestCases(
             List<SingleHeaderParamTests> singleHeaderParam) {
-        Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleHeaderParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
                 t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
@@ -81,7 +80,7 @@ public final class GenerateVerificationServerTestCases {
 
     private static Map<EndpointName, List<String>> generateSingleQueryParamTestCases(
             List<SingleQueryParamTests> singleQueryParam) {
-        Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleQueryParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
                 t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
@@ -90,7 +89,7 @@ public final class GenerateVerificationServerTestCases {
 
     private static Map<EndpointName, List<String>> generateSinglePathParamTestCases(
             List<SinglePathParamTests> singlePathParam) {
-        Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singlePathParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
                 t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
