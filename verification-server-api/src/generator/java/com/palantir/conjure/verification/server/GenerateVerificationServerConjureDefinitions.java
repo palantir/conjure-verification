@@ -18,7 +18,6 @@ package com.palantir.conjure.verification.server;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
 import com.palantir.conjure.verification.AllTestCases;
@@ -65,8 +64,8 @@ public final class GenerateVerificationServerConjureDefinitions {
                         .build());
     }
 
-    private static Builder<String, Object> createConjureYmlBuilder() {
-        Builder<String, Object> builder = ImmutableMap.builder();
+    private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {
+        ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
         builder.put(
                 "types",
                 ImmutableMap.of("conjure-imports",
@@ -77,7 +76,7 @@ public final class GenerateVerificationServerConjureDefinitions {
     }
 
     private static Map<String, Object> generateAutoDeserializeService(List<BodyTests> bodyTests) {
-        Builder<String, Object> endpoints = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
         bodyTests.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
             String endpointName = ServerTestCasesUtils.typeToEndpointName(conjureType);
@@ -97,7 +96,7 @@ public final class GenerateVerificationServerConjureDefinitions {
     }
 
     private static Map<String, Object> generateSingleHeaderService(List<SingleHeaderParamTests> testCases) {
-        Builder<String, Object> endpoints = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
         testCases
                 .stream()
@@ -125,7 +124,7 @@ public final class GenerateVerificationServerConjureDefinitions {
     }
 
     private static Map<String, Object> generateSinglePathParamService(List<SinglePathParamTests> testCases) {
-        Builder<String, Object> endpoints = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
         testCases
                 .stream()
@@ -150,7 +149,7 @@ public final class GenerateVerificationServerConjureDefinitions {
     }
 
     private static Map<String, Object> generateSingleQueryParamService(List<SingleQueryParamTests> testCases) {
-        Builder<String, Object> endpoints = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
         testCases
                 .stream()
