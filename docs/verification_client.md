@@ -9,10 +9,10 @@ The _verification client_ also binds to a port, so that test requests can be dri
 To compile the verification-client test cases, run:
 
 ```bash
-./gradlew generateTestCases
+./gradlew compileTestCasesJson
 ``` 
 
-That will generate a file `/verification-client-api/test-cases.yml`, which conforms to [this conjure-defined format](/verification-client-api/src/main/conjure/test-cases.conjure.yml).
+That will generate a file `/verification-client-api/build/test-cases.json`, which conforms to [this conjure-defined format](/verification-client-api/src/main/conjure/test-cases.conjure.yml).
 
 ### Prerequisites
 

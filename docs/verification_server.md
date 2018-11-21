@@ -6,10 +6,10 @@ This is a reference server used to test Conjure client generators and libraries.
 To compile the verification-server test cases, run:
 
 ```bash
-./gradlew generateTestCases
+./gradlew compileTestCasesJson
 ``` 
 
-That will generate a file `/verification-server-api/test-cases.yml`, which conforms to [this conjure-defined format](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
+That will generate a file `/verification-server-api/build/test-cases.json`, which conforms to [this conjure-defined format](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
 
 | Test type | Service definition | Comment |
 | --------- | ------------------ | ------- |
