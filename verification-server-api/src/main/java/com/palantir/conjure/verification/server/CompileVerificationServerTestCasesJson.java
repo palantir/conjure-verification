@@ -9,16 +9,20 @@ import static java.util.stream.Collectors.toSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Streams;
+import com.google.common.io.MoreFiles;
 import com.palantir.conjure.defs.Conjure;
 import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class CompileVerificationServerTestCasesJson {
@@ -43,8 +47,13 @@ public final class CompileVerificationServerTestCasesJson {
         System.out.println("Total test cases: " + total);
         jsonMapper.writerWithDefaultPrettyPrinter().writeValue(new File("build/test-cases.json"), testCases);
 
-        File dir = new File("src/main/conjure");
-        ConjureDefinition ir = Conjure.parse(Arrays.asList(dir.listFiles()));
+        List<File> files = Streams
+                .stream(MoreFiles.fileTraverser().breadthFirst(Paths.get("src/main/conjure")))
+                .filter(MoreFiles.isDirectory().negate())
+                .filter(path -> path.getFileName().toString().endsWith(".yml"))
+                .map(Path::toFile)
+                .collect(Collectors.toList());
+        ConjureDefinition ir = Conjure.parse(files);
 
         checkEndpointNamesMatchPaths(ir);
         checkNoLeftovers(clientTestCases.getAutoDeserialize().keySet(),
