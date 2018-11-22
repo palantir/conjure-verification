@@ -19,6 +19,7 @@ use bytes::Bytes;
 use conjure::ir;
 use conjure::resolved_type::builders::*;
 use conjure::resolved_type::ResolvedType;
+use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Result;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
@@ -51,6 +52,7 @@ fn test_content_type_error() {
 
     run_test_case_against_server(
         &router,
+        TestType::Body,
         endpoint_name,
         |_| {
             let mut response = Response::new(StatusCode::OK);
@@ -71,6 +73,7 @@ fn test_confirmation_error() {
 
     run_test_case_against_server(
         &router,
+        TestType::Body,
         endpoint_name,
         |_| Ok(json!("foo")),
         Some("ConjureVerificationClient:ConfirmationFailure"),
@@ -86,6 +89,7 @@ fn test_response_parse_error() {
 
     run_test_case_against_server(
         &router,
+        TestType::Body,
         endpoint_name,
         |_| Ok(json!({})),
         Some("ConjureVerificationClient:CouldNotParseServerResponse"),
@@ -131,7 +135,13 @@ fn test_response_empty_missing_fields_ok() {
         conjure_type,
     );
 
-    run_test_case_against_server(&router, endpoint_name, |_| Ok(json!({})), None);
+    run_test_case_against_server(
+        &router,
+        TestType::Body,
+        endpoint_name,
+        |_| Ok(json!({})),
+        None,
+    );
 }
 
 /// Test that a simple JSON round-trips against a mirroring server-under-test endpoint.
@@ -149,6 +159,7 @@ fn test_returns_body() {
         setup::setup_simple_auto_positive(json!({"heyo": 43}), endpoint_name, conjure_type);
     run_test_case_against_server(
         &router,
+        TestType::Body,
         endpoint_name,
         |request| Ok(request.body::<serde_json::Value>()?),
         None,
@@ -161,7 +172,13 @@ fn test_returns_204() {
     let conjure_type = optional_type(primitive_type(ir::PrimitiveType::String));
     let endpoint_name = "returns_204";
     let router = setup::setup_simple_auto_positive(json!(null), endpoint_name, conjure_type);
-    run_test_case_against_server(&router, endpoint_name, |_| Ok(NoContent), None);
+    run_test_case_against_server(
+        &router,
+        TestType::Body,
+        endpoint_name,
+        |_| Ok(NoContent),
+        None,
+    );
 }
 
 /// Spins up a server-under-test, and instructs the configured [VerificationClientResource]
@@ -171,6 +188,7 @@ fn test_returns_204() {
 /// 'POST /{endpoint_name}' endpoint.
 fn run_test_case_against_server<F, R>(
     router: &Router,
+    test_type: TestType,
     endpoint_name: &str,
     server_under_test_implementation: F,
     expected_error: Option<&str>,
@@ -178,14 +196,11 @@ fn run_test_case_against_server<F, R>(
     F: Fn(&mut Request) -> Result<R> + Send + Sync + 'static,
     R: 'static + IntoResponse,
 {
-    let mut responses: HashMap<
-        EndpointName,
-        Arc<Fn(&mut Request) -> Result<Response> + Send + Sync>,
-    > = HashMap::new();
-    responses.insert(
+    let responses = vec![self::server_under_test::ResponseMapping::new(
+        test_type,
         EndpointName::new(endpoint_name),
         Arc::new(move |req| (server_under_test_implementation)(req)?.into_response(req)),
-    );
+    )];
     self::server_under_test::with_server_under_test(responses, |addr| {
         let request = ClientRequest {
             endpoint_name: EndpointName::new(endpoint_name),
@@ -307,19 +322,26 @@ mod setup {
 /// Logic to set up and run actions against a mock server-under-test.
 mod server_under_test {
     use super::*;
+    use conjure_verification_common::type_mapping::TestType;
     use conjure_verification_http_server::handler::HttpService;
     use conjure_verification_http_server::router::Binder;
     use conjure_verification_http_server::DynamicResource;
 
     pub type ResponseFunction = Fn(&mut Request) -> Result<Response> + Send + Sync + 'static;
 
+    #[derive(new)]
+    pub struct ResponseMapping {
+        test_type: TestType,
+        endpoint_name: EndpointName,
+        response_function: Arc<ResponseFunction>,
+    }
+
     /// Spins up a server under test using [ServerUnderTest] on a random localhost port and returns
     /// the address where it was bound.
-    pub fn with_server_under_test<F>(
-        response_functions: HashMap<EndpointName, Arc<ResponseFunction>>,
-        f: F,
-    ) where
+    pub fn with_server_under_test<F, RM>(response_mappings: RM, f: F)
+    where
         F: FnOnce(Url),
+        RM: IntoIterator<Item = ResponseMapping>,
     {
         use futures::{future, Future};
         use hyper;
@@ -328,7 +350,9 @@ mod server_under_test {
         let addr = "127.0.0.1:0".parse().unwrap();
         let prefix = "server-under-test";
 
-        let resource = Arc::new(ServerUnderTest { response_functions });
+        let resource = Arc::new(ServerUnderTest::new(
+            response_mappings.into_iter().collect(),
+        ));
         let mut builder = router::Router::builder();
         {
             let ref mut binder = Binder::new(resource.clone(), &mut builder, prefix);
@@ -360,8 +384,9 @@ mod server_under_test {
         runtime.shutdown_now().wait().unwrap();
     }
 
+    #[derive(new)]
     struct ServerUnderTest {
-        pub response_functions: HashMap<EndpointName, Arc<ResponseFunction>>,
+        pub response_mappings: Vec<ResponseMapping>,
     }
 
     impl Resource for ServerUnderTest {
@@ -379,11 +404,22 @@ mod server_under_test {
         where
             R: Route<Self>,
         {
-            for (endpoint, response_function) in &self.response_functions {
+            for ResponseMapping {
+                test_type,
+                endpoint_name,
+                response_function,
+            } in &self.response_mappings
+            {
                 let response_function = response_function.clone();
-                router.post(format!("/{}", endpoint.0).as_str(), "", move |_, req| {
-                    (response_function)(req)
-                });
+                let base_path = match test_type {
+                    TestType::Body => "body",
+                    tt => panic!("Unsupported test type: {:?}", tt),
+                };
+                router.post(
+                    format!("/{}/{}", base_path, endpoint_name.0).as_str(),
+                    "",
+                    move |_, req| (response_function)(req),
+                );
             }
         }
     }

@@ -40,6 +40,9 @@ extern crate serde_conjure_derive;
 #[macro_use]
 extern crate serde_derive;
 #[cfg_attr(test, macro_use)]
+#[cfg(test)]
+extern crate derive_new;
+#[cfg_attr(test, macro_use)]
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
