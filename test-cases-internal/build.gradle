@@ -13,17 +13,17 @@ dependencies {
 task generateClientServices(type: JavaExec) {
     main = "com.palantir.conjure.verification.GenerateClientServices"
     classpath = sourceSets.main.runtimeClasspath
-    args rootProject.file('master-test-cases.yml'), '../verification-api/src/main/conjure/generated-client'
+    args rootProject.file('master-test-cases.yml'), '../verification-client-api/src/main/conjure/generated-client'
     inputs.file rootProject.file('master-test-cases.yml')
-    outputs.dir 'src/main/conjure/generated-client'
+    outputs.dir '../verification-client-api/src/main/conjure/generated-client'
 }
 
 task generateServerServices(type: JavaExec) {
     main = "com.palantir.conjure.verification.GenerateServerServices"
     classpath = sourceSets.main.runtimeClasspath
-    args rootProject.file('master-test-cases.yml'), '../verification-api/src/main/conjure/generated-server'
+    args rootProject.file('master-test-cases.yml'), '../verification-server-api/src/main/conjure/generated-server'
     inputs.file rootProject.file('master-test-cases.yml')
-    outputs.dir 'src/main/conjure/generated-server'
+    outputs.dir '../verification-server-api/src/main/conjure/generated-server'
 }
 
 task generate {

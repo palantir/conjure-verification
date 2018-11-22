@@ -29,6 +29,7 @@ import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
 import com.palantir.conjure.verification.BodyTests;
+import com.palantir.conjure.verification.ClientTestCasesUtils;
 import com.palantir.conjure.verification.ConjureTypeString;
 import com.palantir.conjure.verification.MasterTestCases;
 import com.palantir.conjure.verification.TestCase;

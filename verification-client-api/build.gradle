@@ -1,10 +1,6 @@
 apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
 apply plugin: 'com.palantir.conjure'
 
-sourceSets {
-    generator
-}
-
 dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind'
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
@@ -12,20 +8,12 @@ dependencies {
     compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
     compile project("${project.name}-objects")
     compile project(':test-cases-internal')
-    compile sourceSets.generator.output
-
-    generatorImplementation project(':test-cases-internal')
-    generatorImplementation project(':test-cases-internal:test-cases-internal-objects')
-    generatorImplementation 'com.fasterxml.jackson.core:jackson-databind'
-    generatorImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    generatorImplementation 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
-    generatorImplementation 'com.google.guava:guava'
+    compile project(':test-cases-internal:test-cases-internal-objects')
 }
-
 
 // Ensure we generate definitions first before conjure tries to compile them
 tasks.copyConjureSourcesIntoBuild {
-    dependsOn tasks.generateConjureDefinitions
+    dependsOn ':test-cases-internal:generateClientServices'
 }
 
 task compileTestCasesJson(type: JavaExec) {
