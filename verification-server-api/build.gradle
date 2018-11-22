@@ -11,11 +11,11 @@ dependencies {
     compile 'com.palantir.conjure:conjure-core'
     compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
     compile project("${project.name}-objects")
-    compile project(':test-cases-api')
+    compile project(':test-cases-internal')
     compile sourceSets.generator.output
 
-    generatorImplementation project(':test-cases-api')
-    generatorImplementation project(':test-cases-api:test-cases-api-objects')
+    generatorImplementation project(':test-cases-internal')
+    generatorImplementation project(':test-cases-internal:test-cases-internal-objects')
     generatorImplementation 'com.fasterxml.jackson.core:jackson-databind'
     generatorImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     generatorImplementation 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
@@ -26,9 +26,9 @@ task generateConjureDefinitions(type: JavaExec) {
     description = "Generate the conjure service definition files"
     main = "com.palantir.conjure.verification.server.GenerateVerificationServerConjureDefinitions"
     classpath = sourceSets.generator.runtimeClasspath
-    args rootProject.file('test-cases.yml'), 'src/main/conjure'
+    args rootProject.file('master-test-cases.yml'), 'src/main/conjure'
 
-    inputs.file rootProject.file('test-cases.yml')
+    inputs.file rootProject.file('master-test-cases.yml')
     outputs.dir 'src/main/conjure/generated'
 }
 
@@ -41,9 +41,9 @@ task compileTestCasesJson(type: JavaExec) {
     description = "Generate server-specific test cases"
     main = "com.palantir.conjure.verification.server.CompileVerificationServerTestCasesJson"
     classpath = sourceSets.main.runtimeClasspath
-    args rootProject.file('test-cases.yml'), "$buildDir/test-cases.json"
+    args rootProject.file('master-test-cases.yml'), "$buildDir/test-cases.json"
 
-    inputs.file rootProject.file('test-cases.yml')
+    inputs.file rootProject.file('master-test-cases.yml')
     outputs.file "$buildDir/test-cases.json"
 }
 

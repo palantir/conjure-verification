@@ -138,7 +138,7 @@ fn main() {
 
 fn print_usage(arg0: &str) {
     eprintln!(
-        "Usage: {} <test-cases.json> <verification-client-api.json>",
+        "Usage: {} <client-test-cases.json> <verification-api.conjure.json>",
         arg0
     );
 }

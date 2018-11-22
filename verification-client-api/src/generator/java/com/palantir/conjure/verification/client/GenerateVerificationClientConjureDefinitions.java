@@ -35,7 +35,7 @@ public final class GenerateVerificationClientConjureDefinitions {
     private GenerateVerificationClientConjureDefinitions() {}
 
     public static void main(String... args) throws IOException {
-        Preconditions.checkArgument(args.length == 2, "Usage: <test-cases.yml> <conjure dir>");
+        Preconditions.checkArgument(args.length == 2, "Usage: <master-test-cases.yml> <conjure dir>");
         File file = new File(args[0]);
         File conjureDir = new File(args[1]);
         File outputDir = new File(conjureDir, "generated");

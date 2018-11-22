@@ -2,12 +2,12 @@
 
 This is a reference server used to test Conjure client generators and libraries.
 
-[test-cases.yml][] contains a variety of tests applicable to both [verification client](/docs/verification_client.md) and verification server.
+[master-test-cases.yml][] contains a variety of tests applicable to both [verification client](/docs/verification_client.md) and verification server.
 To compile the verification-server test cases, run:
 
 ```bash
 ./gradlew compileTestCasesJson
-``` 
+```
 
 That will generate a file `/verification-server-api/build/test-cases.json`, which conforms to [this conjure-defined format](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
 
@@ -22,7 +22,7 @@ Service definitions are generated into `/verification-server-api/src/main/conjur
 
 ```bash
 ./gradlew generateConjureDefinitions
-``` 
+```
 
 ### Prerequisites
 
@@ -30,9 +30,9 @@ First, ensure the necessary artifacts are available in your testing environment:
 
 | Artifact | Maven coordinate | Classifier |
 | -------- | ---------------- | ---------- |
-| `verification-server.tgz` | `com.palantir.conjure.verification:verification-server::${classifier}@tgz` | `osx` or `linux` | 
+| `verification-server.tgz` | `com.palantir.conjure.verification:verification-server::${classifier}@tgz` | `osx` or `linux` |
 | `verification-server-test-cases.json` | `com.palantir.conjure.verification:verification-server-test-cases` |
-| `verification-server-api.conjure.json` | `com.palantir.conjure.verification:verification-server-api` | 
+| `verification-server-api.conjure.json` | `com.palantir.conjure.verification:verification-server-api` |
 
 ### Workflow
 
@@ -41,7 +41,7 @@ The steps below mostly follow the [RFC 004 workflow](https://github.com/palantir
 #### Body tests
 [Body tests]: #body-tests
 
-These tests should verify two things, via the two services defined in `auto-deserialize-service.conjure.yml`: 
+These tests should verify two things, via the two services defined in `auto-deserialize-service.conjure.yml`:
 * response bodies are deserialized correctly (via `AutoDeserializeService`)
 * previously deserialized conjure values serialized correctly into request bodies (via `AutoDeserializeConfirmService`)
 

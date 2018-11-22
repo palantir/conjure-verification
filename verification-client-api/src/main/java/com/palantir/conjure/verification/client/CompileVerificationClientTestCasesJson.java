@@ -49,7 +49,7 @@ public final class CompileVerificationClientTestCasesJson {
 
     public static void main(String... args) throws IOException {
 
-        Preconditions.checkArgument(args.length == 2, "Usage: <test-cases.yml> <client-test-cases.json>");
+        Preconditions.checkArgument(args.length == 2, "Usage: <master-test-cases.yml> <client-test-cases.json>");
         File file = new File(args[0]);
         File outputFile = new File(args[1]);
 
