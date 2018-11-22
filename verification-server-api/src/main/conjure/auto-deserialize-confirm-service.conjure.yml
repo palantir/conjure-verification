@@ -1,0 +1,26 @@
+types:
+  conjure-imports:
+    examples: example-types.conjure.yml
+    testCases: test-cases.conjure.yml
+
+services:
+  AutoDeserializeConfirmService:
+    name: Auto Deserialize Confirm Service
+    package: com.palantir.conjure.verification.server
+    default-auth: none
+
+    endpoints:
+
+      confirm:
+        http: POST /confirm/{endpoint}/{index}
+        docs: >
+          Send the response received for positive test cases here
+          to verify that it has been serialized and deserialized properly.
+        args:
+          endpoint:
+            type: testCases.EndpointName
+            docs: The name of the endpoint where the automatic test case request was made.
+          index:
+            type: integer
+            docs: The index of the positive automatic test case.
+          body: any
