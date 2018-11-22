@@ -141,7 +141,7 @@ public final class CompileVerificationServerTestCasesJson {
     private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
         ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
         bodyTests.forEach(t ->
-                builder.put(endpointName("get", t.getType()),
+                builder.put(endpointName("receive", t.getType()),
                         PositiveAndNegativeTestCases
                                 .builder()
                                 .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
@@ -159,7 +159,7 @@ public final class CompileVerificationServerTestCasesJson {
             List<SingleHeaderParamTests> singleHeaderParam) {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleHeaderParam.forEach(t -> builder.put(
-                endpointName("headerParam", t.getType()),
+                endpointName("header", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }

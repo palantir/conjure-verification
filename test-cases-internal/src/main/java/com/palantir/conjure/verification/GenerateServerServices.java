@@ -64,7 +64,7 @@ public final class GenerateServerServices {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
         bodyTests.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
-            String endpointName = TestCasesUtils.typeToEndpointName("get", conjureType);
+            String endpointName = TestCasesUtils.typeToEndpointName("receive", conjureType);
             String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
             endpoints.put(endpointName, ImmutableMap.of(
                     "http", "GET /" + endpointName + "/{index}",
@@ -88,7 +88,7 @@ public final class GenerateServerServices {
                 .map(SingleHeaderParamTests::getType)
                 .map(TestCasesUtils::parseConjureType)
                 .forEach(conjureType -> {
-                    String endpointName = TestCasesUtils.typeToEndpointName("headerParam", conjureType);
+                    String endpointName = TestCasesUtils.typeToEndpointName("header", conjureType);
                     String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
                     endpoints.put(endpointName, ImmutableMap.of(
                             "http", "POST /" + endpointName + "/{index}",
