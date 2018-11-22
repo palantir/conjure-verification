@@ -16,6 +16,8 @@ use self::client_config::ServiceConfig;
 use self::client_config::ServiceDiscoveryConfig;
 use conjure::resolved_type::ResolvedType;
 use conjure::value::*;
+use conjure_verification_common::type_mapping::ParamTypes;
+use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Error;
 use conjure_verification_error::Result;
 use conjure_verification_http::request::Request;
@@ -54,10 +56,8 @@ lazy_static! {
 
 pub struct VerificationClientResource {
     test_cases: Box<ServerTestCases>,
-    param_types: Box<HashMap<ServiceEndpointName, ResolvedType>>,
+    param_types: Box<ParamTypes>,
 }
-
-pub type ParamTypes = HashMap<ServiceEndpointName, ResolvedType>;
 
 #[derive(ConjureDeserialize, ConjureSerialize, Debug)]
 pub(crate) struct ClientRequest {
@@ -160,7 +160,7 @@ impl VerificationClientResource {
             .typed_get::<ContentType>()
             .map_err(Error::internal_safe);
 
-        let conjure_type = get_endpoint(&self.param_types, &endpoint)?;
+        let conjure_type = get_endpoint(&self.param_types[&TestType::Body], &endpoint)?;
         let expected_body = deserialize_expected_value(
             conjure_type,
             test_body_str.as_str(),
@@ -367,14 +367,10 @@ impl Resource for VerificationClientResource {
 }
 
 fn get_endpoint<'a, V>(
-    map: &'a HashMap<ServiceEndpointName, V>,
-    service_name: &str,
+    map: &'a HashMap<EndpointName, V>,
     endpoint: &EndpointName,
 ) -> Result<&'a V> {
-    map.get(&ServiceEndpointName {
-        service_name: service_name.to_string(),
-        endpoint_name: endpoint.clone(),
-    }).ok_or_else(|| {
+    map.get(endpoint).ok_or_else(|| {
         Error::new_safe(
             "No such endpoint",
             VerificationError::InvalidEndpointParameter {

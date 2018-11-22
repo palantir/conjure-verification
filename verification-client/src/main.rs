@@ -62,7 +62,6 @@ use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::ServiceTypeMapping;
 use conjure_verification_common::type_mapping::TestType;
-use conjure_verification_common::type_mapping::TypeForEndpointFn;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http_server::router::Binder;
 pub use conjure_verification_http_server::*;
@@ -71,7 +70,6 @@ use handler::HttpService;
 use hyper::Server;
 use resource::VerificationClientResource;
 use router::Router;
-use std::collections::HashMap;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
@@ -118,7 +116,7 @@ fn main() {
     let ir = File::open(Path::new(ir_path)).unwrap();
     let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
-    let services_mapping: vec![ServiceTypeMapping::new(
+    let services_mapping = vec![ServiceTypeMapping::new(
         "AutoDeserializeService",
         TestType::Body,
         return_type,
