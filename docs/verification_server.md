@@ -1,4 +1,5 @@
 ## Verification server
+[master-test-cases.yml]: /master-test-cases.yml
 
 This is a reference server used to test Conjure client generators and libraries.
 
