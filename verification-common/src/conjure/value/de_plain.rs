@@ -73,13 +73,23 @@ pub fn deserialize_plain_primitive(
 mod test {
     use super::*;
     use conjure::resolved_type::builders::*;
+    use conjure::value::EnumValue;
 
     #[test]
     fn test_deserialize_enum() {
         let enum_def = enum_definition("whatev", &["foo", "bar"]);
-        deserialize_plain(&enum_def, "foo").unwrap();
-        deserialize_plain(&enum_def, "bar").unwrap();
-        deserialize_plain(&enum_def, "baz").expect_err("Should fail");
+        assert_eq!(
+            deserialize_plain(&enum_def, "foo").unwrap(),
+            ConjureValue::Enum(EnumValue::Defined("foo".into()))
+        );
+        assert_eq!(
+            deserialize_plain(&enum_def, "bar").unwrap(),
+            ConjureValue::Enum(EnumValue::Defined("bar".into()))
+        );
+        assert_eq!(
+            deserialize_plain(&enum_def, "baz").unwrap(),
+            ConjureValue::Enum(EnumValue::Unknown("baz".into()))
+        );
     }
 
     #[test]
