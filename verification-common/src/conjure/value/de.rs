@@ -76,16 +76,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
                 key_type,
                 value_type,
             })?),
-            Enum(EnumDefinition { values, .. }) => {
-                let ident = String::deserialize(deserializer)?;
-                if values.iter().find(|&x| x.value == ident.as_str()).is_none() {
-                    return Err(unknown_variant(
-                        ident.as_str(),
-                        values.iter().map(|vdef| &*vdef.value).collect(),
-                    ));
-                }
-                ConjureValue::Enum(ident)
-            }
+            Enum(enum_def) => ConjureValue::Enum(enum_def.deserialize(deserializer)?),
             Union(union_definition) => ConjureValue::Union(
                 deserializer.deserialize_map(ConjureUnionVisitor(&union_definition))?,
             ),
@@ -94,25 +85,23 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a ResolvedType {
 }
 
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a EnumDefinition {
-    type Value = String;
+    type Value = EnumValue;
 
     fn deserialize<D>(self, de: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error>
     where
         D: Deserializer<'de>,
     {
         let ident = String::deserialize(de)?;
-        if self
+        Ok(if self
             .values
             .iter()
             .find(|&x| x.value == ident.as_str())
             .is_none()
         {
-            return Err(unknown_variant(
-                ident.as_str(),
-                self.values.iter().map(|vdef| &*vdef.value).collect(),
-            ));
-        }
-        Ok(ident)
+            EnumValue::Unknown(ident)
+        } else {
+            EnumValue::Defined(ident)
+        })
     }
 }
 

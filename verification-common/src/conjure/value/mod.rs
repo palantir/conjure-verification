@@ -65,12 +65,18 @@ pub enum ConjureValue {
     // complex
     Optional(Option<Box<ConjureValue>>),
     Object(BTreeMap<String, ConjureValue>),
-    Enum(String),
+    Enum(EnumValue),
     Union(ConjureUnionValue),
     // anonymous
     List(Vec<ConjureValue>),
     Set(BTreeSet<ConjureValue>),
     Map(BTreeMap<ConjureValue, ConjureValue>),
+}
+
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
+pub enum EnumValue {
+    Defined(String),
+    Unknown(String),
 }
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
