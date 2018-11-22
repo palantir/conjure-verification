@@ -169,7 +169,7 @@ mod test {
     #[ignore] // test ignored because you need to `./gradlew compileTestCasesJson` first
     fn test() {
         let file = File::open(Path::new(
-            "../verification-api/build/conjure-ir/verification-api.json",
+            "../test-cases-api/build/conjure-ir/test-cases-api.json",
         )).unwrap();
         let _ir: Conjure = serde_json::from_reader(file).unwrap();
     }

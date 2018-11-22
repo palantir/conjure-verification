@@ -113,7 +113,7 @@ fn main() {
 }
 
 fn print_usage(arg0: &str) {
-    eprintln!("Usage: {} <test-cases.json> <verification-api.json>", arg0);
+    eprintln!("Usage: {} <test-cases.json> <test-cases-api.json>", arg0);
 }
 
 pub fn resolve_test_cases(
