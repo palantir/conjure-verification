@@ -407,8 +407,8 @@ mod test {
     use test_spec::{EndpointName, PositiveAndNegativeTestCases};
 
     use super::*;
-    use conjure_verification_common::type_mapping::TestType;
     use conjure_verification_common::type_mapping::builder::*;
+    use conjure_verification_common::type_mapping::TestType;
 
     /// This exists because `Request` takes references only so it can't be used as a builder.
     #[derive(Clone, Default)]
