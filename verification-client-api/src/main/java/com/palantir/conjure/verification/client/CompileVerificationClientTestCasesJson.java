@@ -134,7 +134,7 @@ public final class CompileVerificationClientTestCasesJson {
     private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
         ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
         bodyTests.forEach(t ->
-                builder.put(endpointName(t.getType()),
+                builder.put(endpointName("get", t.getType()),
                         PositiveAndNegativeTestCases
                                 .builder()
                                 .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
@@ -148,8 +148,8 @@ public final class CompileVerificationClientTestCasesJson {
         return builder.build();
     }
 
-    private static EndpointName endpointName(ConjureTypeString type) {
+    private static EndpointName endpointName(String prefix, ConjureTypeString type) {
         return EndpointName.of(
-                TestCasesUtils.typeToEndpointName("get", TestCasesUtils.parseConjureType(type)));
+                TestCasesUtils.typeToEndpointName(prefix, TestCasesUtils.parseConjureType(type)));
     }
 }

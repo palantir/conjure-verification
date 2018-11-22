@@ -141,7 +141,7 @@ public final class CompileVerificationServerTestCasesJson {
     private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
         ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
         bodyTests.forEach(t ->
-                builder.put(endpointName(t.getType()),
+                builder.put(endpointName("get", t.getType()),
                         PositiveAndNegativeTestCases
                                 .builder()
                                 .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
@@ -159,7 +159,7 @@ public final class CompileVerificationServerTestCasesJson {
             List<SingleHeaderParamTests> singleHeaderParam) {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleHeaderParam.forEach(t -> builder.put(
-                endpointName(t.getType()),
+                endpointName("header", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }
@@ -168,7 +168,7 @@ public final class CompileVerificationServerTestCasesJson {
             List<SingleQueryParamTests> singleQueryParam) {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleQueryParam.forEach(t -> builder.put(
-                endpointName(t.getType()),
+                endpointName("queryParam", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }
@@ -177,13 +177,12 @@ public final class CompileVerificationServerTestCasesJson {
             List<SinglePathParamTests> singlePathParam) {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singlePathParam.forEach(t -> builder.put(
-                endpointName(t.getType()),
+                endpointName("pathParam", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }
 
-    private static EndpointName endpointName(ConjureTypeString type) {
-        return EndpointName.of(
-                ServerTestCasesUtils.typeToEndpointName(TestCasesUtils.parseConjureType(type)));
+    private static EndpointName endpointName(String prefix, ConjureTypeString type) {
+        return EndpointName.of(TestCasesUtils.typeToEndpointName(prefix, TestCasesUtils.parseConjureType(type)));
     }
 }
