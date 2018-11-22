@@ -22,16 +22,6 @@ dependencies {
     generatorImplementation 'com.google.guava:guava'
 }
 
-task generateConjureDefinitions(type: JavaExec) {
-    description = "Generate the conjure service definition files"
-    main = "com.palantir.conjure.verification.server.GenerateVerificationServerConjureDefinitions"
-    classpath = sourceSets.generator.runtimeClasspath
-    args rootProject.file('master-test-cases.yml'), 'src/main/conjure'
-
-    inputs.file rootProject.file('master-test-cases.yml')
-    outputs.dir 'src/main/conjure/generated'
-}
-
 // Ensure we generate definitions first before conjure tries to compile them
 tasks.copyConjureSourcesIntoBuild {
     dependsOn tasks.generateConjureDefinitions
