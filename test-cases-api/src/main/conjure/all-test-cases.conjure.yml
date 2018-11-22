@@ -20,20 +20,20 @@ types:
         fields:
           type: ConjureTypeRepr
           clientPositiveServerFail: list<TestCase>
-          bothPositive: list<TestCase>
-          bothNegative: list<TestCase>
+          positive: list<TestCase>
+          negative: list<TestCase>
       SinglePathParamTests:
         docs: Tests verifying the behaviour of a single path parameter of the given type.
         fields:
           type: ConjureTypeRepr
-          bothPositive: list<TestCase>
+          positive: list<TestCase>
       SingleQueryParamTests:
         docs: Tests verifying the behaviour of a single query parameter of the given type.
         fields:
           type: ConjureTypeRepr
-          bothPositive: list<TestCase>
+          positive: list<TestCase>
       SingleHeaderParamTests:
         docs: Tests verifying the behaviour of a single header parameter of the given type.
         fields:
           type: ConjureTypeRepr
-          bothPositive: list<TestCase>
+          positive: list<TestCase>

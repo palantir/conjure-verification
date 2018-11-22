@@ -137,8 +137,8 @@ public final class CompileVerificationClientTestCasesJson {
                 builder.put(endpointName(t.getType()),
                         PositiveAndNegativeTestCases
                                 .builder()
-                                .positive(t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList()))
-                                .negative(t.getBothNegative().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .negative(t.getNegative().stream().map(TestCase::get).collect(Collectors.toList()))
                                 .addAllNegative(t
                                         .getClientPositiveServerFail()
                                         .stream()

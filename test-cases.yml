@@ -1,12 +1,12 @@
 body:
   # primitives
   - type: BearerTokenExample
-    bothPositive:
+    positive:
       - '{"value":"abc123"}'
       - '{"value":"-._~+/="}'
       - '{"value":"abc="}'
       - '{"value":"a="}'
-    bothNegative:
+    negative:
       - '{"value":null}'
       - '{}'
       - '{"value":" space"}'
@@ -19,33 +19,33 @@ body:
       - '{"value":"="}'
       - '{"value":"=a"}'
     # type: BinaryExample
-    # bothNegative:
+    # negative:
     #   - '{"value":}'
   - type: BooleanExample
-    bothPositive:
+    positive:
         - '{"value":false}'
         - '{"value":true}'
-    bothNegative:
+    negative:
         - '{}'
         - '{"value":null}'
         - '{"value":0}'
         - '{"value":"true"}'
   - type: DateTimeExample
-    bothPositive:
+    positive:
         - '{"value":"2017-01-02T03:04:05Z"}'
         - '{"value":"2017-01-02T03:04:05.000Z"}'
         - '{"value":"2017-01-02T03:04:05.000000Z"}'
         - '{"value":"2017-01-02T03:04:05.000000000Z"}'
         - '{"value":"2017-01-02T04:04:05.000000000+01:00"}'
         - '{"value":"2017-01-02T05:04:05.000000000+02:00"}'
-    bothNegative:
+    negative:
         - '{"value":"4/3/2018"}'
         - '{"value":"1523040070"}'
         - '{"value":1523040070}'
         - '{"value":"2017-01-02T03:04:05.0000000000Z"}'
         - '{"value":"2017-01-02T04:04:05.000000000+01:00[Europe/Berlin]"}'
   - type: DoubleExample
-    bothPositive:
+    positive:
         - '{"value":1.23}'
         - '{"value":0.0}'
         - '{"value":-0.0}'
@@ -55,18 +55,18 @@ body:
         - '{"value":"NaN"}'
         - '{"value":"Infinity"}'
         - '{"value":"-Infinity"}'
-    bothNegative:
+    negative:
         - '{"value":null}'
         - '{}'
         - '{"value":"1.23"}'
         - '{"value":"nan"}'
         - '{"value":nan}'
   - type: IntegerExample
-    bothPositive:
+    positive:
         - '{"value":-2147483648}'
         - '{"value":0}'
         - '{"value":2147483647}'
-    bothNegative:
+    negative:
         - '{"value":-2147483649}'
         - '{"value":2147483648}'
         - '{"value":null}'
@@ -74,14 +74,14 @@ body:
         - '{"value":1.23}'
         - '{"value":"12"}'
   - type: RidExample
-    bothPositive:
+    positive:
         - '{"value":"ri.service.instance.folder.foo"}'
         - '{"value":"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"}'
         - '{"value":"ri.my-service.instance1.graph-node.._"}'
         - '{"value":"ri.service.1instance.type.emptyname"}'
         - '{"value":"ri.my-service..graph-node.noInstance"}'
         - '{"value":"ri.my-service..graph-node.noInstance.multiple.extra.dots"}'
-    bothNegative:
+    negative:
         - '{"value":null}'
         - '{}'
         - '{"value":""}'
@@ -95,11 +95,11 @@ body:
         - '{"value":"ri.service.instance.type.name!@#"}'
         - '{"value":"ri.service(name)..folder.foo"}'
   - type: SafeLongExample
-    bothPositive:
+    positive:
         - '{"value":-9007199254740991}'
         - '{"value":0}'
         - '{"value":9007199254740991}'
-    bothNegative:
+    negative:
         - '{"value":null}'
         - '{}'
         - '{"value":-9007199254740992}'
@@ -107,139 +107,139 @@ body:
         - '{"value":1.23}'
         - '{"value":"12"}'
   - type: StringExample
-    bothPositive:
+    positive:
         - '{"value":"exampleOutput"}'
         - '{"value":""}'
-    bothNegative:
+    negative:
         - '{"value":null}'
         - '{}'
         - '{"value":8}'
   - type: UuidExample
-    bothPositive:
+    positive:
         - '{"value":"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"}' # UUID v1
         - '{"value":"80e6dd13-5f42-4e33-ad18-f73875540c8b"}' # UUID v4
-    bothNegative:
+    negative:
         - '{"value":null}'
         - '{}'
         - '{"value":""}'
         - '{"value":"80e6dd13-5f42-4e33-ad18"}'
   - type: AnyExample
-    bothPositive:
+    positive:
         - '{"value":0}'
         - '{"value":"content"}'
         - '{"value":true}'
         - '{"value":[1,2,3]}'
         - '{"value":{"key":3}}'
         - '{"value":{"key":{"inner-key":[1,2,3]}}}'
-    bothNegative:
+    negative:
         - '{"value":null}'
 
 
     # collections
   - type: ListExample
-    bothPositive:
+    positive:
         - '{"value":[]}'
         - '{"value":["","a","b","c","a"]}'
         - '{}'
         # - '{"value":null}'
         #   tag: "lenient"
-    bothNegative:
+    negative:
         - '{"value":{}}'
         # - '{"value":null}'
         #   tag: "!lenient"
   - type: SetStringExample
-    bothPositive:
+    positive:
         - '{"value":[]}'
         - '{"value":["","a","b","c"]}'
         - '{}'
         # - '{"value":null}'
         #   tag: "lenient"
-    bothNegative:
+    negative:
         # - '{"value":null}'
         #   tag: "!lenient"
         # TODO SPEC: behavior for an object declared as a "Set" that receives a list with multiple elements that are equal.
         - '{"value":["a","a"]}'
   - type: SetDoubleExample
-    bothPositive:
+    positive:
         - '{"value":[]}'
         - '{"value":[1.100, 1.2, 1.3]}'
         - '{}'
-    bothNegative:
+    negative:
         - '{"value":[1.1, 1.10, 01.100]}'
   - type: MapExample
-    bothPositive:
+    positive:
         - '{"value":{"key":"value","key2":"value2"}}'
         - '{}'
         - '{"value":{}}'
         # - '{"value":null}'
         #   tag: "lenient"
-    bothNegative:
+    negative:
         - '{"value":{"key":[1,2,3]}}'
         - '{"value":"not a map"}'
         # - '{"value":null}'
         #   tag: "!lenient"
   - type: OptionalExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"value":null}'
         - '{"value":""}'
         - '{"value":"foo"}'
-    bothNegative:
+    negative:
         - '{"value":{}}'
         - '{"value":[]}'
   - type: OptionalBooleanExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"value":null}'
         - '{"value":true}'
         - '{"value":false}'
-    bothNegative:
+    negative:
         - '{"value":{}}'
         - '{"value":[]}'
         - '{"value":"true"}'
   - type: OptionalIntegerExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"value":null}'
         - '{"value":0}'
         - '{"value":1234}'
-    bothNegative:
+    negative:
         - '{"value":{}}'
         - '{"value":[]}'
         - '{"value":"1234"}'
   - type: LongFieldNameOptionalExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"someLongName":null}'
         - '{"someLongName":""}'
         - '{"someLongName":"foo"}'
-    bothNegative:
+    negative:
         - '{"someLongName":{}}'
         - '{"someLongName":[]}'
   - type: RawOptionalExample
-    bothPositive:
+    positive:
         - 'null'
         - '1'
-    bothNegative:
+    negative:
         - '"not an integer"'
 
     # named aliases
   - type: StringAliasExample
-    bothPositive:
+    positive:
         - '"exampleOutput"'
         - '""'
-    bothNegative:
+    negative:
         - 'null'
         - '{}'
         - '[]'
   - type: DoubleAliasExample
-    bothPositive:
+    positive:
         - '10'
         - '10.0'
         - '"NaN"'
         - '"Infinity"'
         - '"-Infinity"'
-    bothNegative:
+    negative:
         - 'null'
         - '{}'
         - '[]'
@@ -250,30 +250,30 @@ body:
         - '"-infinity"'
         - '"+Infinity"'
   - type: IntegerAliasExample
-    bothPositive:
+    positive:
         - '0'
         - '123'
-    bothNegative:
+    negative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
         - '123.4'
   - type: BooleanAliasExample
-    bothPositive:
+    positive:
         - 'true'
         - 'false'
-    bothNegative:
+    negative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
   - type: SafeLongAliasExample
-    bothPositive:
+    positive:
         - '-9007199254740991'
         - '0'
         - '9007199254740991'
-    bothNegative:
+    negative:
         - '-9007199254740992'
         - '9007199254740992'
         - 'null'
@@ -281,14 +281,14 @@ body:
         - '[]'
         - '""'
   - type: RidAliasExample
-    bothPositive:
+    positive:
         - '"ri.service.instance.folder.foo"'
         - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
         - '"ri.my-service.instance1.graph-node.._"'
         - '"ri.service.1instance.type.emptyname"'
         - '"ri.my-service..graph-node.noInstance"'
         - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
-    bothNegative:
+    negative:
         - 'null'
         - '{}'
         - '""'
@@ -305,46 +305,46 @@ body:
         - '[]'
         - '""'
   - type: BearerTokenAliasExample
-    bothPositive:
+    positive:
         - '"abc123"'
         - '"-._~+/="'
         - '"abc="'
         - '"a="'
-    bothNegative:
+    negative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
   - type: UuidAliasExample
-    bothPositive:
+    positive:
         - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
         - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
-    bothNegative:
+    negative:
         - 'null'
         - '{}'
         - '[]'
         - '""'
         - '"80e6dd13-5f42-4e33-ad18"'
   - type: ReferenceAliasExample
-    bothPositive:
+    positive:
         - '{"value":0}'
         - '{"value":"content"}'
         - '{"value":true}'
         - '{"value":[1,2,3]}'
         - '{"value":{"key":3}}'
         - '{"value":{"key":{"inner-key":[1,2,3]}}}'
-    bothNegative:
+    negative:
         - 'null'
         - '{{'
   - type: DateTimeAliasExample
-    bothPositive:
+    positive:
         - '"2017-01-02T03:04:05Z"'
         - '"2017-01-02T03:04:05.000Z"'
         - '"2017-01-02T03:04:05.000000Z"'
         - '"2017-01-02T03:04:05.000000000Z"'
         - '"2017-01-02T04:04:05.000000000+01:00"'
         - '"2017-01-02T05:04:05.000000000+02:00"'
-    bothNegative:
+    negative:
         - '"4/3/2018"'
         - '"1523040070"'
         - '"1523040070'
@@ -355,273 +355,273 @@ body:
         - '[]'
         - '""'
     # receiveBinaryAliasExample:
-    # bothPositive:
+    # positive:
     #     - ''
-    # bothNegative:
+    # negative:
     #     - 'null'
     #     - '{}'
     #     - '[]'
     #     - '""'
   - type: KebabCaseObjectExample
-    bothPositive:
+    positive:
         - '{"kebab-cased-field":1}'
-    bothNegative:
+    negative:
         - '{"kebabCasedField":1}'
         - '{"kebab_cased_field":1}'
   - type: SnakeCaseObjectExample
-    bothPositive:
+    positive:
         - '{"snake_cased_field":1}'
-    bothNegative:
+    negative:
         - '{"snakeCasedField":1}'
         - '{"snake-cased-field":1}'
   - type: OptionalBearerTokenAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '"abc123"'
         - '"-._~+/="'
         - '"abc="'
         - '"a="'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalBinaryAliasExample
-    bothPositive:
+    positive:
         - 'null'
         # TODO(dfox): binary alias?
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalBooleanAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - 'true'
         - 'false'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalDateTimeAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '"2017-01-02T03:04:05Z"'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalDoubleAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '10'
         - '10.0'
         - '"NaN"'
         - '"Infinity"'
         - '"-Infinity"'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalIntegerAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '0'
         - '123'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalRidAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '"ri.service.instance.folder.foo"'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalSafeLongAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '-9007199254740991'
         - '0'
         - '9007199254740991'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalStringAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '""'
         - '"hello"'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalUuidAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"'
         - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"'
-    bothNegative:
+    negative:
         - '{}'
         - '[]'
   - type: OptionalAnyAliasExample
-    bothPositive:
+    positive:
         - 'null'
         - '0'
         - '"content"'
         - 'true'
         - '[1,2,3]'
         - '{"key":3}'
-    bothNegative: []
+    negative: []
   - type: ListBearerTokenAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["abc123"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListBinaryAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListBooleanAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[true]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListDateTimeAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListDoubleAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListIntegerAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[0, 123]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListRidAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["ri.service.instance.folder.foo"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListSafeLongAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListStringAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["", "hello"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListUuidAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: ListAnyAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetBearerTokenAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["abc123"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetBinaryAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetBooleanAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[true]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetDateTimeAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetDoubleAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[100, 10.0, "NaN", "Infinity", "-Infinity"]'
         # https://github.com/palantir/conjure-verification/issues/72
         # - '[+0, -0]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetIntegerAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[0, 123]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetRidAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["ri.service.instance.folder.foo"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetSafeLongAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetStringAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["", "hello"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetUuidAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
-    bothNegative:
+    negative:
         - 'null'
   - type: SetAnyAliasExample
-    bothPositive:
+    positive:
         - '[]'
         - '[null, 0, "content", true, [1,2,3], {"key":3}]'
-    bothNegative:
+    negative:
         - 'null'
   - type: MapBearerTokenAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"abc123": true}'
-    bothNegative: []
+    negative: []
   - type: MapBinaryAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"SGVsbG8sIFdvcmxk": true}'
-    bothNegative: []
+    negative: []
   - type: MapBooleanAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"true": true}'
-    bothNegative: []
+    negative: []
   - type: MapDateTimeAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"2017-01-02T03:04:05Z": true}'
-    bothNegative: []
+    negative: []
   - type: MapDoubleAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"10": true}'
         - '{"10.0": true}'
@@ -631,65 +631,65 @@ body:
         - '{"Infinity": true}'
         - '{"-Infinity": true}'
         - '{"10": true, "3e2": true}'
-    bothNegative:
+    negative:
         - '{"10": true, "10e0": false}'
         - '{"10": true, "10.0": false}'
   - type: MapIntegerAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"0": true}'
         - '{"123": true}'
-    bothNegative: []
+    negative: []
   - type: MapRidAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"ri.service.instance.folder.foo": true}'
-    bothNegative: []
+    negative: []
   - type: MapSafeLongAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"-9007199254740991": true}'
         - '{"0": true}'
         - '{"9007199254740991": true}'
-    bothNegative: []
+    negative: []
   - type: MapStringAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"": true}'
         - '{"hello": true}'
-    bothNegative: []
+    negative: []
   - type: MapUuidAliasExample
-    bothPositive:
+    positive:
         - '{}'
         - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
-    bothNegative: []
+    negative: []
   - type: MapEnumExampleAlias
-    bothPositive:
+    positive:
         - '{"ONE": "", "TWO": ""}'
-    bothNegative:
+    negative:
         - '{"ONE": "", "TWO": "", "BAD VARIANT": ""}'
 
 singleHeaderParam:
 - type: bearertoken
-  bothPositive:
+  positive:
     - '"bearertoken"'
 - type: boolean
-  bothPositive:
+  positive:
     - 'true'
     - 'false'
 - type: datetime
-  bothPositive:
+  positive:
     - '"2017-01-02T03:04:05Z"'
 - type: double
-  bothPositive:
+  positive:
     - '10'
     - '10.0'
 - type: integer
-  bothPositive:
+  positive:
     - '0'
     - '123'
 - type: rid
-  bothPositive:
+  positive:
     - '"ri.service.instance.folder.foo"'
     - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
     - '"ri.my-service.instance1.graph-node.._"'
@@ -697,45 +697,45 @@ singleHeaderParam:
     - '"ri.my-service..graph-node.noInstance"'
     - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
 - type: safelong
-  bothPositive:
+  positive:
     - '-9007199254740991'
     - '0'
     - '9007199254740991'
 - type: string
-  bothPositive:
+  positive:
     - '""'
     - '"hello"'
 - type: uuid
-  bothPositive:
+  positive:
     - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
     - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
 - type: optional<string>
-  bothPositive:
+  positive:
     - 'null'
     - '"foo"'
 - type: AliasString
-  bothPositive:
+  positive:
     - '""'
     - '"hello"'
 
 singlePathParam:
 - type: boolean
-  bothPositive:
+  positive:
     - 'true'
     - 'false'
 - type: datetime
-  bothPositive:
+  positive:
     - '"2017-01-02T03:04:05Z"'
 - type: double
-  bothPositive:
+  positive:
     - '10'
     - '10.0'
 - type: integer
-  bothPositive:
+  positive:
     - '0'
     - '123'
 - type: rid
-  bothPositive:
+  positive:
     - '"ri.service.instance.folder.foo"'
     - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
     - '"ri.my-service.instance1.graph-node.._"'
@@ -743,41 +743,41 @@ singlePathParam:
     - '"ri.my-service..graph-node.noInstance"'
     - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
 - type: safelong
-  bothPositive:
+  positive:
     - '-9007199254740991'
     - '0'
     - '9007199254740991'
 - type: string
-  bothPositive:
+  positive:
     - '""'
     - '"hello"'
 - type: uuid
-  bothPositive:
+  positive:
     - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
     - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
 - type: AliasString
-  bothPositive:
+  positive:
     - '""'
     - '"hello"'
 
 singleQueryParam:
 - type: boolean
-  bothPositive:
+  positive:
     - 'true'
     - 'false'
   # TODO(dfox): this should definitely be allowed!
   # queryParamDatetime:
   #   - '"2017-01-02T03:04:05Z"'
 - type: double
-  bothPositive:
+  positive:
     - '10'
     - '10.0'
 - type: integer
-  bothPositive:
+  positive:
     - '0'
     - '123'
 - type: rid
-  bothPositive:
+  positive:
     - '"ri.service.instance.folder.foo"'
     - '"ri.a1p2p3.south-west.data-set.my-hello_WORLD-123"'
     - '"ri.my-service.instance1.graph-node.._"'
@@ -785,23 +785,23 @@ singleQueryParam:
     - '"ri.my-service..graph-node.noInstance"'
     - '"ri.my-service..graph-node.noInstance.multiple.extra.dots"'
 - type: safelong
-  bothPositive:
+  positive:
     - '-9007199254740991'
     - '0'
     - '9007199254740991'
 - type: string
-  bothPositive:
+  positive:
     - '""'
     - '"hello"'
 - type: uuid
-  bothPositive:
+  positive:
     - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
     - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
 - type: optional<string>
-  bothPositive:
+  positive:
     - 'null'
     - '"foo"'
 - type: AliasString
-  bothPositive:
+  positive:
     - '""'
     - '"hello"'

@@ -144,8 +144,8 @@ public final class CompileVerificationServerTestCasesJson {
                 builder.put(endpointName(t.getType()),
                         PositiveAndNegativeTestCases
                                 .builder()
-                                .positive(t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList()))
-                                .negative(t.getBothNegative().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
+                                .negative(t.getNegative().stream().map(TestCase::get).collect(Collectors.toList()))
                                 .addAllPositive(t
                                         .getClientPositiveServerFail()
                                         .stream()
@@ -160,7 +160,7 @@ public final class CompileVerificationServerTestCasesJson {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleHeaderParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
-                t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
+                t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }
 
@@ -169,7 +169,7 @@ public final class CompileVerificationServerTestCasesJson {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleQueryParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
-                t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
+                t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }
 
@@ -178,7 +178,7 @@ public final class CompileVerificationServerTestCasesJson {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singlePathParam.forEach(t -> builder.put(
                 endpointName(t.getType()),
-                t.getBothPositive().stream().map(TestCase::get).collect(Collectors.toList())));
+                t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }
 

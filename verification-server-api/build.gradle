@@ -48,6 +48,7 @@ task compileTestCasesJson(type: JavaExec) {
 }
 
 build.dependsOn compileTestCasesJson
+task generate(dependsOn: compileTestCasesJson)
 
 publishing {
     publications {
