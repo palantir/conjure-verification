@@ -159,7 +159,7 @@ public final class CompileVerificationServerTestCasesJson {
             List<SingleHeaderParamTests> singleHeaderParam) {
         ImmutableMap.Builder<EndpointName, List<String>> builder = ImmutableMap.builder();
         singleHeaderParam.forEach(t -> builder.put(
-                endpointName("header", t.getType()),
+                endpointName("headerParam", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
         return builder.build();
     }
