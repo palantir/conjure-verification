@@ -20,8 +20,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
-import com.palantir.conjure.verification.AllTestCases;
 import com.palantir.conjure.verification.BodyTests;
+import com.palantir.conjure.verification.MasterTestCases;
 import com.palantir.conjure.verification.ResolveLocalReferencesConjureTypeVisitor;
 import com.palantir.conjure.verification.TestCasesUtils;
 import java.io.File;
@@ -40,7 +40,7 @@ public final class GenerateVerificationClientConjureDefinitions {
         File conjureDir = new File(args[1]);
         File outputDir = new File(conjureDir, "generated");
 
-        AllTestCases testCases = TestCasesUtils.parseTestCases(file);
+        MasterTestCases testCases = TestCasesUtils.parseTestCases(file);
 
         // Delete old contents
         Files.createDirectories(outputDir.toPath());

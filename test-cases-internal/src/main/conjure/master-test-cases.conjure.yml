@@ -3,7 +3,7 @@ types:
   definitions:
     default-package: com.palantir.conjure.verification
     objects:
-      AllTestCases:
+      MasterTestCases:
         docs: All test cases for both clients and servers.
         fields:
           body: list<BodyTests>

@@ -32,8 +32,8 @@ public final class TestCasesUtils {
 
     private TestCasesUtils() {}
 
-    public static AllTestCases parseTestCases(File file) throws IOException {
-        return YAML_MAPPER.readValue(file, AllTestCases.class);
+    public static MasterTestCases parseTestCases(File file) throws IOException {
+        return YAML_MAPPER.readValue(file, MasterTestCases.class);
     }
 
     public static ConjureType parseConjureType(ConjureTypeString typeRepr) {

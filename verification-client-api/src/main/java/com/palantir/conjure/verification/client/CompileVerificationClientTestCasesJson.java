@@ -28,9 +28,9 @@ import com.palantir.conjure.defs.Conjure;
 import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
-import com.palantir.conjure.verification.AllTestCases;
 import com.palantir.conjure.verification.BodyTests;
 import com.palantir.conjure.verification.ConjureTypeString;
+import com.palantir.conjure.verification.MasterTestCases;
 import com.palantir.conjure.verification.TestCase;
 import com.palantir.conjure.verification.TestCasesUtils;
 import java.io.File;
@@ -53,10 +53,10 @@ public final class CompileVerificationClientTestCasesJson {
         File file = new File(args[0]);
         File outputFile = new File(args[1]);
 
-        AllTestCases allTestCases = TestCasesUtils.parseTestCases(file);
+        MasterTestCases masterTestCases = TestCasesUtils.parseTestCases(file);
 
         TestCases testCases = TestCases.of(ServerTestCases.builder()
-                .autoDeserialize(generateBodyTestCases(allTestCases.getBody()))
+                .autoDeserialize(generateBodyTestCases(masterTestCases.getBody()))
                 .build());
 
         ServerTestCases serverTestCases = testCases.getServer();

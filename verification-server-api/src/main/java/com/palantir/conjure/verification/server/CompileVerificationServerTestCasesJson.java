@@ -16,9 +16,9 @@ import com.palantir.conjure.defs.Conjure;
 import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
-import com.palantir.conjure.verification.AllTestCases;
 import com.palantir.conjure.verification.BodyTests;
 import com.palantir.conjure.verification.ConjureTypeString;
+import com.palantir.conjure.verification.MasterTestCases;
 import com.palantir.conjure.verification.SingleHeaderParamTests;
 import com.palantir.conjure.verification.SinglePathParamTests;
 import com.palantir.conjure.verification.SingleQueryParamTests;
@@ -44,13 +44,13 @@ public final class CompileVerificationServerTestCasesJson {
         File file = new File(args[0]);
         File outputFile = new File(args[1]);
 
-        AllTestCases allTestCases = TestCasesUtils.parseTestCases(file);
+        MasterTestCases masterTestCases = TestCasesUtils.parseTestCases(file);
 
         TestCases testCases = TestCases.of(ClientTestCases.builder()
-                .autoDeserialize(generateBodyTestCases(allTestCases.getBody()))
-                .singleHeaderService(generateSingleHeaderParamTestCases(allTestCases.getSingleHeaderParam()))
-                .singleQueryParamService(generateSingleQueryParamTestCases(allTestCases.getSingleQueryParam()))
-                .singlePathParamService(generateSinglePathParamTestCases(allTestCases.getSinglePathParam()))
+                .autoDeserialize(generateBodyTestCases(masterTestCases.getBody()))
+                .singleHeaderService(generateSingleHeaderParamTestCases(masterTestCases.getSingleHeaderParam()))
+                .singleQueryParamService(generateSingleQueryParamTestCases(masterTestCases.getSingleQueryParam()))
+                .singlePathParamService(generateSinglePathParamTestCases(masterTestCases.getSinglePathParam()))
                 .build());
 
         ClientTestCases clientTestCases = testCases.getClient();
