@@ -18,7 +18,7 @@ import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
 import com.palantir.conjure.verification.AllTestCases;
 import com.palantir.conjure.verification.BodyTests;
-import com.palantir.conjure.verification.ConjureTypeRepr;
+import com.palantir.conjure.verification.ConjureTypeString;
 import com.palantir.conjure.verification.SingleHeaderParamTests;
 import com.palantir.conjure.verification.SinglePathParamTests;
 import com.palantir.conjure.verification.SingleQueryParamTests;
@@ -182,7 +182,7 @@ public final class CompileVerificationServerTestCasesJson {
         return builder.build();
     }
 
-    private static EndpointName endpointName(ConjureTypeRepr type) {
+    private static EndpointName endpointName(ConjureTypeString type) {
         return EndpointName.of(
                 ServerTestCasesUtils.typeToEndpointName(TestCasesUtils.parseConjureType(type)));
     }

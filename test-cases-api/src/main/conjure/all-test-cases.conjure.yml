@@ -12,28 +12,28 @@ types:
           singleHeaderParam: list<SingleHeaderParamTests>
       TestCase:
         alias: string
-      ConjureTypeRepr:
+      ConjureTypeString:
         docs: a parseable conjure type.
         alias: string
       BodyTests:
         docs: Tests verifying the behaviour of a body parameter / return value of the given type.
         fields:
-          type: ConjureTypeRepr
+          type: ConjureTypeString
           clientPositiveServerFail: list<TestCase>
           positive: list<TestCase>
           negative: list<TestCase>
       SinglePathParamTests:
         docs: Tests verifying the behaviour of a single path parameter of the given type.
         fields:
-          type: ConjureTypeRepr
+          type: ConjureTypeString
           positive: list<TestCase>
       SingleQueryParamTests:
         docs: Tests verifying the behaviour of a single query parameter of the given type.
         fields:
-          type: ConjureTypeRepr
+          type: ConjureTypeString
           positive: list<TestCase>
       SingleHeaderParamTests:
         docs: Tests verifying the behaviour of a single header parameter of the given type.
         fields:
-          type: ConjureTypeRepr
+          type: ConjureTypeString
           positive: list<TestCase>

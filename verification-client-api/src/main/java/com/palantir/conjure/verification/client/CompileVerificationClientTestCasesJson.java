@@ -30,7 +30,7 @@ import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
 import com.palantir.conjure.verification.AllTestCases;
 import com.palantir.conjure.verification.BodyTests;
-import com.palantir.conjure.verification.ConjureTypeRepr;
+import com.palantir.conjure.verification.ConjureTypeString;
 import com.palantir.conjure.verification.TestCase;
 import com.palantir.conjure.verification.TestCasesUtils;
 import java.io.File;
@@ -148,7 +148,7 @@ public final class CompileVerificationClientTestCasesJson {
         return builder.build();
     }
 
-    private static EndpointName endpointName(ConjureTypeRepr type) {
+    private static EndpointName endpointName(ConjureTypeString type) {
         return EndpointName.of(
                 ClientTestCasesUtils.typeToEndpointName(TestCasesUtils.parseConjureType(type)));
     }

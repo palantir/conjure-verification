@@ -36,7 +36,7 @@ public final class TestCasesUtils {
         return YAML_MAPPER.readValue(file, AllTestCases.class);
     }
 
-    public static ConjureType parseConjureType(ConjureTypeRepr typeRepr) {
+    public static ConjureType parseConjureType(ConjureTypeString typeRepr) {
         ConjureType conjureType;
         try {
             conjureType = ConjureType.fromString(typeRepr.get());
