@@ -408,30 +408,7 @@ mod test {
 
     use super::*;
     use conjure_verification_common::type_mapping::TestType;
-
-    type ParamTypes = HashMap<TestType, HashMap<EndpointName, ResolvedType>>;
-
-    #[derive(Default)]
-    struct ParamTypesBuilder(ParamTypes);
-
-    impl ParamTypesBuilder {
-        fn add(
-            &mut self,
-            tt: TestType,
-            endpoint_name: EndpointName,
-            resolved_type: ResolvedType,
-        ) -> &mut Self {
-            self.0
-                .entry(tt)
-                .or_default()
-                .insert(endpoint_name, resolved_type);
-            self
-        }
-
-        fn build(self) -> ParamTypes {
-            self.0
-        }
-    }
+    use conjure_verification_common::type_mapping::builder::*;
 
     /// This exists because `Request` takes references only so it can't be used as a builder.
     #[derive(Clone, Default)]
