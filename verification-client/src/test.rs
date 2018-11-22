@@ -204,6 +204,9 @@ fn run_test_case_against_server<F, R>(
 /// Contains logic for setting up the [VerificationClientResource].
 mod setup {
     use super::*;
+    use conjure_verification_common::type_mapping::builder::ParamTypesBuilder;
+    use conjure_verification_common::type_mapping::ParamTypes;
+    use conjure_verification_common::type_mapping::TestType;
     use conjure_verification_http_server::router::Binder;
     use typed_headers::{ContentType, HeaderMapExt};
 
@@ -242,19 +245,23 @@ mod setup {
                         negative: vec![],
                     }
                 );
-            param_types.insert(EndpointName::new(endpoint_name), conjure_type);
+            param_types.add(
+                TestType::Body,
+                EndpointName::new(endpoint_name),
+                conjure_type,
+            );
         })
     }
 
     /// Sets up a router for a [VerificationClientResource] handling the desired server test cases.
     fn setup_routes<F>(f: F) -> Router
     where
-        F: FnOnce(&mut ServerTestCases, &mut ParamTypes),
+        F: FnOnce(&mut ServerTestCases, &mut ParamTypesBuilder),
     {
         let mut test_cases = ServerTestCases::default();
-        let mut param_types = HashMap::default();
+        let mut param_types = ParamTypesBuilder::default();
         f(&mut test_cases, &mut param_types);
-        let (router, _) = create_resource(test_cases, param_types);
+        let (router, _) = create_resource(test_cases, param_types.build());
         router
     }
 

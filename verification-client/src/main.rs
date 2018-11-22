@@ -60,7 +60,8 @@ use conjure_verification_common::conjure;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
-use conjure_verification_common::type_mapping::TypeForEndpointFn;
+use conjure_verification_common::type_mapping::ServiceTypeMapping;
+use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http_server::router::Binder;
 pub use conjure_verification_http_server::*;
@@ -69,7 +70,6 @@ use handler::HttpService;
 use hyper::Server;
 use resource::VerificationClientResource;
 use router::Router;
-use std::collections::HashMap;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
@@ -116,12 +116,15 @@ fn main() {
     let ir = File::open(Path::new(ir_path)).unwrap();
     let ir: Box<Conjure> = Box::new(serde_json::from_reader(ir).unwrap());
 
-    let mut services_mapping: HashMap<String, TypeForEndpointFn> = HashMap::new();
-    services_mapping.insert("AutoDeserializeService".to_string(), return_type);
+    let services_mapping = vec![ServiceTypeMapping::new(
+        "AutoDeserializeService",
+        TestType::Body,
+        return_type,
+    )];
 
     let resource = Arc::new(VerificationClientResource::new(
         test_cases.server.into(),
-        type_mapping::resolve_types(&ir, &services_mapping),
+        type_mapping::resolve_types(&ir, &services_mapping).into(),
     ));
     let mut builder = router::Router::builder();
     {
@@ -135,7 +138,7 @@ fn main() {
 
 fn print_usage(arg0: &str) {
     eprintln!(
-        "Usage: {} <test-cases.json> <verification-client-api.json>",
+        "Usage: {} <client-test-cases.json> <verification-api.conjure.json>",
         arg0
     );
 }

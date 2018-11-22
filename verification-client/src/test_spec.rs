@@ -43,15 +43,16 @@ pub struct AutoDeserializeNegativeTest(pub String);
 #[cfg(test)]
 mod test {
     use super::*;
-    use serde_yaml;
+    use serde_json;
     use std::fs::File;
     use std::path::Path;
 
-    const TEST_CASES_PATH: &str = "../verification-client-api/test-cases.yml";
+    const TEST_CASES_PATH: &str = "../verification-client-api/build/test-cases.json";
 
+    /// This test requires that you run `./gradlew compileTestCasesJson` beforehand.
     #[test]
     fn deserializes_test_cases() {
         let f = File::open(Path::new(TEST_CASES_PATH)).unwrap();
-        serde_yaml::from_reader::<_, TestCases>(f).unwrap();
+        serde_json::from_reader::<_, TestCases>(f).unwrap();
     }
 }

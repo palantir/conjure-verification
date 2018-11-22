@@ -1,12 +1,18 @@
 # Verification client
-[test-cases.yml]: /verification-client-api/test-cases.yml
+[master-test-cases.yml]: /master-test-cases.yml
 [verification-client.conjure.yml]: /verification-client-api/src/main/conjure/verification-client.conjure.yml
 
 The _verification client_ makes requests to a user-provided server-under-test.
 The _verification client_ also binds to a port, so that test requests can be driven by a user's test harness (i.e. it is, in fact, a server).
 
-[test-cases.yml][] contains a variety of tests, grouped by type, then endpoint name.
-The conjure-defined format for this file is defined [here](/verification-client-api/src/main/conjure/test-cases.conjure.yml).
+[master-test-cases.yml][] contains a variety of tests applicable to both verification client and [verification server](/docs/verification_server.md).
+To compile the verification-client test cases, run:
+
+```bash
+./gradlew compileTestCasesJson
+```
+
+That will generate a file `/verification-client-api/build/test-cases.json`, which conforms to [this conjure-defined format](/verification-client-api/src/main/conjure/test-cases.conjure.yml).
 
 ### Prerequisites
 
@@ -14,9 +20,9 @@ First, ensure the necessary artifacts are available in your testing environment:
 
 | Artifact | Maven coordinate | Classifier |
 | -------- | ---------------- | ---------- |
-| `verification-client.tgz` | `com.palantir.conjure.verification:verification-client::${classifier}@tgz` | `osx` or `linux` | 
+| `verification-client.tgz` | `com.palantir.conjure.verification:verification-client::${classifier}@tgz` | `osx` or `linux` |
 | `verification-client-test-cases.json` | `com.palantir.conjure.verification:verification-client-test-cases` |
-| `verification-client-api.conjure.json` | `com.palantir.conjure.verification:verification-client-api` | 
+| `verification-client-api.conjure.json` | `com.palantir.conjure.verification:verification-client-api` |
 
 The [server under test][] also needs to be implemented and made available to the test harness.
 
@@ -31,12 +37,12 @@ Using the generator and runtime that are being tested:
 
 #### Test harness
 
-The test harness should ensure that both the [server under test][] and the verification client are up and running 
+The test harness should ensure that both the [server under test][] and the verification client are up and running
 before running the tests, then stop them after it's done running the tests.
 
 To run the verification client, extract the executable out of the `verification-client.tgz` and run it. There should only be one file inside the archive.
 
-For each test found in the [test-cases.yml][] file, the harness should invoke the [`VerificationClientService`](/verification-client-api/src/main/conjure/verification-client.conjure.yml)'s `runTestCase` endpoint, passing the endpoint name, test index (0-indexed) and URL of the _server under test_.
+For each test found in the [master-test-cases.yml][] file, the harness should invoke the [`VerificationClientService`](/verification-client-api/src/main/conjure/verification-client.conjure.yml)'s `runTestCase` endpoint, passing the endpoint name, test index (0-indexed) and URL of the _server under test_.
 Note: For negative [Body tests][], the index should be set to (number of positive tests) + the 0-indexed position of the negative test.
 
 ### Types of test cases
@@ -44,10 +50,16 @@ Note: For negative [Body tests][], the index should be set to (number of positiv
 
 | Test type | Service definition | Service to implement | Comment |
 | --------- | ------------------ | -------------------- | ------- |
-| auto-deserialize | [auto-deserialize-service.yml](/verification-client-api/src/main/conjure/auto-deserialize-service.yml) | `AutoDeserializeService` | See [Body tests][] |
+| auto-deserialize | `auto-deserialize-service.yml` | `AutoDeserializeService` | See [Body tests][] |
 | single header | not implemented yet | | Tests the ability to deserialize a header param correctly.
 | single query param | not implemented yet | | Tests the ability to deserialize a query param correctly.
 | single path param | not implemented yet | | Tests the ability to deserialize a path param correctly.
+
+Service definitions are generated into `/verification-client-api/src/main/conjure/generated` by running
+
+```bash
+./gradlew generateConjureDefinitions
+```
 
 #### Body tests
 [Body tests]: #body-tests
@@ -55,7 +67,7 @@ Note: For negative [Body tests][], the index should be set to (number of positiv
 The tests include positive and negative tests for each endpoint.
 
 The test harness does not need to assert that negative test cases failed. The `VerificationClientService` encapsulates
-all of that logic, and will return an error if a test didn't behave as expected. 
+all of that logic, and will return an error if a test didn't behave as expected.
 
 Note: Because the tests in each endpoint have the same structure, if the language allows, it's simpler to generate the tests using reflection, rather than hand-rolling a new test for every endpoint.
 

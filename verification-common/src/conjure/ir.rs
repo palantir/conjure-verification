@@ -157,20 +157,3 @@ pub struct ArgumentDefinition {
     pub arg_name: String,
     pub type_: Type,
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use serde_json;
-    use std::fs::File;
-    use std::path::Path;
-
-    #[test]
-    #[ignore] // test ignored because you need to `./gradlew compileTestCasesJson` first
-    fn test() {
-        let file = File::open(Path::new(
-            "../verification-api/build/conjure-ir/verification-api.json",
-        )).unwrap();
-        let _ir: Conjure = serde_json::from_reader(file).unwrap();
-    }
-}

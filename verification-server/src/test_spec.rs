@@ -38,18 +38,10 @@ pub struct PositiveAndNegativeTestCases {
 mod test {
     use super::*;
     use serde_json;
-    use serde_yaml;
     use std::fs::File;
     use std::path::Path;
 
-    const TEST_CASES_PATH: &str = "../verification-server-api/test-cases.yml";
     const TEST_CASES_JSON: &str = "../verification-server-api/build/test-cases.json";
-
-    #[test]
-    fn deserializes_test_cases() {
-        let f = File::open(Path::new(TEST_CASES_PATH)).unwrap();
-        serde_yaml::from_reader::<_, TestCases>(f).unwrap();
-    }
 
     #[test]
     fn deserializes_test_cases_json() {

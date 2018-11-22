@@ -2,22 +2,33 @@ apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
 apply plugin: 'com.palantir.conjure'
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.6'
-    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6'
-    compile 'com.palantir.conjure:conjure-core:4.0.0'
-    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization:4.5.1'
-    compile project('verification-client-api-objects')
+    compile 'com.fasterxml.jackson.core:jackson-databind'
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    compile 'com.palantir.conjure:conjure-core'
+    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
+    compile project("${project.name}-objects")
+    compile project(':test-cases-internal')
+    compile project(':test-cases-internal:test-cases-internal-objects')
+    
+    runtimeOnly 'org.slf4j:slf4j-simple'}
+
+// Ensure we generate definitions first before conjure tries to compile them
+tasks.copyConjureSourcesIntoBuild {
+    dependsOn ':test-cases-internal:generateClientServices'
 }
 
 task compileTestCasesJson(type: JavaExec) {
+    description = "Generate client-specific test cases"
     main = "com.palantir.conjure.verification.client.CompileVerificationClientTestCasesJson"
     classpath = sourceSets.main.runtimeClasspath
+    args rootProject.file('master-test-cases.yml'), "$buildDir/test-cases.json"
 
-    inputs.file 'test-cases.yml'
+    inputs.file rootProject.file('master-test-cases.yml')
     outputs.file "$buildDir/test-cases.json"
 }
 
 build.dependsOn compileTestCasesJson
+task generate(dependsOn: compileTestCasesJson)
 
 publishing {
     publications {

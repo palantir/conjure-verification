@@ -4,5 +4,7 @@ include 'verification-server-api'
 include 'verification-server-api:verification-server-api-objects'
 include 'verification-client-api'
 include 'verification-client-api:verification-client-api-objects'
+include 'test-cases-internal'
+include 'test-cases-internal:test-cases-internal-objects'
 
 enableFeaturePreview('STABLE_PUBLISHING')

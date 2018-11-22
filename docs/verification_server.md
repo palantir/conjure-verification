@@ -2,15 +2,27 @@
 
 This is a reference server used to test Conjure client generators and libraries.
 
-[test-cases.yml](/verification-server-api/test-cases.yml) contains a variety of tests, grouped by type, then endpoint name.
-The conjure-defined format for this file is defined [here](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
+[master-test-cases.yml][] contains a variety of tests applicable to both [verification client](/docs/verification_client.md) and verification server.
+To compile the verification-server test cases, run:
+
+```bash
+./gradlew compileTestCasesJson
+```
+
+That will generate a file `/verification-server-api/build/test-cases.json`, which conforms to [this conjure-defined format](/verification-server-api/src/main/conjure/test-cases.conjure.yml).
 
 | Test type | Service definition | Comment |
 | --------- | ------------------ | ------- |
-| body | [auto-deserialize-service.conjure.yml][] | See [Body tests][] |
-| single header | [single-header-service.conjure.yml](/verification-server-api/src/main/conjure/single-header-service.conjure.yml) | Tests the ability to serialize a header param correctly. See [Parameter tests][].
-| single query param | [single-query-param-service.conjure.yml](/verification-server-api/src/main/conjure/single-query-param-service.conjure.yml) | Tests the ability to serialize a query param correctly. See [Parameter tests][].
-| single path param | [single-path-param-service.conjure.yml](/verification-server-api/src/main/conjure/single-path-param-service.conjure.yml) | Tests the ability to serialize a path param correctly. See [Parameter tests][].
+| body | `auto-deserialize-service.conjure.yml` | See [Body tests][] |
+| single header | `single-header-service.conjure.yml` | Tests the ability to serialize a header param correctly. See [Parameter tests][].
+| single query param | `single-query-param-service.conjure.yml` | Tests the ability to serialize a query param correctly. See [Parameter tests][].
+| single path param | `single-path-param-service.conjure.yml` | Tests the ability to serialize a path param correctly. See [Parameter tests][].
+
+Service definitions are generated into `/verification-server-api/src/main/conjure/generated` by running
+
+```bash
+./gradlew generateConjureDefinitions
+```
 
 ### Prerequisites
 
@@ -18,9 +30,9 @@ First, ensure the necessary artifacts are available in your testing environment:
 
 | Artifact | Maven coordinate | Classifier |
 | -------- | ---------------- | ---------- |
-| `verification-server.tgz` | `com.palantir.conjure.verification:verification-server::${classifier}@tgz` | `osx` or `linux` | 
+| `verification-server.tgz` | `com.palantir.conjure.verification:verification-server::${classifier}@tgz` | `osx` or `linux` |
 | `verification-server-test-cases.json` | `com.palantir.conjure.verification:verification-server-test-cases` |
-| `verification-server-api.conjure.json` | `com.palantir.conjure.verification:verification-server-api` | 
+| `verification-server-api.conjure.json` | `com.palantir.conjure.verification:verification-server-api` |
 
 ### Workflow
 
@@ -28,9 +40,8 @@ The steps below mostly follow the [RFC 004 workflow](https://github.com/palantir
 
 #### Body tests
 [Body tests]: #body-tests
-[auto-deserialize-service.conjure.yml]: /verification-server-api/src/main/conjure/auto-deserialize-service.conjure.yml
 
-These tests should verify two things, via the two services defined in [auto-deserialize-service.conjure.yml][]: 
+These tests should verify two things, via the two services defined in `auto-deserialize-service.conjure.yml`:
 * response bodies are deserialized correctly (via `AutoDeserializeService`)
 * previously deserialized conjure values serialized correctly into request bodies (via `AutoDeserializeConfirmService`)
 

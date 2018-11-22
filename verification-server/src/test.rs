@@ -14,20 +14,19 @@
 
 use conjure_verification_common::conjure::ir::Conjure;
 use serde_json;
-use serde_yaml;
 use std::fs::File;
 use std::path::Path;
 use test_spec::TestCases;
 
-const TEST_CASES_PATH: &str = "../verification-server-api/test-cases.yml";
+const TEST_CASES_PATH: &str = "../verification-server-api/build/test-cases.json";
 const CONJURE_IR_PATH: &str =
     "../verification-server-api/build/conjure-ir/verification-server-api.conjure.json";
 
-/// This test requires that you run `./gradlew compileIr` beforehand.
+/// This test requires that you run `./gradlew compileIr compileTestCasesJson` beforehand.
 #[test]
 fn can_parse_all_test_cases() {
     let test_cases_file = File::open(Path::new(TEST_CASES_PATH)).unwrap();
-    let test_cases: TestCases = serde_yaml::from_reader(test_cases_file).unwrap();
+    let test_cases: TestCases = serde_json::from_reader(test_cases_file).unwrap();
 
     let ir_file = File::open(Path::new(CONJURE_IR_PATH)).unwrap();
     let ir: Conjure = serde_json::from_reader(ir_file).unwrap();

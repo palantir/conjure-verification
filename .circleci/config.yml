@@ -157,6 +157,8 @@ jobs:
           root: .
           paths:
             - ./*/build/
+            - ./verification-client-api/src/main/conjure/generated
+            - ./verification-server-api/src/main/conjure/generated
 
   markdown:
     docker:

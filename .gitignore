@@ -47,3 +47,6 @@ generated/
 
 # Blueprint theme
 __init__.pyc
+
+verification-client-api/src/main/conjure/generated-client
+verification-server-api/src/main/conjure/generated-server

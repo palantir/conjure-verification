@@ -1,0 +1,154 @@
+types:
+  definitions:
+    default-package: com.palantir.conjure.verification.types
+    objects:
+
+      # built-ins: https://github.com/palantir/conjure/blob/develop/docs/spec/wire.md#json-format
+      BearerTokenExample: { fields: { value: bearertoken } }
+      BinaryExample: { fields: { value: binary } }
+      BooleanExample: { fields: { value: boolean } }
+      DateTimeExample: { fields: { value: datetime } }
+      DoubleExample: { fields: { value: double } }
+      IntegerExample: { fields: { value: integer } }
+      RidExample: { fields: { value: rid } }
+      SafeLongExample: { fields: { value: safelong } }
+      StringExample: { fields: { value: string } }
+      UuidExample: { fields: { value: uuid } }
+      AnyExample: { fields: { value: any } }
+
+      # container types: https://github.com/palantir/conjure/blob/develop/docs/spec/wire.md#json-format
+      ListExample:
+        fields:
+          value: list<string>
+      SetStringExample:
+        fields:
+          value: set<string>
+      SetDoubleExample:
+        fields:
+          value: set<double>
+      MapExample:
+        fields:
+          value: map<string, string>
+      OptionalExample: { fields: { value: optional<string> } }
+      OptionalBooleanExample: { fields: { value: optional<boolean> } }
+      OptionalIntegerExample: { fields: { value: optional<integer> } }
+      LongFieldNameOptionalExample: { fields: { someLongName: optional<string> } }
+      RawOptionalExample: { alias: optional<integer> }
+
+      # named types: https://github.com/palantir/conjure/blob/develop/docs/spec/wire.md#json-format
+
+      # named object
+      EmptyObjectExample:
+        fields: {}
+      ObjectExample:
+        fields:
+          string: string
+          integer: integer
+          doubleValue: double
+          optionalItem: optional<string>
+          items: list<string>
+          set: set<string>
+          map: map<string, string>
+          alias: StringAliasExample
+      KebabCaseObjectExample:
+        fields:
+          kebab-cased-field: integer
+      SnakeCaseObjectExample:
+        fields:
+          snake_cased_field: integer
+
+      # named enum
+      EnumExample:
+        values:
+          - ONE
+          - TWO
+      Enum:
+        values:
+          - ONE
+          - TWO
+      EnumFieldExample: { fields: { enum: EnumExample } }
+
+      # named union
+      Union:
+        docs: A type which can either be a StringExample, a set of strings, or an integer.
+        union:
+          stringExample: StringExample
+          set: set<string>
+          thisFieldIsAnInteger: integer
+          alsoAnInteger: integer
+          if: integer # some 'bad' member names!
+          new: integer
+          interface: integer
+
+      # named alias
+      AliasString: { alias: string }
+      StringAliasExample: { alias: string }
+      DoubleAliasExample: { alias: double }
+      IntegerAliasExample: { alias: integer }
+      BooleanAliasExample: { alias: boolean }
+      SafeLongAliasExample: { alias: safelong }
+      RidAliasExample: { alias: rid }
+      BearerTokenAliasExample: { alias: bearertoken }
+      UuidAliasExample: { alias: uuid }
+      ReferenceAliasExample: { alias: AnyExample }
+      DateTimeAliasExample: { alias: datetime }
+      BinaryAliasExample: { alias: binary }
+
+      OptionalBearerTokenAliasExample: { alias: optional<bearertoken> }
+      OptionalBinaryAliasExample: { alias: optional<binary> }
+      OptionalBooleanAliasExample: { alias: optional<boolean> }
+      OptionalDateTimeAliasExample: { alias: optional<datetime> }
+      OptionalDoubleAliasExample: { alias: optional<double> }
+      OptionalIntegerAliasExample: { alias: optional<integer> }
+      OptionalRidAliasExample: { alias: optional<rid> }
+      OptionalSafeLongAliasExample: { alias: optional<safelong> }
+      OptionalStringAliasExample: { alias: optional<string> }
+      OptionalUuidAliasExample: { alias: optional<uuid> }
+      OptionalAnyAliasExample: { alias: optional<any> }
+
+      ListBearerTokenAliasExample: { alias: list<bearertoken> }
+      ListBinaryAliasExample: { alias: list<binary> }
+      ListBooleanAliasExample: { alias: list<boolean> }
+      ListDateTimeAliasExample: { alias: list<datetime> }
+      ListDoubleAliasExample: { alias: list<double> }
+      ListIntegerAliasExample: { alias: list<integer> }
+      ListRidAliasExample: { alias: list<rid> }
+      ListSafeLongAliasExample: { alias: list<safelong> }
+      ListStringAliasExample: { alias: list<string> }
+      ListUuidAliasExample: { alias: list<uuid> }
+      ListAnyAliasExample: { alias: list<any> }
+
+      SetBearerTokenAliasExample: { alias: set<bearertoken> }
+      SetBinaryAliasExample: { alias: set<binary> }
+      SetBooleanAliasExample: { alias: set<boolean> }
+      SetDateTimeAliasExample: { alias: set<datetime> }
+      SetDoubleAliasExample: { alias: set<double> }
+      SetIntegerAliasExample: { alias: set<integer> }
+      SetRidAliasExample: { alias: set<rid> }
+      SetSafeLongAliasExample: { alias: set<safelong> }
+      SetStringAliasExample: { alias: set<string> }
+      SetUuidAliasExample: { alias: set<uuid> }
+      SetAnyAliasExample: { alias: set<any> }
+
+      MapBearerTokenAliasExample:
+        alias: map<bearertoken, boolean>
+      MapBinaryAliasExample:
+        alias: map<binary, boolean>
+      MapBooleanAliasExample:
+        alias: map<boolean, boolean>
+      MapDateTimeAliasExample:
+        alias: map<datetime, boolean>
+      MapDoubleAliasExample:
+        alias: map<double, boolean>
+      MapIntegerAliasExample:
+        alias: map<integer, boolean>
+      MapRidAliasExample:
+        alias: map<rid, boolean>
+      MapSafeLongAliasExample:
+        alias: map<safelong, boolean>
+      MapStringAliasExample:
+        alias: map<string, boolean>
+      MapUuidAliasExample:
+        alias: map<uuid, boolean>
+      MapEnumExampleAlias:
+        alias: map<EnumExample, string>

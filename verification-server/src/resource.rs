@@ -12,7 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use core;
+use std::borrow::Borrow;
+use std::collections::HashMap;
+use std::error::Error as StdError;
+use std::string::ToString;
+
 use bytes::Bytes;
+use either::{Either, Left, Right};
+use http::Method;
+use serde_json;
+
 use conjure::value::*;
 use conjure_verification_common::conjure::value::de_plain::deserialize_plain;
 use conjure_verification_error::Result;
@@ -24,20 +34,12 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http_server::RouteWithOptions;
-use core;
-use either::{Either, Left, Right};
 use errors::*;
-use http::Method;
 use raw_json::RawJson;
 use resolved_test_cases::ResolvedClientTestCases;
 use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
 use resolved_test_cases::ResolvedTestCase;
 use resolved_test_cases::ResolvedTestCases;
-use serde_json;
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::error::Error as StdError;
-use std::string::ToString;
 use test_spec::EndpointName;
 use DynamicResource;
 
@@ -298,7 +300,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in automatic_endpoint_names.cloned() {
             router.route_with_options(
                 Method::GET,
-                format!("/{}/:index", endpoint_name.0).as_str(),
+                format!("/body/{}/:index", endpoint_name.0).as_str(),
                 SpecTestResource::create_test(endpoint_name),
             );
         }
@@ -306,7 +308,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in self.test_cases.single_path_param_service.keys().cloned() {
             router.route_with_options(
                 Method::POST,
-                format!("/{}/:index/:param", endpoint_name.0).as_str(),
+                format!("/single-path-param/{}/:index/:param", endpoint_name.0).as_str(),
                 SpecTestResource::create_param_test(
                     endpoint_name,
                     |req| Ok(Some(req.path_param("param").into())),
@@ -318,7 +320,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in self.test_cases.single_query_param_service.keys().cloned() {
             router.route_with_options(
                 Method::POST,
-                format!("/{}/:index", endpoint_name.0).as_str(),
+                format!("/single-query-param/{}/:index", endpoint_name.0).as_str(),
                 SpecTestResource::create_param_test(
                     endpoint_name,
                     |req| req.opt_query_param::<String>("foo"),
@@ -330,7 +332,7 @@ impl DynamicResource for SpecTestResource {
         for endpoint_name in self.test_cases.single_header_service.keys().cloned() {
             router.route_with_options(
                 Method::POST,
-                format!("/{}/:index", endpoint_name.0).as_str(),
+                format!("/single-header-param/{}/:index", endpoint_name.0).as_str(),
                 SpecTestResource::create_param_test(
                     endpoint_name,
                     |req| match req.headers().get::<String>("Some-Header".into()).map(|hv| {
@@ -383,28 +385,30 @@ impl OrErr<(), Error> for bool {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use conjure::ir;
-    use conjure::resolved_type::FieldDefinition;
-    use conjure::resolved_type::ObjectDefinition;
-    use conjure::resolved_type::OptionalType;
-    use conjure::resolved_type::ResolvedType;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
     use hyper::header::HeaderValue;
     use hyper::HeaderMap;
     use hyper::Method;
     use mime::APPLICATION_JSON;
+    use typed_headers::{ContentType, HeaderMapExt};
+
+    use conjure::ir;
+    use conjure::resolved_type::builders::*;
+    use conjure::resolved_type::OptionalType;
+    use conjure::resolved_type::ResolvedType;
     use register_resource;
     use resolved_test_cases;
     use router;
     use router::RouteResult;
     use router::Router;
-    use std::collections::HashMap;
-    use std::sync::Arc;
     use test_spec::ClientTestCases;
     use test_spec::{EndpointName, PositiveAndNegativeTestCases};
-    use typed_headers::{ContentType, HeaderMapExt};
 
-    type ParamTypes = HashMap<EndpointName, ResolvedType>;
+    use super::*;
+    use conjure_verification_common::type_mapping::builder::*;
+    use conjure_verification_common::type_mapping::TestType;
 
     /// This exists because `Request` takes references only so it can't be used as a builder.
     #[derive(Clone, Default)]
@@ -437,19 +441,23 @@ mod test {
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("string"),
                 ResolvedType::Primitive(ir::PrimitiveType::String),
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("int"),
                 ResolvedType::Primitive(ir::PrimitiveType::Integer),
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("bool"),
                 ResolvedType::Primitive(ir::PrimitiveType::Boolean),
             );
-            types.insert(
+            types.add(
+                TestType::SingleHeaderParam,
                 EndpointName::new("opt"),
                 ResolvedType::Optional(OptionalType {
                     item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
@@ -457,16 +465,40 @@ mod test {
             );
         });
         let header_name: &'static str = "Some-Header";
-        send_request(&router, Method::POST, "/string/0", 0, |req| {
-            req.headers.insert(header_name, "yo".parse().unwrap());
-        }).unwrap();
-        send_request(&router, Method::POST, "/int/0", 0, |req| {
-            req.headers.insert(header_name, "-1234".parse().unwrap());
-        }).unwrap();
-        send_request(&router, Method::POST, "/bool/0", 0, |req| {
-            req.headers.insert(header_name, "false".parse().unwrap());
-        }).unwrap();
-        send_request(&router, Method::POST, "/opt/0", 0, |_| {}).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/string/0",
+            0,
+            |req| {
+                req.headers.insert(header_name, "yo".parse().unwrap());
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/int/0",
+            0,
+            |req| {
+                req.headers.insert(header_name, "-1234".parse().unwrap());
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/bool/0",
+            0,
+            |req| {
+                req.headers.insert(header_name, "false".parse().unwrap());
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-header-param/opt/0",
+            0,
+            |_| {},
+        ).unwrap();
     }
 
     #[test]
@@ -478,42 +510,70 @@ mod test {
                 EndpointName::new("bool") => vec!["false".into()],
                 EndpointName::new("opt") => vec!["null".into()]
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("string"),
                 ResolvedType::Primitive(ir::PrimitiveType::String),
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("int"),
                 ResolvedType::Primitive(ir::PrimitiveType::Integer),
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("bool"),
                 ResolvedType::Primitive(ir::PrimitiveType::Boolean),
             );
-            types.insert(
+            types.add(
+                TestType::SingleQueryParam,
                 EndpointName::new("opt"),
                 ResolvedType::Optional(OptionalType {
                     item_type: ResolvedType::Primitive(ir::PrimitiveType::Any).into(),
                 }),
             );
         });
-        send_request(&router, Method::POST, "/string/0", 0, |req| {
-            req.query_params.insert("foo".into(), vec!["yo".into()]);
-        }).unwrap();
-        send_request(&router, Method::POST, "/int/0", 0, |req| {
-            req.query_params.insert("foo".into(), vec!["-1234".into()]);
-        }).unwrap();
-        send_request(&router, Method::POST, "/bool/0", 0, |req| {
-            req.query_params.insert("foo".into(), vec!["false".into()]);
-        }).unwrap();
-        send_request(&router, Method::POST, "/opt/0", 0, |_| {}).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/string/0",
+            0,
+            |req| {
+                req.query_params.insert("foo".into(), vec!["yo".into()]);
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/int/0",
+            0,
+            |req| {
+                req.query_params.insert("foo".into(), vec!["-1234".into()]);
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/bool/0",
+            0,
+            |req| {
+                req.query_params.insert("foo".into(), vec!["false".into()]);
+            },
+        ).unwrap();
+        send_request(
+            &router,
+            Method::POST,
+            "/single-query-param/opt/0",
+            0,
+            |_| {},
+        ).unwrap();
     }
 
     #[test]
     fn test_validation_error() {
         let (_, router, _) = setup_simple_auto_positive();
 
-        match send_request(&router, Method::GET, "/foo/0", 0, |req| {
+        match send_request(&router, Method::GET, "/body/foo/0", 0, |req| {
             req.body = "bad body".into();
         }) {
             Err(err) => assert_eq!(err.name(), "ConjureVerification:UnexpectedBody"),
@@ -566,27 +626,21 @@ mod test {
                 .insert("index".into(), index.to_string());
             builder.with_request(|req| endpoint.handler.handle(req))
         } else {
-            panic!("Failed to route!")
-        }
-    }
-
-    fn field_definition(field_name: &str, type_: ResolvedType) -> FieldDefinition {
-        FieldDefinition {
-            field_name: field_name.into(),
-            type_,
+            panic!("Failed to route: {}", path)
         }
     }
 
     /// Sets up a router handling the desired client test cases.
     fn setup_routes<F>(f: F) -> Router
     where
-        F: FnOnce(&mut ClientTestCases, &mut ParamTypes),
+        F: FnOnce(&mut ClientTestCases, &mut ParamTypesBuilder),
     {
         let mut test_cases = ClientTestCases::default();
-        let mut param_types = HashMap::default();
-        f(&mut test_cases, &mut param_types);
+        let mut param_types_builder = ParamTypesBuilder::default();
+        f(&mut test_cases, &mut param_types_builder);
         let resolved_test_cases =
-            resolved_test_cases::resolve_test_cases(&param_types, &test_cases).unwrap();
+            resolved_test_cases::resolve_test_cases(&param_types_builder.build(), &test_cases)
+                .unwrap();
         let (router, _) = create_resource(resolved_test_cases);
         router
     }
@@ -600,19 +654,20 @@ mod test {
                 negative: vec![],
             }
         );
-        let param_types: HashMap<EndpointName, ResolvedType> = hashmap![
-            EndpointName::new("foo") => ResolvedType::Object(ObjectDefinition {
-                type_name: ir::TypeName { name: "Name".to_string(), package: "com.palantir.package".to_string() },
-                fields: vec![
-                    field_definition(
-                        "heyo",
-                        ResolvedType::Primitive(ir::PrimitiveType::Integer)
-                    )
-                ]
-            })
-        ];
+        let mut param_types = ParamTypesBuilder::default();
+        param_types.add(
+            TestType::Body,
+            EndpointName::new("foo"),
+            object_definition(
+                "Name",
+                &[field_definition(
+                    "heyo",
+                    ResolvedType::Primitive(ir::PrimitiveType::Integer),
+                )],
+            ),
+        );
         let resolved_test_cases =
-            resolved_test_cases::resolve_test_cases(&param_types, &test_cases).unwrap();
+            resolved_test_cases::resolve_test_cases(&param_types.build(), &test_cases).unwrap();
         let (router, resource) = create_resource(resolved_test_cases);
         (expected_body, router, resource)
     }
