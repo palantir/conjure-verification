@@ -8,6 +8,8 @@ dependencies {
     compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
     compile 'com.google.guava:guava'
     compile project("${project.name}-objects")
+
+    runtimeOnly 'org.slf4j:slf4j-simple'
 }
 
 task generateClientServices(type: JavaExec) {

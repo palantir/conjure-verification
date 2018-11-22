@@ -9,7 +9,8 @@ dependencies {
     compile project("${project.name}-objects")
     compile project(':test-cases-internal')
     compile project(':test-cases-internal:test-cases-internal-objects')
-}
+    
+    runtimeOnly 'org.slf4j:slf4j-simple'}
 
 // Ensure we generate definitions first before conjure tries to compile them
 tasks.copyConjureSourcesIntoBuild {
