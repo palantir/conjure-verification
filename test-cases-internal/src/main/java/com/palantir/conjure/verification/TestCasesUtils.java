@@ -24,6 +24,7 @@ import com.palantir.conjure.parser.types.ConjureType;
 import com.palantir.parsec.ParseException;
 import java.io.File;
 import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
 
 public final class TestCasesUtils {
     public static final ObjectMapper YAML_MAPPER = ObjectMappers
@@ -44,5 +45,9 @@ public final class TestCasesUtils {
             throw new RuntimeException("Failed to parse conjure type: " + typeRepr.get(), e);
         }
         return conjureType;
+    }
+
+    public static String typeToEndpointName(String prefix, ConjureType type) {
+        return prefix + StringUtils.capitalize(type.visit(new EndpointNameConjureTypeVisitor()));
     }
 }

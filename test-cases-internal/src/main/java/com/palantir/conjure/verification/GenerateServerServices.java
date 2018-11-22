@@ -64,7 +64,7 @@ public final class GenerateServerServices {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
         bodyTests.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
-            String endpointName = ServerTestCasesUtils.typeToEndpointName(conjureType);
+            String endpointName = TestCasesUtils.typeToEndpointName("get", conjureType);
             String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
             endpoints.put(endpointName, ImmutableMap.of(
                     "http", "GET /" + endpointName + "/{index}",
@@ -88,7 +88,7 @@ public final class GenerateServerServices {
                 .map(SingleHeaderParamTests::getType)
                 .map(TestCasesUtils::parseConjureType)
                 .forEach(conjureType -> {
-                    String endpointName = ServerTestCasesUtils.typeToEndpointName(conjureType);
+                    String endpointName = TestCasesUtils.typeToEndpointName("headerParam", conjureType);
                     String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
                     endpoints.put(endpointName, ImmutableMap.of(
                             "http", "POST /" + endpointName + "/{index}",
@@ -116,7 +116,7 @@ public final class GenerateServerServices {
                 .map(SinglePathParamTests::getType)
                 .map(TestCasesUtils::parseConjureType)
                 .forEach(conjureType -> {
-                    String endpointName = ServerTestCasesUtils.typeToEndpointName(conjureType);
+                    String endpointName = TestCasesUtils.typeToEndpointName("pathParam", conjureType);
                     String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
                     endpoints.put(endpointName, ImmutableMap.of(
                             "http", "POST /" + endpointName + "/{index}/{param}",
@@ -136,12 +136,11 @@ public final class GenerateServerServices {
     private static Map<String, Object> generateSingleQueryParamService(List<SingleQueryParamTests> testCases) {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
-        testCases
-                .stream()
+        testCases.stream()
                 .map(SingleQueryParamTests::getType)
                 .map(TestCasesUtils::parseConjureType)
                 .forEach(conjureType -> {
-                    String endpointName = ServerTestCasesUtils.typeToEndpointName(conjureType);
+                    String endpointName = TestCasesUtils.typeToEndpointName("queryParam", conjureType);
                     String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
                     endpoints.put(endpointName, ImmutableMap.of(
                             "http", "POST /" + endpointName + "/{index}",

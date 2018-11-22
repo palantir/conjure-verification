@@ -19,7 +19,6 @@ import com.palantir.conjure.spec.ServiceDefinition;
 import com.palantir.conjure.verification.BodyTests;
 import com.palantir.conjure.verification.ConjureTypeString;
 import com.palantir.conjure.verification.MasterTestCases;
-import com.palantir.conjure.verification.ServerTestCasesUtils;
 import com.palantir.conjure.verification.SingleHeaderParamTests;
 import com.palantir.conjure.verification.SinglePathParamTests;
 import com.palantir.conjure.verification.SingleQueryParamTests;

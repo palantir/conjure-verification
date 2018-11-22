@@ -56,7 +56,7 @@ public final class GenerateClientServices {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
         bodyTests.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
-            String endpointName = ClientTestCasesUtils.typeToEndpointName(conjureType);
+            String endpointName = TestCasesUtils.typeToEndpointName("get", conjureType);
             String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
             endpoints.put(endpointName, ImmutableMap.of(
                     "http", "POST /" + endpointName,
