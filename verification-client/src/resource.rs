@@ -105,7 +105,7 @@ impl VerificationClientResource {
         let endpoint = &client_request.endpoint_name;
 
         let client = VerificationClientResource::construct_client(&client_request.base_url)?;
-        let mut builder = client.post("/:endpoint");
+        let mut builder = client.post("/body/:endpoint");
         builder.param("endpoint", &endpoint.0);
         builder.headers_mut().insert(
             ACCEPT,
