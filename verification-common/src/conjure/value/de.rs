@@ -27,7 +27,6 @@ use conjure::ir::EnumDefinition;
 use conjure::ir::PrimitiveType;
 use conjure::resolved_type::ResolvedType::*;
 use conjure::resolved_type::*;
-use conjure::value::util::unknown_variant;
 use conjure::value::visitors::map::ConjureMapVisitor;
 use conjure::value::visitors::object::ConjureObjectVisitor;
 use conjure::value::visitors::option::ConjureOptionVisitor;
@@ -372,6 +371,7 @@ mod test {
             ConjureValue::Union(ConjureUnionValue {
                 field_name: "foo".into(),
                 value: ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)).into(),
+                known: true,
             })
         );
 
@@ -382,6 +382,7 @@ mod test {
             ConjureValue::Union(ConjureUnionValue {
                 field_name: "foo".into(),
                 value: ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)).into(),
+                known: true,
             })
         );
 
@@ -392,6 +393,7 @@ mod test {
             ConjureValue::Union(ConjureUnionValue {
                 field_name: "bar".into(),
                 value: ConjureValue::Optional(None).into(),
+                known: true,
             })
         );
 

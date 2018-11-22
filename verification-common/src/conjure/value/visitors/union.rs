@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use conjure::ir::PrimitiveType;
+use conjure::resolved_type::builders::*;
 use conjure::resolved_type::FieldDefinition;
 use conjure::resolved_type::UnionDefinition;
-use conjure::value::util::unknown_variant;
 use conjure::value::*;
 use serde::de::DeserializeSeed;
 use serde::de::Error;
@@ -43,39 +44,23 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
                 let variant: String = items.next_value()?;
                 let key = items.next_key_seed(self.0)?;
                 match key {
-                    Some(UnionField::Data(FieldDefinition { field_name, type_ })) => {
-                        if *field_name != variant {
-                            return Err(Error::invalid_value(
-                                Unexpected::Str(&field_name),
-                                &variant.as_ref(),
-                            ));
-                        }
-                        Ok(ConjureUnionValue {
-                            field_name: variant,
-                            value: items.next_value_seed(type_)?.into(),
-                        })
+                    Some(UnionField::Data(ref union_variant)) => {
+                        fail_if_mismatching_variant(&variant, union_variant)?;
+                        build_union_value(&mut items, union_variant)
                     }
                     Some(UnionField::Type) | None => {
                         Err(Error::custom(format_args!("missing field `{}`", variant)))
                     }
                 }
             }
-            Some(UnionField::Data(FieldDefinition { field_name, type_ })) => {
-                let value = items.next_value_seed(type_)?.into();
+            Some(UnionField::Data(ref union_variant)) => {
+                let result = build_union_value(&mut items, union_variant);
                 if items.next_key::<UnionTypeField>()?.is_none() {
                     return Err(Error::missing_field("type"));
                 }
                 let variant: String = items.next_value()?;
-                if *field_name != variant {
-                    return Err(Error::invalid_value(
-                        Unexpected::Str(&variant),
-                        &field_name.as_ref(),
-                    ));
-                }
-                Ok(ConjureUnionValue {
-                    field_name: variant,
-                    value,
-                })
+                fail_if_mismatching_variant(&variant, union_variant)?;
+                result
             }
             None => Err(Error::missing_field("type")),
         }
@@ -84,7 +69,21 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
 
 pub enum UnionField<'a> {
     Type,
-    Data(&'a FieldDefinition),
+    Data(UnionVariant<'a>),
+}
+
+pub enum UnionVariant<'a> {
+    Real(&'a FieldDefinition),
+    Unknown(String),
+}
+
+impl<'a> UnionVariant<'a> {
+    pub fn field_name(&self) -> &str {
+        match self {
+            UnionVariant::Real(FieldDefinition { field_name, .. }) => field_name.as_str(),
+            UnionVariant::Unknown(field_name) => field_name.as_str(),
+        }
+    }
 }
 
 impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition {
@@ -107,23 +106,57 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition {
             where
                 E: Error,
             {
-                match value {
-                    "type" => Ok(UnionField::Type),
-                    _ => Ok(UnionField::Data(
+                Ok(match value {
+                    "type" => UnionField::Type,
+                    _ => UnionField::Data(
                         self.0
                             .iter()
                             .find(|fd| fd.field_name == value)
-                            .ok_or_else(|| {
-                                unknown_variant(
-                                    value,
-                                    self.0.iter().map(|fd| fd.field_name.as_str()).collect(),
-                                )
-                            })?,
-                    )),
-                }
+                            .map(UnionVariant::Real)
+                            .unwrap_or_else(|| UnionVariant::Unknown(value.to_string())),
+                    ),
+                })
             }
         }
 
         deserializer.deserialize_str(UnionFieldVisitor(&self.union))
     }
+}
+
+/// The `items` must be in the position to deserialize the union value.
+fn build_union_value<'de: 'a, 'a, A>(
+    items: &mut A,
+    union_variant: &UnionVariant,
+) -> Result<ConjureUnionValue, A::Error>
+where
+    A: MapAccess<'de>,
+{
+    Ok(match union_variant {
+        UnionVariant::Real(FieldDefinition { type_, field_name }) => ConjureUnionValue {
+            field_name: field_name.clone(),
+            value: items.next_value_seed(type_)?.into(),
+            known: true,
+        },
+        UnionVariant::Unknown(field_name) => ConjureUnionValue {
+            field_name: field_name.clone(),
+            // deserialize it as 'any'
+            value: items
+                .next_value_seed(&primitive_type(PrimitiveType::Any))?
+                .into(),
+            known: false,
+        },
+    })
+}
+
+fn fail_if_mismatching_variant<E>(variant: &str, union_variant: &UnionVariant) -> Result<(), E>
+where
+    E: Error,
+{
+    if union_variant.field_name() != variant {
+        return Err(Error::invalid_value(
+            Unexpected::Str(union_variant.field_name()),
+            &variant.as_ref(),
+        ));
+    }
+    Ok(())
 }

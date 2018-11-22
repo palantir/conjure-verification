@@ -31,7 +31,6 @@ use uuid::Uuid;
 pub mod de;
 pub mod de_plain;
 pub mod double;
-mod util;
 mod visitors;
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
@@ -79,10 +78,11 @@ pub enum EnumValue {
     Unknown(String),
 }
 
-#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord, new)]
 pub struct ConjureUnionValue {
     pub field_name: String,
     pub value: Box<ConjureValue>,
+    pub known: bool,
 }
 
 /// Deserialized only from a base-64 encoded string.
