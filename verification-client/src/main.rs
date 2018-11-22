@@ -124,7 +124,7 @@ fn main() {
 
     let resource = Arc::new(VerificationClientResource::new(
         test_cases.server.into(),
-        type_mapping::resolve_types(&ir, &services_mapping),
+        type_mapping::resolve_types(&ir, &services_mapping).into(),
     ));
     let mut builder = router::Router::builder();
     {

@@ -141,7 +141,7 @@ pub fn resolve_test_cases(
 
     let type_mapping = type_mapping::resolve_types(ir, &services_mapping);
 
-    resolved_test_cases::resolve_test_cases(type_mapping.as_ref(), client_test_cases)
+    resolved_test_cases::resolve_test_cases(&type_mapping, client_test_cases)
 }
 
 fn start_server(router: Router, port: u16) {

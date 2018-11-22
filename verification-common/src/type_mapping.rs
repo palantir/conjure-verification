@@ -54,9 +54,9 @@ pub type ParamTypes = HashMap<TestType, HashMap<EndpointName, ResolvedType>>;
 pub fn resolve_types<'a, 'b>(
     ir: &'a Conjure,
     type_by_service: &'a [ServiceTypeMapping<'b>],
-) -> Box<ParamTypes> {
+) -> ParamTypes {
     // Resolve endpoint -> type mappings eagerly
-    let mut param_types = Box::new(HashMap::new());
+    let mut param_types = HashMap::new();
     type_by_service.iter().for_each(
         |ServiceTypeMapping {
              test_type,
