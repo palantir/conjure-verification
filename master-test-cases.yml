@@ -666,7 +666,6 @@ body:
   - type: MapEnumExampleAlias
     positive:
         - '{"ONE": "", "TWO": ""}'
-    negative:
         - '{"ONE": "", "TWO": "", "BAD VARIANT": ""}'
 
 singleHeaderParam:

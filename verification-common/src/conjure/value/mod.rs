@@ -31,7 +31,6 @@ use uuid::Uuid;
 pub mod de;
 pub mod de_plain;
 pub mod double;
-mod util;
 mod visitors;
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
@@ -65,7 +64,7 @@ pub enum ConjureValue {
     // complex
     Optional(Option<Box<ConjureValue>>),
     Object(BTreeMap<String, ConjureValue>),
-    Enum(String),
+    Enum(EnumValue),
     Union(ConjureUnionValue),
     // anonymous
     List(Vec<ConjureValue>),
@@ -74,9 +73,21 @@ pub enum ConjureValue {
 }
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
+pub enum EnumValue {
+    Known(String),
+    Unknown(String),
+}
+
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord, new)]
 pub struct ConjureUnionValue {
-    pub field_name: String,
+    pub variant: UnionVariant,
     pub value: Box<ConjureValue>,
+}
+
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord, new)]
+pub enum UnionVariant {
+    Known(String),
+    Unknown(String),
 }
 
 /// Deserialized only from a base-64 encoded string.
