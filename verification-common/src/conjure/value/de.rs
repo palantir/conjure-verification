@@ -91,15 +91,10 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a EnumDefinition {
         D: Deserializer<'de>,
     {
         let ident = String::deserialize(de)?;
-        Ok(if self
-            .values
-            .iter()
-            .find(|&x| x.value == ident.as_str())
-            .is_none()
-        {
-            EnumValue::Unknown(ident)
-        } else {
+        Ok(if self.values.iter().any(|x| x.value == ident.as_str()) {
             EnumValue::Known(ident)
+        } else {
+            EnumValue::Unknown(ident)
         })
     }
 }
