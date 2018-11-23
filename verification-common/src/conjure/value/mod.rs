@@ -80,9 +80,14 @@ pub enum EnumValue {
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord, new)]
 pub struct ConjureUnionValue {
-    pub field_name: String,
+    pub field_name: UnionVariant,
     pub value: Box<ConjureValue>,
-    pub known: bool,
+}
+
+#[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord, new)]
+pub enum UnionVariant {
+    Known(String),
+    Unknown(String),
 }
 
 /// Deserialized only from a base-64 encoded string.

@@ -369,9 +369,8 @@ mod test {
                 .deserialize(&json!({ "type": "foo", "foo": 123 }))
                 .unwrap(),
             ConjureValue::Union(ConjureUnionValue {
-                field_name: "foo".into(),
+                field_name: UnionVariant::Known("foo".into()),
                 value: ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)).into(),
-                known: true,
             })
         );
 
@@ -380,9 +379,8 @@ mod test {
                 .deserialize(&json!({ "foo": 123, "type": "foo" }))
                 .unwrap(),
             ConjureValue::Union(ConjureUnionValue {
-                field_name: "foo".into(),
+                field_name: UnionVariant::Known("foo".into()),
                 value: ConjureValue::Primitive(ConjurePrimitiveValue::double(123.0)).into(),
-                known: true,
             })
         );
 
@@ -391,9 +389,8 @@ mod test {
                 .deserialize(&json!({ "type": "bar", "bar": null }))
                 .unwrap(),
             ConjureValue::Union(ConjureUnionValue {
-                field_name: "bar".into(),
+                field_name: UnionVariant::Known("bar".into()),
                 value: ConjureValue::Optional(None).into(),
-                known: true,
             })
         );
 

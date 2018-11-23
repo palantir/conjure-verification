@@ -69,19 +69,19 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureUnionVisitor<'a> {
 
 pub enum UnionField<'a> {
     Type,
-    Data(UnionVariant<'a>),
+    Data(UnionVariantInner<'a>),
 }
 
-pub enum UnionVariant<'a> {
+pub enum UnionVariantInner<'a> {
     Real(&'a FieldDefinition),
     Unknown(String),
 }
 
-impl<'a> UnionVariant<'a> {
+impl<'a> UnionVariantInner<'a> {
     pub fn field_name(&self) -> &str {
         match self {
-            UnionVariant::Real(FieldDefinition { field_name, .. }) => field_name.as_str(),
-            UnionVariant::Unknown(field_name) => field_name.as_str(),
+            UnionVariantInner::Real(FieldDefinition { field_name, .. }) => field_name.as_str(),
+            UnionVariantInner::Unknown(field_name) => field_name.as_str(),
         }
     }
 }
@@ -112,8 +112,8 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition {
                         self.0
                             .iter()
                             .find(|fd| fd.field_name == value)
-                            .map(UnionVariant::Real)
-                            .unwrap_or_else(|| UnionVariant::Unknown(value.to_string())),
+                            .map(UnionVariantInner::Real)
+                            .unwrap_or_else(|| UnionVariantInner::Unknown(value.to_string())),
                     ),
                 })
             }
@@ -126,29 +126,27 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a UnionDefinition {
 /// The `items` must be in the position to deserialize the union value.
 fn build_union_value<'de: 'a, 'a, A>(
     items: &mut A,
-    union_variant: &UnionVariant,
+    union_variant: &UnionVariantInner,
 ) -> Result<ConjureUnionValue, A::Error>
 where
     A: MapAccess<'de>,
 {
     Ok(match union_variant {
-        UnionVariant::Real(FieldDefinition { type_, field_name }) => ConjureUnionValue {
-            field_name: field_name.clone(),
+        UnionVariantInner::Real(FieldDefinition { type_, field_name }) => ConjureUnionValue {
+            field_name: UnionVariant::Known(field_name.clone()),
             value: items.next_value_seed(type_)?.into(),
-            known: true,
         },
-        UnionVariant::Unknown(field_name) => ConjureUnionValue {
-            field_name: field_name.clone(),
+        UnionVariantInner::Unknown(field_name) => ConjureUnionValue {
+            field_name: UnionVariant::Unknown(field_name.clone()),
             // deserialize it as 'any'
             value: items
                 .next_value_seed(&primitive_type(PrimitiveType::Any))?
                 .into(),
-            known: false,
         },
     })
 }
 
-fn fail_if_mismatching_variant<E>(variant: &str, union_variant: &UnionVariant) -> Result<(), E>
+fn fail_if_mismatching_variant<E>(variant: &str, union_variant: &UnionVariantInner) -> Result<(), E>
 where
     E: Error,
 {
