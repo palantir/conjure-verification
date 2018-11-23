@@ -74,7 +74,7 @@ pub enum ConjureValue {
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum EnumValue {
-    Defined(String),
+    Known(String),
     Unknown(String),
 }
 

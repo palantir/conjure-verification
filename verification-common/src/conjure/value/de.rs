@@ -99,7 +99,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a EnumDefinition {
         {
             EnumValue::Unknown(ident)
         } else {
-            EnumValue::Defined(ident)
+            EnumValue::Known(ident)
         })
     }
 }

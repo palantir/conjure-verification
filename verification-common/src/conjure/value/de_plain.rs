@@ -80,11 +80,11 @@ mod test {
         let enum_def = enum_definition("whatev", &["foo", "bar"]);
         assert_eq!(
             deserialize_plain(&enum_def, "foo").unwrap(),
-            ConjureValue::Enum(EnumValue::Defined("foo".into()))
+            ConjureValue::Enum(EnumValue::Known("foo".into()))
         );
         assert_eq!(
             deserialize_plain(&enum_def, "bar").unwrap(),
-            ConjureValue::Enum(EnumValue::Defined("bar".into()))
+            ConjureValue::Enum(EnumValue::Known("bar".into()))
         );
         assert_eq!(
             deserialize_plain(&enum_def, "baz").unwrap(),
