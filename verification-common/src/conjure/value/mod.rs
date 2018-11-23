@@ -80,7 +80,7 @@ pub enum EnumValue {
 
 #[derive(ConjureSerialize, Debug, PartialEq, PartialOrd, Eq, Ord, new)]
 pub struct ConjureUnionValue {
-    pub field_name: UnionVariant,
+    pub variant: UnionVariant,
     pub value: Box<ConjureValue>,
 }
 

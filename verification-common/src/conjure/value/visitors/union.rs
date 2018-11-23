@@ -133,11 +133,11 @@ where
 {
     Ok(match union_variant {
         UnionVariantInner::Real(FieldDefinition { type_, field_name }) => ConjureUnionValue {
-            field_name: UnionVariant::Known(field_name.clone()),
+            variant: UnionVariant::Known(field_name.clone()),
             value: items.next_value_seed(type_)?.into(),
         },
         UnionVariantInner::Unknown(field_name) => ConjureUnionValue {
-            field_name: UnionVariant::Unknown(field_name.clone()),
+            variant: UnionVariant::Unknown(field_name.clone()),
             // deserialize it as 'any'
             value: items
                 .next_value_seed(&primitive_type(PrimitiveType::Any))?
