@@ -18,9 +18,6 @@ body:
       - '{"value":"("}'
       - '{"value":"="}'
       - '{"value":"=a"}'
-    # type: BinaryExample
-    # negative:
-    #   - '{"value":}'
   - type: BooleanExample
     positive:
         - '{"value":false}'
@@ -141,29 +138,23 @@ body:
         - '{"value":[]}'
         - '{"value":["","a","b","c","a"]}'
         - '{}'
-        # - '{"value":null}'
-        #   tag: "lenient"
+        - '{"value":null}'
     negative:
         - '{"value":{}}'
-        # - '{"value":null}'
-        #   tag: "!lenient"
   - type: SetStringExample
     positive:
         - '{"value":[]}'
         - '{"value":["","a","b","c"]}'
         - '{}'
-        # - '{"value":null}'
-        #   tag: "lenient"
+        - '{"value":null}'
     negative:
-        # - '{"value":null}'
-        #   tag: "!lenient"
-        # TODO SPEC: behavior for an object declared as a "Set" that receives a list with multiple elements that are equal.
         - '{"value":["a","a"]}'
   - type: SetDoubleExample
     positive:
         - '{"value":[]}'
         - '{"value":[1.100, 1.2, 1.3]}'
         - '{}'
+        - '{"value":null}'
     negative:
         - '{"value":[1.1, 1.10, 01.100]}'
   - type: MapExample
@@ -171,13 +162,11 @@ body:
         - '{"value":{"key":"value","key2":"value2"}}'
         - '{}'
         - '{"value":{}}'
-        # - '{"value":null}'
-        #   tag: "lenient"
+        - '{"value":null}'
     negative:
         - '{"value":{"key":[1,2,3]}}'
         - '{"value":"not a map"}'
-        # - '{"value":null}'
-        #   tag: "!lenient"
+        - '{"value":null}'
   - type: OptionalExample
     positive:
         - '{}'
