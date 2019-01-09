@@ -22,7 +22,7 @@ That will generate a file `/verification-server-api/build/test-cases.json`, whic
 Service definitions are generated into `/verification-server-api/src/main/conjure/generated` by running
 
 ```bash
-./gradlew generateConjureDefinitions
+./gradlew generate
 ```
 
 ### Prerequisites

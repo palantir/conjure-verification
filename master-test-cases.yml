@@ -1,3 +1,9 @@
+###
+# master-test-cases.yml contains sample strings which should either deserialize successfully or fail to
+# deserialize into Conjure types specified in the examples-types.conjure.yml file.
+# Run `./gradlew generate` to programmatically create corresponding Conjure YML for services.
+###
+
 body:
   # primitives
   - type: BearerTokenExample
@@ -134,6 +140,26 @@ body:
     negative:
         - '{"value":null}'
 
+  # named types
+  - type: EnumExample
+    positive:
+        - '"ONE"'
+        - '"one"'
+        - '"TWO"'
+        - '"two"'
+        - '"ONE_HUNDRED"'
+        - '"one_hundred"'
+        - '"THIS_IS_UNKNOWN"'
+    negative:
+        - ''
+        - '[]'
+        - '{}'
+        - '0'
+        - '"!!!"'
+        - '"one-hundred"'
+        - 'UNQUOTED'
+        - 'ONE'
+        - 'one-hundred'
 
     # collections
   - type: ListExample
@@ -716,6 +742,12 @@ singleHeaderParam:
   positive:
     - '""'
     - '"hello"'
+- type: EnumExample
+  positive:
+    - '"ONE"'
+    - '"TWO"'
+    - '"ONE_HUNDRED"'
+    - '"UNKNOWN_VARIANT"'
 
 singlePathParam:
 - type: boolean
@@ -758,6 +790,12 @@ singlePathParam:
   positive:
     - '""'
     - '"hello"'
+- type: EnumExample
+  positive:
+    - '"ONE"'
+    - '"TWO"'
+    - '"ONE_HUNDRED"'
+    - '"UNKNOWN_VARIANT"'
 
 singleQueryParam:
 - type: boolean
@@ -804,3 +842,9 @@ singleQueryParam:
   positive:
     - '""'
     - '"hello"'
+- type: EnumExample
+  positive:
+    - '"ONE"'
+    - '"TWO"'
+    - '"ONE_HUNDRED"'
+    - '"UNKNOWN_VARIANT"'

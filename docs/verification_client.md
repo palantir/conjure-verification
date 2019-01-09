@@ -58,7 +58,7 @@ Note: For negative [Body tests][], the index should be set to (number of positiv
 Service definitions are generated into `/verification-client-api/src/main/conjure/generated` by running
 
 ```bash
-./gradlew generateConjureDefinitions
+./gradlew generate
 ```
 
 #### Body tests
