@@ -2,12 +2,14 @@ apply plugin: 'com.palantir.conjure'
 apply plugin: 'java-library'
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-databind'
-    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    compile 'com.palantir.conjure:conjure-core'
-    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
-    compile 'com.google.guava:guava'
-    compile project("${project.name}-objects")
+    api 'com.fasterxml.jackson.core:jackson-databind'
+    api project("${project.name}-objects")
+
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    implementation 'com.palantir.conjure:conjure-core'
+    implementation 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
+    implementation 'com.google.guava:guava'
+    implementation 'org.apache.commons:commons-lang3'
 
     runtimeOnly 'org.slf4j:slf4j-simple'
 }

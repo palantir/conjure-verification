@@ -7,4 +7,3 @@ include 'verification-client-api:verification-client-api-objects'
 include 'test-cases-internal'
 include 'test-cases-internal:test-cases-internal-objects'
 
-enableFeaturePreview('STABLE_PUBLISHING')
