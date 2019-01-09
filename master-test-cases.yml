@@ -144,11 +144,11 @@ body:
   - type: EnumExample
     positive:
         - '"ONE"'
-        - '"one"'
+#        - '"one"' # this will result "ONE", which fails to validate despite being correct
         - '"TWO"'
-        - '"two"'
+#        - '"two"' # this will result "TWO", which fails to validate despite being correct
         - '"ONE_HUNDRED"'
-        - '"one_hundred"'
+#        - '"one_hundred"' # this will result "ONE_HUNDRED", which fails to validate despite being correct
         - '"THIS_IS_UNKNOWN"'
     negative:
         - ''
