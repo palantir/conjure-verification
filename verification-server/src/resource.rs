@@ -217,10 +217,7 @@ impl SpecTestResource {
                 .typed_get::<ContentType>()
                 .map(|o| o.map(|ct| ct.0))
                 .map_err(|e| Error::new_safe(e, Code::InvalidArgument))?;
-            if mime_opt
-                .filter(|mime| SerializableFormat::Json.matches(&mime))
-                .is_none()
-            {
+            if mime_opt.map(|mime| SerializableFormat::Json.matches(&mime)) == Some(false) {
                 return Err(Error::new_safe(
                     "unsupported content type",
                     ConjureVerificationError::UnsupportedContentType,
