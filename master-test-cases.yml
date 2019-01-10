@@ -141,14 +141,12 @@ body:
         - '{"value":null}'
 
   # named types
+  # TODO(dfox): add more positive/negative cases when https://github.com/palantir/conjure/issues/193 is resolved 
   - type: EnumExample
     positive:
         - '"ONE"'
-#        - '"one"' # this will result "ONE", which fails to validate despite being correct
         - '"TWO"'
-#        - '"two"' # this will result "TWO", which fails to validate despite being correct
         - '"ONE_HUNDRED"'
-#        - '"one_hundred"' # this will result "ONE_HUNDRED", which fails to validate despite being correct
         - '"THIS_IS_UNKNOWN"'
     negative:
         - ''
