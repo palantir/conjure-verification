@@ -206,6 +206,10 @@ impl SpecTestResource {
         let expected_body_str = resolved_test_case.text.to_string();
         let expected_body: &ConjureValue = &resolved_test_case.value;
 
+        // TODO(dsanduleac): we don't currently handle binary (streaming) requests, we should have
+        // a dedicated deserializer for conjure::Value from Request, which knows when to read the
+        // raw_body() and when to deserialize it to JSON.
+
         // Special handling for when body is empty - allow no content type (or otherwise expect JSON).
         let request_body_value: serde_json::Value = if let Some(ContentLength(0)) = request
             .headers()
