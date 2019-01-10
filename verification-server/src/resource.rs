@@ -27,12 +27,15 @@ use conjure::value::*;
 use conjure_verification_common::conjure::value::de_plain::deserialize_plain;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
+use conjure_verification_http::error::ConjureVerificationError;
+use conjure_verification_http::request::Format;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
+use conjure_verification_http::SerializableFormat;
 use conjure_verification_http_server::RouteWithOptions;
 use errors::*;
 use raw_json::RawJson;
@@ -41,6 +44,7 @@ use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
 use resolved_test_cases::ResolvedTestCase;
 use resolved_test_cases::ResolvedTestCases;
 use test_spec::EndpointName;
+use typed_headers::{ContentLength, ContentType, HeaderMapExt};
 use DynamicResource;
 
 pub struct SpecTestResource {
@@ -201,7 +205,32 @@ impl SpecTestResource {
         })?;
         let expected_body_str = resolved_test_case.text.to_string();
         let expected_body: &ConjureValue = &resolved_test_case.value;
-        let request_body_value: serde_json::Value = request.body()?;
+
+        // TODO(dsanduleac): we don't currently handle binary (streaming) requests, we should have
+        // a dedicated deserializer for conjure::Value from Request, which knows when to read the
+        // raw_body() and when to deserialize it to JSON.
+
+        // Special handling for when body is empty - allow no content type (or otherwise expect JSON).
+        let request_body_value: serde_json::Value = if let Some(ContentLength(0)) = request
+            .headers()
+            .typed_get::<ContentLength>()
+            .map_err(Error::internal_safe)?
+        {
+            let mime_opt = request
+                .headers()
+                .typed_get::<ContentType>()
+                .map(|o| o.map(|ct| ct.0))
+                .map_err(|e| Error::new_safe(e, Code::InvalidArgument))?;
+            if mime_opt.map(|mime| SerializableFormat::Json.matches(&mime)) == Some(false) {
+                return Err(Error::new_safe(
+                    "unsupported content type",
+                    ConjureVerificationError::UnsupportedContentType,
+                ));
+            };
+            serde_json::Value::Null
+        } else {
+            request.body()?
+        };
         let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {
             let error_message = format!("{}", e);
             Error::new_safe(
