@@ -780,6 +780,10 @@ singlePathParam:
   positive:
     - '""'
     - '"hello"'
+    - '"+"'
+    - '"encoded/slash"'
+    - '".."'
+    - '"%2F"'
 - type: uuid
   positive:
     - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
@@ -828,6 +832,10 @@ singleQueryParam:
   positive:
     - '""'
     - '"hello"'
+    - '"+"'
+    - '"encoded/slash"'
+    - '".."'
+    - '"%2F"'
 - type: uuid
   positive:
     - '"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"' # UUID v1
