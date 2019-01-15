@@ -8,14 +8,7 @@ This project has two main components:
 
 ## Development
 
-- Install rustup via brew
-    ```
-    brew install rustup-init
-    ```
-- Initialize rustup
-    ```
-    rustup-init -y
-    ```
+- Install rustup using instructions on https://rustup.rs
 - Set up rustup to use the stable toolchain by default (note: nightly's cargofmt output will be different)
     ```
     rustup default stable
