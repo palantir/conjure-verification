@@ -10,7 +10,11 @@ This project has two main components:
 
 - Install rustup via brew
     ```
-    brew install rustup
+    brew install rustup-init
+    ```
+- Initialize rustup
+    ```
+    rustup-init -y
     ```
 - Set up rustup to use the stable toolchain by default (note: nightly's cargofmt output will be different)
     ```
