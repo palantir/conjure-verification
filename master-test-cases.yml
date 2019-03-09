@@ -553,9 +553,16 @@ body:
   - type: ListAnyAliasExample
     positive:
         - '[]'
-        - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+        - '[0, "content", true, [1,2,3], {"key":3}]'
     negative:
         - 'null'
+        - '[null]'
+  - type: ListOptionalAnyAliasExample
+    positive:
+      - '[]'
+      - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+    negative:
+      - 'null'
   - type: SetBearerTokenAliasExample
     positive:
         - '[]'
@@ -621,9 +628,16 @@ body:
   - type: SetAnyAliasExample
     positive:
         - '[]'
-        - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+        - '[0, "content", true, [1,2,3], {"key":3}]'
     negative:
         - 'null'
+        - '[null]'
+  - type: SetOptionalAnyAliasExample
+    positive:
+      - '[]'
+      - '[null, 0, "content", true, [1,2,3], {"key":3}]'
+    negative:
+      - 'null'
   - type: MapBearerTokenAliasExample
     positive:
         - '{}'
