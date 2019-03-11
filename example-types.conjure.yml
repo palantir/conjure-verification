@@ -118,6 +118,7 @@ types:
       ListStringAliasExample: { alias: list<string> }
       ListUuidAliasExample: { alias: list<uuid> }
       ListAnyAliasExample: { alias: list<any> }
+      ListOptionalAnyAliasExample: { alias: list<optional<any>> }
 
       SetBearerTokenAliasExample: { alias: set<bearertoken> }
       SetBinaryAliasExample: { alias: set<binary> }
@@ -130,6 +131,7 @@ types:
       SetStringAliasExample: { alias: set<string> }
       SetUuidAliasExample: { alias: set<uuid> }
       SetAnyAliasExample: { alias: set<any> }
+      SetOptionalAnyAliasExample: { alias: set<optional<any>> }
 
       MapBearerTokenAliasExample:
         alias: map<bearertoken, boolean>
