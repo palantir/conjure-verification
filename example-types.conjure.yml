@@ -23,9 +23,6 @@ types:
       SetStringExample:
         fields:
           value: set<string>
-      SetDoubleExample:
-        fields:
-          value: set<double>
       MapExample:
         fields:
           value: map<string, string>
@@ -124,7 +121,6 @@ types:
       SetBinaryAliasExample: { alias: set<binary> }
       SetBooleanAliasExample: { alias: set<boolean> }
       SetDateTimeAliasExample: { alias: set<datetime> }
-      SetDoubleAliasExample: { alias: set<double> }
       SetIntegerAliasExample: { alias: set<integer> }
       SetRidAliasExample: { alias: set<rid> }
       SetSafeLongAliasExample: { alias: set<safelong> }
@@ -141,8 +137,6 @@ types:
         alias: map<boolean, boolean>
       MapDateTimeAliasExample:
         alias: map<datetime, boolean>
-      MapDoubleAliasExample:
-        alias: map<double, boolean>
       MapIntegerAliasExample:
         alias: map<integer, boolean>
       MapRidAliasExample:

@@ -141,7 +141,7 @@ body:
         - '{"value":null}'
 
   # named types
-  # TODO(dfox): add more positive/negative cases when https://github.com/palantir/conjure/issues/193 is resolved 
+  # TODO(dfox): add more positive/negative cases when https://github.com/palantir/conjure/issues/193 is resolved
   - type: EnumExample
     positive:
         - '"ONE"'
@@ -183,13 +183,6 @@ body:
         #   tag: "!lenient"
         # TODO SPEC: behavior for an object declared as a "Set" that receives a list with multiple elements that are equal.
         - '{"value":["a","a"]}'
-  - type: SetDoubleExample
-    positive:
-        - '{"value":[]}'
-        - '{"value":[1.100, 1.2, 1.3]}'
-        - '{}'
-    negative:
-        - '{"value":[1.1, 1.10, 01.100]}'
   - type: MapExample
     positive:
         - '{"value":{"key":"value","key2":"value2"}}'
@@ -587,14 +580,6 @@ body:
         - '["2017-01-02T03:04:05Z"]'
     negative:
         - 'null'
-  - type: SetDoubleAliasExample
-    positive:
-        - '[]'
-        - '[100, 10.0, "NaN", "Infinity", "-Infinity"]'
-        # https://github.com/palantir/conjure-verification/issues/72
-        # - '[+0, -0]'
-    negative:
-        - 'null'
   - type: SetIntegerAliasExample
     positive:
         - '[]'
@@ -658,20 +643,6 @@ body:
         - '{}'
         - '{"2017-01-02T03:04:05Z": true}'
     negative: []
-  - type: MapDoubleAliasExample
-    positive:
-        - '{}'
-        - '{"10": true}'
-        - '{"10.0": true}'
-        - '{"3e+2": true}'
-        - '{"3e-2": true}'
-        - '{"NaN": true}'
-        - '{"Infinity": true}'
-        - '{"-Infinity": true}'
-        - '{"10": true, "3e2": true}'
-    negative:
-        - '{"10": true, "10e0": false}'
-        - '{"10": true, "10.0": false}'
   - type: MapIntegerAliasExample
     positive:
         - '{}'
