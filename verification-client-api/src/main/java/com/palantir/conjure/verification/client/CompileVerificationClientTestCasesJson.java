@@ -107,7 +107,6 @@ public final class CompileVerificationClientTestCasesJson {
             File outputFile,
             Set<EndpointName> testCases,
             ServiceDefinition serviceDefinition) {
-
         Set<String> fromTestCasesYml = testCases.stream().map(EndpointName::get).collect(toSet());
 
         Set<String> realApiDefinition = serviceDefinition.getEndpoints().stream()
