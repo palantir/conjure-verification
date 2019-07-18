@@ -7,7 +7,6 @@ package com.palantir.conjure.verification.server;
 import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
@@ -40,7 +39,7 @@ public final class CompileVerificationServerTestCasesJson {
 
     public static void main(String... args) throws IOException {
 
-        Preconditions.checkArgument(args.length == 2, "Usage: <master-test-cases.yml> <server-test-cases.json>");
+        com.palantir.logsafe.Preconditions.checkArgument(args.length == 2, "Usage: <master-test-cases.yml> <server-test-cases.json>");
         File file = new File(args[0]);
         File outputFile = new File(args[1]);
 
@@ -114,7 +113,6 @@ public final class CompileVerificationServerTestCasesJson {
 
     private static void checkNoLeftovers(
             File outputFile, Set<EndpointName> testCases, ServiceDefinition serviceDefinition) {
-
         Set<String> fromTestCasesYml = testCases.stream().map(EndpointName::get).collect(toSet());
 
         Set<String> realApiDefinition = serviceDefinition.getEndpoints().stream()

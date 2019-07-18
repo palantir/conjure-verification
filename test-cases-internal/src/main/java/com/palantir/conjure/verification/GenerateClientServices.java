@@ -4,7 +4,6 @@
 
 package com.palantir.conjure.verification;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
@@ -19,7 +18,7 @@ public final class GenerateClientServices {
     private GenerateClientServices() {}
 
     public static void main(String... args) throws IOException {
-        Preconditions.checkArgument(args.length == 2, "Usage: <master-test-cases.yml> <gitignored output dir>");
+        com.palantir.logsafe.Preconditions.checkArgument(args.length == 2, "Usage: <master-test-cases.yml> <gitignored output dir>");
         File file = new File(args[0]);
         File outputDir = new File(args[1]);
 
