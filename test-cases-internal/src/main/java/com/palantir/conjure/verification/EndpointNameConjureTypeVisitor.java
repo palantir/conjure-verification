@@ -35,7 +35,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<String> {
     @Override
-    public String visitAny(AnyType type) {
+    public String visitAny(AnyType _type) {
         return "any";
     }
 
@@ -77,12 +77,12 @@ public final class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<
     }
 
     @Override
-    public String visitBinary(BinaryType type) {
+    public String visitBinary(BinaryType _type) {
         return "binary";
     }
 
     @Override
-    public String visitDateTime(DateTimeType type) {
+    public String visitDateTime(DateTimeType _type) {
         return "datetime";
     }
 }
