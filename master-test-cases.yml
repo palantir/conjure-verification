@@ -408,13 +408,14 @@ body:
     negative:
         - '{}'
         - '[]'
-  - type: OptionalBinaryAliasExample
-    positive:
-        - 'null'
-        # TODO(dfox): binary alias?
-    negative:
-        - '{}'
-        - '[]'
+  # Can not accept this as a BODY argument due to NoOptionalBinaryBodyParamValidator
+  # - type: OptionalBinaryAliasExample
+  #   positive:
+  #       - 'null'
+  #       # TODO(dfox): binary alias?
+  #   negative:
+  #       - '{}'
+  #       - '[]'
   - type: OptionalBooleanAliasExample
     positive:
         - 'null'

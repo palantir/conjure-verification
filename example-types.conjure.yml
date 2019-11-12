@@ -96,7 +96,8 @@ types:
       BinaryAliasExample: { alias: binary }
 
       OptionalBearerTokenAliasExample: { alias: optional<bearertoken> }
-      OptionalBinaryAliasExample: { alias: optional<binary> }
+      # Can not accept this as a BODY argument due to NoOptionalBinaryBodyParamValidator
+      # OptionalBinaryAliasExample: { alias: optional<binary> }
       OptionalBooleanAliasExample: { alias: optional<boolean> }
       OptionalDateTimeAliasExample: { alias: optional<datetime> }
       OptionalDoubleAliasExample: { alias: optional<double> }
