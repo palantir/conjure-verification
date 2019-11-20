@@ -38,6 +38,7 @@ use conjure_verification_http::response::Response;
 use conjure_verification_http::SerializableFormat;
 use conjure_verification_http_server::RouteWithOptions;
 use errors::*;
+use fixed_streaming::StreamingResponse;
 use raw_json::RawJson;
 use resolved_test_cases::ResolvedClientTestCases;
 use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
@@ -149,6 +150,14 @@ impl SpecTestResource {
         Ok(())
     }
 
+    fn response_non_streaming(reply: &str, request: &Request) -> Result<Response> {
+        if reply == Bytes::from("null") {
+            return NoContent.into_response(request);
+        } else {
+            return RawJson { data: reply.into() }.into_response(request);
+        };
+    }
+
     /// Create an automated test
     fn create_test(
         endpoint: EndpointName,
@@ -165,17 +174,18 @@ impl SpecTestResource {
             validate(request)?;
 
             let cases = get_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
-            let reply: Bytes = get_test_case_at_index(cases, &index)?
-                .map_left(|case| case.0.text.as_str())
-                .map_right(|case| case.0)
-                .into_inner()
-                .into();
-
-            if reply == Bytes::from("null") {
-                NoContent.into_response(request)
-            } else {
-                RawJson { data: reply }.into_response(request)
-            }
+            return get_test_case_at_index(cases, &index)?
+                .map_left(|case| match case.0.value {
+                    ConjureValue::Primitive(ConjurePrimitiveValue::Binary(_)) => {
+                        StreamingResponse {
+                            data: case.0.text.as_str().into(),
+                        }
+                        .into_response(request)
+                    }
+                    _ => SpecTestResource::response_non_streaming(case.0.text.as_str(), request),
+                })
+                .map_right(|case| SpecTestResource::response_non_streaming(case.0, request))
+                .into_inner();
         }
     }
 
@@ -620,6 +630,16 @@ mod test {
         confirm_with(&router, expected_body.into(), None);
     }
 
+    #[test]
+    fn test_confirm_binary() {
+        let (expected_body, router, _) = setup_simple_auto_positive_binary();
+
+        // Test that confirmation responds with NOT_ACCEPTABLE for an incorrect body.
+        confirm_with(&router, "bad".into(), Some(Code::InvalidArgument));
+        // Test that confirmation works with the correct body.
+        confirm_with(&router, expected_body.into(), None);
+    }
+
     fn confirm_with(router: &Router, body: Vec<u8>, expected_error: Option<Code>) -> () {
         if let RouteResult::Matched { endpoint, .. } = router.route(&Method::POST, "/confirm/foo/0")
         {
@@ -672,6 +692,27 @@ mod test {
                 .unwrap();
         let (router, _) = create_resource(resolved_test_cases);
         router
+    }
+
+    fn setup_simple_auto_positive_binary() -> (&'static str, Router, Arc<SpecTestResource>) {
+        let expected_body = "\"YpbKYYSbQpCjvb754goTMpXaxVX/M2m2287jcpZ3vHI=\"";
+        let mut test_cases = ClientTestCases::default();
+        test_cases.auto_deserialize = hashmap!(
+            EndpointName::new("foo") => PositiveAndNegativeTestCases {
+                positive: vec![expected_body.to_string()],
+                negative: vec![],
+            }
+        );
+        let mut param_types = ParamTypesBuilder::default();
+        param_types.add(
+            TestType::Body,
+            EndpointName::new("foo"),
+            primitive_type(ir::PrimitiveType::Binary),
+        );
+        let resolved_test_cases =
+            resolved_test_cases::resolve_test_cases(&param_types.build(), &test_cases).unwrap();
+        let (router, resource) = create_resource(resolved_test_cases);
+        (expected_body, router, resource)
     }
 
     fn setup_simple_auto_positive() -> (&'static str, Router, Arc<SpecTestResource>) {

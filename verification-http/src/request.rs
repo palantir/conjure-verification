@@ -308,8 +308,9 @@ mod test {
         let query_params = HashMap::new();
         let path_params = HashMap::new();
 
+        let body_length = json.len() as u64 + 1;
         let mut request = Request::new(&path_params, &query_params, &headers, &mut json);
-        request.body_size_limit = json.len() as u64 + 1;
+        request.body_size_limit = body_length;
 
         let actual = request.body::<Vec<u32>>().unwrap();
         assert_eq!(body, actual);
@@ -327,8 +328,9 @@ mod test {
         let query_params = HashMap::new();
         let path_params = HashMap::new();
 
+        let body_length = json.len() as u64 - 1;
         let mut request = Request::new(&path_params, &query_params, &headers, &mut json);
-        request.body_size_limit = json.len() as u64 - 1;
+        request.body_size_limit = body_length;
 
         assert!(request.body::<Vec<u32>>().is_err());
     }
