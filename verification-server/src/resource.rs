@@ -179,12 +179,10 @@ impl SpecTestResource {
                     ConjureValue::Primitive(ConjurePrimitiveValue::Binary(_)) => {
                         StreamingResponse {
                             data: case.0.text.as_str().into(),
-                        }
-                        .into_response(request)
+                        }.into_response(request)
                     }
                     _ => SpecTestResource::response_non_streaming(case.0.text.as_str(), request),
-                })
-                .map_right(|case| SpecTestResource::response_non_streaming(case.0, request))
+                }).map_right(|case| SpecTestResource::response_non_streaming(case.0, request))
                 .into_inner();
         }
     }
