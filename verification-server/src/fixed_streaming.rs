@@ -34,11 +34,12 @@ impl WriteBody for StreamingResponse {
     fn write_body(&mut self, w: &mut dyn Write) -> Result<()> {
         return self
             .data
-            .chunks(4096)
+            .chunks(1024)
             .fold_while(Ok(()), |_res, chunk| {
                 thread::sleep(time::Duration::from_millis(10));
                 let chunk_res = w.write_all(chunk).map_err(|e| Error::internal(e));
                 return if chunk_res.is_ok() {
+                    w.flush();
                     Continue(chunk_res)
                 } else {
                     Done(chunk_res)
