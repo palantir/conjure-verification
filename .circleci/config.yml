@@ -71,7 +71,7 @@ jobs:
     - deploy:
         command: |
           if [[ "${CIRCLE_BRANCH}" == "develop" || "${CIRCLE_TAG}" =~ [0-9]+(\.[0-9]+)+(-[a-zA-Z]+[0-9]*)* ]]; then
-            docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
             docker push palantirtechnologies/conjure-verification-server:$(git describe --tags --always --first-parent)
             docker push palantirtechnologies/conjure-verification-server:latest
             docker push palantirtechnologies/conjure-verification-client:$(git describe --tags --always --first-parent)
