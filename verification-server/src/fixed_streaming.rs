@@ -37,9 +37,10 @@ impl WriteBody for StreamingResponse {
             .chunks(1024)
             .fold_while(Ok(()), |_res, chunk| {
                 thread::sleep(time::Duration::from_millis(10));
-                let chunk_res = w.write_all(chunk).map_err(|e| Error::internal(e));
+                let chunk_res = w.write_all(chunk)
+                    .and(w.flush())
+                    .map_err(|e| Error::internal(e));
                 return if chunk_res.is_ok() {
-                    w.flush();
                     Continue(chunk_res)
                 } else {
                     Done(chunk_res)
