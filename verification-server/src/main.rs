@@ -36,6 +36,7 @@ extern crate serde_yaml;
 extern crate typed_headers;
 #[macro_use]
 extern crate serde_conjure_derive;
+extern crate itertools;
 
 use conjure::ir::Conjure;
 use conjure_verification_common::conjure;
@@ -63,6 +64,7 @@ use test_spec::ClientTestCases;
 use test_spec::TestCases;
 
 pub mod errors;
+pub mod fixed_streaming;
 pub mod raw_json;
 pub mod resolved_test_cases;
 pub mod resource;
