@@ -46,6 +46,7 @@ public final class CompileVerificationClientTestCasesJson {
 
     private CompileVerificationClientTestCasesJson() {}
 
+    @SuppressWarnings("BanSystemOut")
     public static void main(String... args) throws IOException {
 
         com.palantir.logsafe.Preconditions.checkArgument(
