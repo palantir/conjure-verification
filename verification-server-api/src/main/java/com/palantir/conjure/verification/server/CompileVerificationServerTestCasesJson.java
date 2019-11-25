@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("BanSystemOut")
 public final class CompileVerificationServerTestCasesJson {
 
     private CompileVerificationServerTestCasesJson() {}
