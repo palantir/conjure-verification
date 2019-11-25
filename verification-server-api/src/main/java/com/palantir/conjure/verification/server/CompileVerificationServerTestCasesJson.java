@@ -7,7 +7,6 @@ package com.palantir.conjure.verification.server;
 import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
@@ -34,13 +33,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("BanSystemOut")
 public final class CompileVerificationServerTestCasesJson {
 
     private CompileVerificationServerTestCasesJson() {}
 
     public static void main(String... args) throws IOException {
 
-        Preconditions.checkArgument(args.length == 2, "Usage: <master-test-cases.yml> <server-test-cases.json>");
+        com.palantir.logsafe.Preconditions.checkArgument(
+                args.length == 2, "Usage: <master-test-cases.yml> <server-test-cases.json>");
         File file = new File(args[0]);
         File outputFile = new File(args[1]);
 

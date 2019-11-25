@@ -33,7 +33,7 @@ import com.palantir.conjure.parser.types.reference.LocalReferenceType;
  */
 public final class ResolveLocalReferencesConjureTypeVisitor implements ConjureTypeVisitor<String> {
     @Override
-    public String visitAny(AnyType type) {
+    public String visitAny(AnyType _type) {
         return "any";
     }
 
@@ -75,12 +75,12 @@ public final class ResolveLocalReferencesConjureTypeVisitor implements ConjureTy
     }
 
     @Override
-    public String visitBinary(BinaryType type) {
+    public String visitBinary(BinaryType _type) {
         return "binary";
     }
 
     @Override
-    public String visitDateTime(DateTimeType type) {
+    public String visitDateTime(DateTimeType _type) {
         return "datetime";
     }
 }
