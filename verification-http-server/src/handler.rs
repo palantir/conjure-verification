@@ -344,7 +344,7 @@ impl SyncHandler {
                 Body::Fixed(bytes)
             }
             // handle tracking response_size for streaming body
-            Body::Streaming(write_body) => Body::Streaming(write_body)
+            Body::Streaming(write_body) => Body::Streaming(write_body),
         };
 
         response
