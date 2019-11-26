@@ -277,7 +277,6 @@ impl SyncHandler {
                 return;
             }
             Body::Fixed(bytes) => {
-                response_size.store(bytes.len(), Ordering::SeqCst);
                 let mut response = hyper::Response::new(hyper::Body::from(bytes));
                 *response.status_mut() = raw_response.status;
                 *response.headers_mut() = raw_response.headers;
@@ -344,12 +343,8 @@ impl SyncHandler {
                 response_size.store(bytes.len(), Ordering::SeqCst);
                 Body::Fixed(bytes)
             }
-            Body::Streaming(_write_body) =>
-                unimplemented!()
-//                Body::Streaming(Box::new(SizeTrackingWriteBody {
-//                write_body: write_body,
-//                response_size: response_size.clone(),
-//            })),
+            // handle tracking response_size for streaming body
+            Body::Streaming(write_body) => Body::Streaming(write_body),
         };
 
         response
