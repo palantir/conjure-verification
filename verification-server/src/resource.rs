@@ -175,10 +175,10 @@ impl SpecTestResource {
 
             let cases = get_endpoint(&resource.test_cases.auto_deserialize, &endpoint)?;
             return get_test_case_at_index(cases, &index)?
-                .map_left(|case| match case.0.value {
-                    ConjureValue::Primitive(ConjurePrimitiveValue::Binary(_)) => {
+                .map_left(|case| match &case.0.value {
+                    ConjureValue::Primitive(ConjurePrimitiveValue::Binary(binary)) => {
                         StreamingResponse {
-                            data: case.0.text.as_str().into(),
+                            data: binary.0.to_owned(),
                         }.into_response(request)
                     }
                     _ => SpecTestResource::response_non_streaming(case.0.text.as_str(), request),
