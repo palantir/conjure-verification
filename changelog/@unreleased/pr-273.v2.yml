@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Send deserialized bytes for binary types
+  links:
+  - https://github.com/palantir/conjure-verification/pull/273

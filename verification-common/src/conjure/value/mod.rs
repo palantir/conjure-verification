@@ -92,4 +92,4 @@ pub enum UnionVariant {
 
 /// Deserialized only from a base-64 encoded string.
 #[derive(Serialize, Debug, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Binary(Vec<u8>);
+pub struct Binary(pub Vec<u8>);
