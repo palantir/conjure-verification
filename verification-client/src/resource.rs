@@ -206,7 +206,7 @@ impl VerificationClientResource {
             let mut result: Vec<u8> = Vec::new();
             let read_size = raw_body.0.read_to_end(result.as_mut());
             response_body_value = serde_json::Value::String(
-                serde_json::to_string(result.as_slice()).map_err(Error::internal)?
+                serde_json::to_string(result.as_slice()).map_err(Error::internal)?,
             );
             response_body =
                 ConjureValue::Primitive(ConjurePrimitiveValue::Binary(Binary(result.to_vec())))

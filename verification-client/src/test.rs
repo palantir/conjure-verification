@@ -19,36 +19,36 @@ use bytes::Bytes;
 use conjure::ir;
 use conjure::resolved_type::builders::*;
 use conjure::resolved_type::ResolvedType;
+use conjure_verification_common::conjure::ir::PrimitiveType;
+use conjure_verification_common::conjure::value::Binary;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::{Error, Result};
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
-use conjure_verification_http::response::{Body, WriteBody};
+use conjure_verification_http::response::Body::Streaming;
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
+use conjure_verification_http::response::{Body, WriteBody};
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
 use hyper::Method;
 use hyper::StatusCode;
 use mime::APPLICATION_JSON;
+use mime::APPLICATION_OCTET_STREAM;
 use resource::*;
-use router;
-use router::RouteResult;
 use router::Router;
+use router::RouteResult;
+use router;
 use serde_json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use test_spec::ServerTestCases;
 use test_spec::{EndpointName, PositiveAndNegativeTestCases};
-use url::Url;
-use conjure_verification_common::conjure::ir::PrimitiveType;
-use conjure_verification_http::response::Body::Streaming;
-use conjure_verification_common::conjure::value::Binary;
 use tokio::prelude::Write;
-use mime::APPLICATION_OCTET_STREAM;
 use typed_headers::{ContentType, HeaderMapExt};
+use url::Url;
 
 #[test]
 fn test_content_type_error() {
@@ -192,14 +192,17 @@ fn test_returns_204() {
 fn test_octet_stream() {
     let conjure_type = primitive_type(ir::PrimitiveType::Binary);
     let endpoint_name = "test_octet_stream";
-    let router =
-        setup::setup_simple_auto_positive(json!("c29tZS1iaW5hcnktZGF0YQo="), endpoint_name, conjure_type);
+    let router = setup::setup_simple_auto_positive(
+        json!("c29tZS1iaW5hcnktZGF0YQo="),
+        endpoint_name,
+        conjure_type);
     run_test_case_against_server(
         &router,
         TestType::Body,
         endpoint_name,
         |_request| {
-            let result: Result<Binary> = serde_json::from_str("\"c29tZS1iaW5hcnktZGF0YQo=\"").map_err(Error::internal);
+            let result: Result<Binary> =
+                serde_json::from_str("\"c29tZS1iaW5hcnktZGF0YQo=\"").map_err(Error::internal);
             Ok(StreamingResponse(result.unwrap().0))
         },
         None,

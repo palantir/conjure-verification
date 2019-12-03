@@ -163,7 +163,9 @@ impl Format {
             Format::Json => serde_json::from_reader(r).map_err(Error::internal),
             Format::Cbor => serde_cbor::from_reader(r).map_err(Error::internal),
             Format::Urlencoded => serde_urlencoded::from_reader(r).map_err(Error::internal),
-            Format::Octet_stream => Err(Error::internal_safe("Can't deserialize octet_stream body"))
+            Format::Octet_stream => {
+                Err(Error::internal_safe("Can't deserialize octet_stream body"))
+            }
         }
     }
 }
