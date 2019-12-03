@@ -20,11 +20,11 @@ use conjure::ir;
 use conjure::resolved_type::builders::*;
 use conjure::resolved_type::ResolvedType;
 use conjure_verification_common::type_mapping::TestType;
-use conjure_verification_error::Result;
+use conjure_verification_error::{Error, Result};
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
-use conjure_verification_http::response::Body;
+use conjure_verification_http::response::{Body, WriteBody};
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
@@ -43,6 +43,12 @@ use std::sync::Arc;
 use test_spec::ServerTestCases;
 use test_spec::{EndpointName, PositiveAndNegativeTestCases};
 use url::Url;
+use conjure_verification_common::conjure::ir::PrimitiveType;
+use conjure_verification_http::response::Body::Streaming;
+use conjure_verification_common::conjure::value::Binary;
+use tokio::prelude::Write;
+use mime::APPLICATION_OCTET_STREAM;
+use typed_headers::{ContentType, HeaderMapExt};
 
 #[test]
 fn test_content_type_error() {
@@ -179,6 +185,47 @@ fn test_returns_204() {
         |_| Ok(NoContent),
         None,
     );
+}
+
+/// Test that a binary response body is handled.
+#[test]
+fn test_octet_stream() {
+    let conjure_type = primitive_type(ir::PrimitiveType::Binary);
+    let endpoint_name = "returns_204";
+    let router =
+        setup::setup_simple_auto_positive(json!("\"c29tZS1iaW5hcnktZGF0YQo=\""), endpoint_name, conjure_type);
+    run_test_case_against_server(
+        &router,
+        TestType::Body,
+        endpoint_name,
+        |_request| {
+            let result: Result<Binary> = serde_json::from_str("\"c29tZS1iaW5hcnktZGF0YQo=\"").map_err(Error::internal);
+            Ok(StreamingResponse(result.unwrap().0))
+        },
+        None,
+    );
+}
+
+pub struct StreamingResponse(Vec<u8>);
+
+impl WriteBody for StreamingResponse {
+    fn write_body(&mut self, w: &mut Write) -> Result<()> {
+        return w.write_all(self.0.as_ref()).map_err(Error::internal);
+    }
+}
+
+impl IntoResponse for StreamingResponse {
+    fn into_response(self, _request: &Request) -> Result<Response> {
+        let mut response = Response::new(StatusCode::OK);
+        response
+            .headers
+            .typed_insert(&ContentType(APPLICATION_OCTET_STREAM));
+        response
+            .headers
+            .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
+        response.body = Body::Streaming(Box::new(self));
+        Ok(response)
+    }
 }
 
 /// Spins up a server-under-test, and instructs the configured [VerificationClientResource]
