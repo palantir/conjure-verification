@@ -38,9 +38,9 @@ use hyper::StatusCode;
 use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
 use resource::*;
+use router;
 use router::Router;
 use router::RouteResult;
-use router;
 use serde_json;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -195,7 +195,8 @@ fn test_octet_stream() {
     let router = setup::setup_simple_auto_positive(
         json!("c29tZS1iaW5hcnktZGF0YQo="),
         endpoint_name,
-        conjure_type);
+        conjure_type,
+    );
     run_test_case_against_server(
         &router,
         TestType::Body,

@@ -38,12 +38,12 @@ use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
-use conjure_verification_http_client::{config as client_config, ResponseBody};
 use conjure_verification_http_client::body::BytesBody;
-use conjure_verification_http_client::Client;
 use conjure_verification_http_client::request::RequestBuilder;
 use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
+use conjure_verification_http_client::Client;
+use conjure_verification_http_client::{config as client_config, ResponseBody};
 use conjure_verification_http_server::RouteWithOptions;
 use errors::*;
 use more_serde_json;
@@ -204,7 +204,7 @@ impl VerificationClientResource {
         } else {
             let mut raw_body = response.raw_body()?;
             let mut result: Vec<u8> = Vec::new();
-            let read_size = raw_body.0.read_to_end(result.as_mut());
+            let _read_size = raw_body.0.read_to_end(result.as_mut());
             response_body_value = serde_json::Value::String(
                 serde_json::to_string(result.as_slice()).map_err(Error::internal)?,
             );
