@@ -16,8 +16,8 @@ use std::collections::HashMap;
 use std::string::ToString;
 
 use either::{Either, Left, Right};
-use hyper::header::ACCEPT;
 use hyper::header::HeaderValue;
+use hyper::header::ACCEPT;
 use hyper::Method;
 use hyper::StatusCode;
 use mime::APPLICATION_JSON;
