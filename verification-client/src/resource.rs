@@ -131,6 +131,7 @@ impl VerificationClientResource {
         positive: AutoDeserializePositiveTest,
     ) -> Result<()> {
         let test_body_str = positive.0;
+        println!("body {}", test_body_str);
         let response = builder
             .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
             .send()
@@ -310,6 +311,7 @@ fn deserialize_expected_value(
     endpoint: &EndpointName,
     index: usize,
 ) -> Result<ConjureValue> {
+    println!("raw values {:?}, {}", conjure_type, raw);
     more_serde_json::from_str(conjure_type, raw).map_err(|e| {
         Error::internal_safe(e)
             .with_safe_param("endpoint", endpoint.to_string())
