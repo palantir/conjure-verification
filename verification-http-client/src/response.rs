@@ -111,8 +111,7 @@ impl Response {
         T: DeserializeOwned,
     {
         let format = self.format()?;
-        let mut body = self.raw_body()?;
-        format.deserialize(&mut body.0)
+        format.deserialize(&mut self.raw_body()?.0)
     }
 
     /// Returns a reader of the raw response body.
@@ -140,6 +139,7 @@ enum Format {
     Json,
     Cbor,
     Urlencoded,
+    OctetStream,
 }
 
 impl Format {
@@ -148,6 +148,7 @@ impl Format {
             Some(ref v) if v.0 == mime::APPLICATION_JSON => Ok(Format::Json),
             Some(ref v) if v.0 == *APPLICATION_CBOR => Ok(Format::Cbor),
             Some(ref v) if v.0 == mime::APPLICATION_WWW_FORM_URLENCODED => Ok(Format::Urlencoded),
+            Some(ref v) if v.0 == mime::APPLICATION_OCTET_STREAM => Ok(Format::OctetStream),
             Some(v) => Err(Error::internal_safe("unsupported Content-Type")
                 .with_safe_param("type", format!("{:?}", v))),
             None => Err(Error::internal_safe("Content-Type header missing")),
@@ -162,11 +163,12 @@ impl Format {
             Format::Json => serde_json::from_reader(r).map_err(Error::internal),
             Format::Cbor => serde_cbor::from_reader(r).map_err(Error::internal),
             Format::Urlencoded => serde_urlencoded::from_reader(r).map_err(Error::internal),
+            Format::OctetStream => Err(Error::internal_safe("Can't deserialize octet_stream body")),
         }
     }
 }
 
-pub struct ResponseBody(Box<BufRead>);
+pub struct ResponseBody(pub Box<BufRead>);
 
 impl Read for ResponseBody {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {

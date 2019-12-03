@@ -12,8 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use self::client_config::ServiceConfig;
-use self::client_config::ServiceDiscoveryConfig;
+use std::collections::HashMap;
+use std::string::ToString;
+
+use either::{Either, Left, Right};
+use hyper::header::HeaderValue;
+use hyper::header::ACCEPT;
+use hyper::Method;
+use hyper::StatusCode;
+use mime::APPLICATION_JSON;
+use mime::APPLICATION_OCTET_STREAM;
+use serde_json;
+use typed_headers::{ContentType, HeaderMapExt};
+use zipkin::Endpoint;
+use zipkin::Tracer;
+
 use conjure::resolved_type::ResolvedType;
 use conjure::value::*;
 use conjure_verification_common::type_mapping::ParamTypes;
@@ -32,22 +45,12 @@ use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
 use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
-use either::{Either, Left, Right};
 use errors::*;
-use hyper::header::HeaderValue;
-use hyper::header::ACCEPT;
-use hyper::Method;
-use hyper::StatusCode;
-use mime::APPLICATION_JSON;
-use mime::APPLICATION_OCTET_STREAM;
 use more_serde_json;
-use serde_json;
-use std::collections::HashMap;
-use std::string::ToString;
 use test_spec::*;
-use typed_headers::{ContentType, HeaderMapExt};
-use zipkin::Endpoint;
-use zipkin::Tracer;
+
+use self::client_config::ServiceConfig;
+use self::client_config::ServiceDiscoveryConfig;
 
 lazy_static! {
     static ref USER_AGENT: UserAgent =
@@ -158,7 +161,7 @@ impl VerificationClientResource {
         let content_type = response
             .headers()
             .typed_get::<ContentType>()
-            .map_err(Error::internal_safe);
+            .map_err(Error::internal_safe)?;
 
         let conjure_type = get_endpoint(&self.param_types[&TestType::Body], &endpoint)?;
         let expected_body = deserialize_expected_value(
@@ -182,7 +185,7 @@ impl VerificationClientResource {
         // Thus, we expect a 200 with either OCTET_STREAM or APPLICATION_JSON.
         // Note: we MUST check this before calling .body(), which will fail if there's no content type.
         VerificationClientResource::assert_content_type(
-            content_type?,
+            &content_type,
             &mut vec![APPLICATION_JSON, APPLICATION_OCTET_STREAM]
                 .into_iter()
                 .map(|mime| Some(ContentType(mime))),
@@ -190,11 +193,24 @@ impl VerificationClientResource {
 
         // We deserialize into serde_json::Value first because .body()'s return type needs
         // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
-        let response_body_value: serde_json::Value = response.body()?;
-        let response_body = VerificationClientResource::try_parse_response_body(
-            conjure_type,
-            &response_body_value,
-        )?;
+        let response_body;
+        let response_body_value: serde_json::Value;
+        if content_type.unwrap() == ContentType(APPLICATION_JSON) {
+            response_body_value = response.body()?;
+            response_body = VerificationClientResource::try_parse_response_body(
+                conjure_type,
+                &response_body_value,
+            )?;
+        } else {
+            let mut raw_body = response.raw_body()?;
+            let mut result: Vec<u8> = Vec::new();
+            let _read_size = raw_body.0.read_to_end(result.as_mut());
+            response_body_value = serde_json::Value::String(
+                serde_json::to_string(result.as_slice()).map_err(Error::internal)?,
+            );
+            response_body =
+                ConjureValue::Primitive(ConjurePrimitiveValue::Binary(Binary(result.to_vec())))
+        }
 
         // Compare response_body with what the test case says we sent
         if response_body != expected_body {
@@ -262,16 +278,17 @@ impl VerificationClientResource {
 
     /// Assert content-type header matches one of the expected ones.
     fn assert_content_type<ExpectedTypes: Iterator<Item = Option<ContentType>>>(
-        response_content_type: Option<ContentType>,
+        response_content_type: &Option<ContentType>,
         expected_content_types: &mut ExpectedTypes,
     ) -> Result<()> {
-        if expected_content_types.any(|expected| expected == response_content_type) {
+        if expected_content_types.any(|expected| expected == *response_content_type) {
             Ok(())
         } else {
             return Err(Error::new_safe(
                 "Did not expect content type",
                 VerificationError::UnexpectedContentType {
                     content_type: response_content_type
+                        .as_ref()
                         .map(|ct| ct.to_string())
                         .unwrap_or("<empty>".to_string()),
                 },
