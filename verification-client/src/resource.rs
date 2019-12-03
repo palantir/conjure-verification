@@ -205,8 +205,11 @@ impl VerificationClientResource {
             let mut raw_body = response.raw_body()?;
             let mut result: Vec<u8> = Vec::new();
             let read_size = raw_body.0.read_to_end(result.as_mut());
-            response_body_value = serde_json::Value::String(serde_json::to_string(result.as_slice()).map_err(Error::internal)?);
-            response_body = ConjureValue::Primitive(ConjurePrimitiveValue::Binary(Binary(result.to_vec())))
+            response_body_value = serde_json::Value::String(
+                serde_json::to_string(result.as_slice()).map_err(Error::internal)?
+            );
+            response_body =
+                ConjureValue::Primitive(ConjurePrimitiveValue::Binary(Binary(result.to_vec())))
         }
 
         // Compare response_body with what the test case says we sent
@@ -284,7 +287,8 @@ impl VerificationClientResource {
             return Err(Error::new_safe(
                 "Did not expect content type",
                 VerificationError::UnexpectedContentType {
-                    content_type: response_content_type.as_ref()
+                    content_type: response_content_type
+                        .as_ref()
                         .map(|ct| ct.to_string())
                         .unwrap_or("<empty>".to_string()),
                 },
