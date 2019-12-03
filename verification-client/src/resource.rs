@@ -43,7 +43,7 @@ use conjure_verification_http_client::request::RequestBuilder;
 use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
 use conjure_verification_http_client::Client;
-use conjure_verification_http_client::{config as client_config, ResponseBody};
+use conjure_verification_http_client::{config as client_config};
 use conjure_verification_http_server::RouteWithOptions;
 use errors::*;
 use more_serde_json;
