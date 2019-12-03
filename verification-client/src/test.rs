@@ -191,7 +191,7 @@ fn test_returns_204() {
 #[test]
 fn test_octet_stream() {
     let conjure_type = primitive_type(ir::PrimitiveType::Binary);
-    let endpoint_name = "returns_204";
+    let endpoint_name = "test_octet_stream";
     let router =
         setup::setup_simple_auto_positive(json!("c29tZS1iaW5hcnktZGF0YQo="), endpoint_name, conjure_type);
     run_test_case_against_server(

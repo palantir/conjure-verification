@@ -134,7 +134,6 @@ impl VerificationClientResource {
         positive: AutoDeserializePositiveTest,
     ) -> Result<()> {
         let test_body_str = positive.0;
-        println!("body {}", test_body_str);
         let response = builder
             .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
             .send()
@@ -205,17 +204,7 @@ impl VerificationClientResource {
         } else {
             let mut raw_body = response.raw_body()?;
             let mut result: Vec<u8> = Vec::new();
-            loop {
-                let mut response_buf = raw_body.0.fill_buf()
-                    .map_err(Error::internal)?
-                    .to_vec();
-                if response_buf.is_empty() {
-                    break;
-                } else {
-                    result.append(response_buf.as_mut());
-                    raw_body.0.consume(response_buf.len());
-                }
-            }
+            let read_size = raw_body.0.read_to_end(result.as_mut());
             response_body_value = serde_json::Value::String(serde_json::to_string(result.as_slice()).map_err(Error::internal)?);
             response_body = ConjureValue::Primitive(ConjurePrimitiveValue::Binary(Binary(result.to_vec())))
         }
@@ -334,7 +323,6 @@ fn deserialize_expected_value(
     endpoint: &EndpointName,
     index: usize,
 ) -> Result<ConjureValue> {
-    println!("raw values {:?}, {}", conjure_type, raw);
     more_serde_json::from_str(conjure_type, raw).map_err(|e| {
         Error::internal_safe(e)
             .with_safe_param("endpoint", endpoint.to_string())
