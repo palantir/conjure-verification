@@ -1,0 +1,6 @@
+type: improvement
+improvement:
+  description: Don't try to deserialize applicaiton/octet-stream and handle it as
+    a binary stream
+  links:
+  - https://github.com/palantir/conjure-verification/pull/276
