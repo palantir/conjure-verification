@@ -32,6 +32,10 @@ public final class GenerateServerServices {
         writeServiceDefinition(new File(outputDir, "auto-deserialize-service.conjure.yml"),
                 "AutoDeserializeService",
                 generateAutoDeserializeService(testCases.getBody()));
+        writeServiceDefinition(
+                new File(outputDir, "auto-deserialize-confirm-service.conjure.yml"),
+                "AutoDeserializeConfirmService",
+                generateAutoDeserializeConfirmService(testCases.getBody()));
         writeServiceDefinition(new File(outputDir, "single-header-service.conjure.yml"),
                 "SingleHeaderService",
                 generateSingleHeaderService(testCases.getSingleHeaderParam()));
@@ -41,6 +45,35 @@ public final class GenerateServerServices {
         writeServiceDefinition(new File(outputDir, "single-query-param-service.conjure.yml"),
                 "SingleQueryParamService",
                 generateSingleQueryParamService(testCases.getSingleQueryParam()));
+    }
+
+    private static Map<String, Object> generateAutoDeserializeConfirmService(List<BodyTests> body) {
+        ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
+        endpoints.put("confirm", ImmutableMap.builder()
+                .put("http", "POST /confirm/{endpoint}/{index}")
+                .put("docs", "Send the response received for positive test cases here to verify that it has been "
+                        + "serialized and deserialized properly.")
+                .put("args", ImmutableMap.builder()
+                        .put("endpoint", "testCases.EndpointName")
+                        .put("index", "integer")
+                        .put("body", "any")
+                        .build())
+                .build());
+
+        body.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
+            String endpointName = TestCasesUtils.typeToEndpointName("receive", conjureType);
+            String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
+            endpoints.put(endpointName, ImmutableMap.of(
+                    "http", "POST /" + endpointName + "/{index}",
+                    "args", ImmutableMap.of("index", "integer", "body", typeName)));
+        });
+
+        return ImmutableMap.of(
+                "name", "Auto Deserialize Confirm Service",
+                "package", "com.palantir.conjure.verification.server",
+                "default-auth", "none",
+                "base-path", "/confirm",
+                "endpoints", endpoints.build());
     }
 
     private static void writeServiceDefinition(
