@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Removed two test cases that were impossible to satisfy.
+  links:
+  - https://github.com/palantir/conjure-verification/pull/314
