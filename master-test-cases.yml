@@ -788,7 +788,6 @@ singlePathParam:
     - '9007199254740991'
 - type: string
   positive:
-    - '""'
     - '"hello"'
 - type: uuid
   positive:
@@ -796,7 +795,6 @@ singlePathParam:
     - '"80e6dd13-5f42-4e33-ad18-f73875540c8b"' # UUID v4
 - type: AliasString
   positive:
-    - '""'
     - '"hello"'
 - type: EnumExample
   positive:
