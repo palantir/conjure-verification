@@ -26,6 +26,7 @@ buildscript {
     }
 
     dependencies {
+        classpath 'com.palantir.javaformat:gradle-palantir-java-format:0.3.26'
         classpath 'com.netflix.nebula:gradle-info-plugin:5.2.0'
         classpath 'com.netflix.nebula:nebula-publishing-plugin:14.1.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
@@ -40,6 +41,7 @@ apply plugin: 'com.palantir.baseline'
 apply from: 'gradle/publish-rust-dist.gradle'
 
 allprojects {
+    apply plugin: 'com.palantir.java-format'
     version gitVersion()
     group 'com.palantir.conjure.verification'
 

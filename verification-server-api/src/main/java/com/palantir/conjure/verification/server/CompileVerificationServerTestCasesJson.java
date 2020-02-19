@@ -66,8 +66,7 @@ public final class CompileVerificationServerTestCasesJson {
         System.out.println("Total test cases: " + total);
         jsonMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, testCases);
 
-        List<File> files = Streams
-                .stream(MoreFiles.fileTraverser().breadthFirst(Paths.get("src/main/conjure")))
+        List<File> files = Streams.stream(MoreFiles.fileTraverser().breadthFirst(Paths.get("src/main/conjure")))
                 .filter(MoreFiles.isDirectory().negate())
                 .filter(path -> path.getFileName().toString().endsWith(".yml"))
                 .map(Path::toFile)
@@ -75,20 +74,24 @@ public final class CompileVerificationServerTestCasesJson {
         ConjureDefinition ir = Conjure.parse(files);
 
         checkEndpointNamesMatchPaths(ir);
-        checkNoLeftovers(outputFile, clientTestCases.getAutoDeserialize().keySet(),
-                serviceByName(ir, "AutoDeserializeService"));
-        checkNoLeftovers(outputFile, clientTestCases.getSingleHeaderService().keySet(),
+        checkNoLeftovers(
+                outputFile, clientTestCases.getAutoDeserialize().keySet(), serviceByName(ir, "AutoDeserializeService"));
+        checkNoLeftovers(
+                outputFile,
+                clientTestCases.getSingleHeaderService().keySet(),
                 serviceByName(ir, "SingleHeaderService"));
-        checkNoLeftovers(outputFile, clientTestCases.getSinglePathParamService().keySet(),
+        checkNoLeftovers(
+                outputFile,
+                clientTestCases.getSinglePathParamService().keySet(),
                 serviceByName(ir, "SinglePathParamService"));
-        checkNoLeftovers(outputFile, clientTestCases.getSingleQueryParamService().keySet(),
+        checkNoLeftovers(
+                outputFile,
+                clientTestCases.getSingleQueryParamService().keySet(),
                 serviceByName(ir, "SingleQueryParamService"));
     }
 
     private static long countTestCases(Map<EndpointName, List<String>> tests) {
-        return tests.entrySet().stream()
-                .flatMap(e -> e.getValue().stream())
-                .count();
+        return tests.entrySet().stream().flatMap(e -> e.getValue().stream()).count();
     }
 
     private static long countPositiveAndNegative(Map<EndpointName, PositiveAndNegativeTestCases> tests) {
@@ -102,12 +105,12 @@ public final class CompileVerificationServerTestCasesJson {
             String name = service.getServiceName().getName();
 
             service.getEndpoints().forEach(endpoint -> {
-                if (!endpoint.getHttpPath().get().contains(endpoint.getEndpointName().get())) {
+                if (!endpoint.getHttpPath()
+                        .get()
+                        .contains(endpoint.getEndpointName().get())) {
                     throw new RuntimeException(String.format(
                             "%s#%s has an inconsistent path: %s",
-                            name,
-                            endpoint.getEndpointName(),
-                            endpoint.getHttpPath()));
+                            name, endpoint.getEndpointName(), endpoint.getHttpPath()));
                 }
             });
         });
@@ -136,23 +139,23 @@ public final class CompileVerificationServerTestCasesJson {
     }
 
     private static ServiceDefinition serviceByName(ConjureDefinition ir, String name) {
-        return ir.getServices().stream().filter(s -> s.getServiceName().getName().equals(name)).findFirst().get();
+        return ir.getServices().stream()
+                .filter(s -> s.getServiceName().getName().equals(name))
+                .findFirst()
+                .get();
     }
 
     private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
         ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
-        bodyTests.forEach(t ->
-                builder.put(endpointName("receive", t.getType()),
-                        PositiveAndNegativeTestCases
-                                .builder()
-                                .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
-                                .negative(t.getNegative().stream().map(TestCase::get).collect(Collectors.toList()))
-                                .addAllPositive(t
-                                        .getClientPositiveServerFail()
-                                        .stream()
-                                        .map(TestCase::get)
-                                        .collect(Collectors.toList()))
-                                .build()));
+        bodyTests.forEach(t -> builder.put(
+                endpointName("receive", t.getType()),
+                PositiveAndNegativeTestCases.builder()
+                        .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
+                        .negative(t.getNegative().stream().map(TestCase::get).collect(Collectors.toList()))
+                        .addAllPositive(t.getClientPositiveServerFail().stream()
+                                .map(TestCase::get)
+                                .collect(Collectors.toList()))
+                        .build()));
         return builder.build();
     }
 
