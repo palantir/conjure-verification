@@ -50,7 +50,7 @@ public final class GenerateServerServices {
     private static Map<String, Object> generateAutoDeserializeConfirmService(List<BodyTests> body) {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
         endpoints.put("confirm", ImmutableMap.builder()
-                .put("http", "POST /confirm/{endpoint}/{index}")
+                .put("http", "POST /{endpoint}/{index}")
                 .put("docs", "Send the response received for positive test cases here to verify that it has been "
                         + "serialized and deserialized properly.")
                 .put("args", ImmutableMap.builder()
