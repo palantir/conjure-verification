@@ -1,0 +1,6 @@
+type: improvement
+improvement:
+  description: Additional negative test cases ensure deserialization isn't too lenient
+    for list & map-like types.
+  links:
+  - https://github.com/palantir/conjure-verification/pull/330

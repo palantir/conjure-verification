@@ -145,7 +145,7 @@ body:
         - '{"value":null}'
 
   # named types
-  # TODO(dfox): add more positive/negative cases when https://github.com/palantir/conjure/issues/193 is resolved 
+  # TODO(dfox): add more positive/negative cases when https://github.com/palantir/conjure/issues/193 is resolved
   - type: EnumExample
     positive:
         - '"ONE"'
@@ -490,60 +490,70 @@ body:
         - '["abc123"]'
     negative:
         - 'null'
+        - '{}'
   - type: ListBinaryAliasExample
     positive:
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
     negative:
         - 'null'
+        - '{}'
   - type: ListBooleanAliasExample
     positive:
         - '[]'
         - '[true]'
     negative:
         - 'null'
+        - '{}'
   - type: ListDateTimeAliasExample
     positive:
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
     negative:
         - 'null'
+        - '{}'
   - type: ListDoubleAliasExample
     positive:
         - '[]'
         - '[10, 10.0, "NaN", "Infinity", "-Infinity"]'
     negative:
         - 'null'
+        - '{}'
   - type: ListIntegerAliasExample
     positive:
         - '[]'
         - '[0, 123]'
     negative:
         - 'null'
+        - '{}'
   - type: ListRidAliasExample
     positive:
         - '[]'
         - '["ri.service.instance.folder.foo"]'
     negative:
         - 'null'
+        - '{}'
   - type: ListSafeLongAliasExample
     positive:
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
     negative:
         - 'null'
+        - '{}'
   - type: ListStringAliasExample
     positive:
         - '[]'
         - '["", "hello"]'
     negative:
         - 'null'
+        - '{}'
   - type: ListUuidAliasExample
     positive:
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
     negative:
         - 'null'
+        - '{}'
   - type: ListAnyAliasExample
     positive:
         - '[]'
@@ -551,36 +561,42 @@ body:
     negative:
         - 'null'
         - '[null]'
+        - '{}'
   - type: ListOptionalAnyAliasExample
     positive:
       - '[]'
       - '[null, 0, "content", true, [1,2,3], {"key":3}]'
     negative:
       - 'null'
+      - '{}'
   - type: SetBearerTokenAliasExample
     positive:
         - '[]'
         - '["abc123"]'
     negative:
         - 'null'
+        - '{}'
   - type: SetBinaryAliasExample
     positive:
         - '[]'
         - '["", "SGVsbG8sIFdvcmxk"]'
     negative:
         - 'null'
+        - '{}'
   - type: SetBooleanAliasExample
     positive:
         - '[]'
         - '[true]'
     negative:
         - 'null'
+        - '{}'
   - type: SetDateTimeAliasExample
     positive:
         - '[]'
         - '["2017-01-02T03:04:05Z"]'
     negative:
         - 'null'
+        - '{}'
   - type: SetDoubleAliasExample
     positive:
         - '[]'
@@ -589,36 +605,42 @@ body:
         # - '[+0, -0]'
     negative:
         - 'null'
+        - '{}'
   - type: SetIntegerAliasExample
     positive:
         - '[]'
         - '[0, 123]'
     negative:
         - 'null'
+        - '{}'
   - type: SetRidAliasExample
     positive:
         - '[]'
         - '["ri.service.instance.folder.foo"]'
     negative:
         - 'null'
+        - '{}'
   - type: SetSafeLongAliasExample
     positive:
         - '[]'
         - '[-9007199254740991, 0, 9007199254740991]'
     negative:
         - 'null'
+        - '{}'
   - type: SetStringAliasExample
     positive:
         - '[]'
         - '["", "hello"]'
     negative:
         - 'null'
+        - '{}'
   - type: SetUuidAliasExample
     positive:
         - '[]'
         - '["d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b"]'
     negative:
         - 'null'
+        - '{}'
   - type: SetAnyAliasExample
     positive:
         - '[]'
@@ -626,32 +648,42 @@ body:
     negative:
         - 'null'
         - '[null]'
+        - '{}'
   - type: SetOptionalAnyAliasExample
     positive:
       - '[]'
       - '[null, 0, "content", true, [1,2,3], {"key":3}]'
     negative:
       - 'null'
+      - '{}'
   - type: MapBearerTokenAliasExample
     positive:
         - '{}'
         - '{"abc123": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapBinaryAliasExample
     positive:
         - '{}'
         - '{"SGVsbG8sIFdvcmxk": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapBooleanAliasExample
     positive:
         - '{}'
         - '{"true": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapDateTimeAliasExample
     positive:
         - '{}'
         - '{"2017-01-02T03:04:05Z": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapDoubleAliasExample
     positive:
         - '{}'
@@ -664,6 +696,8 @@ body:
         - '{"-Infinity": true}'
         - '{"10": true, "3e2": true}'
     negative:
+        - 'null'
+        - '[]'
         - '{"10": true, "10e0": false}'
         - '{"10": true, "10.0": false}'
   - type: MapIntegerAliasExample
@@ -671,36 +705,48 @@ body:
         - '{}'
         - '{"0": true}'
         - '{"123": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapRidAliasExample
     positive:
         - '{}'
         - '{"ri.service.instance.folder.foo": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapSafeLongAliasExample
     positive:
         - '{}'
         - '{"-9007199254740991": true}'
         - '{"0": true}'
         - '{"9007199254740991": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapStringAliasExample
     positive:
         - '{}'
         - '{"": true}'
         - '{"hello": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapUuidAliasExample
     positive:
         - '{}'
         - '{"d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b": true}'
-    negative: []
+    negative:
+        - 'null'
+        - '[]'
   - type: MapEnumExampleAlias
     positive:
         - '{"ONE": "", "TWO": ""}'
         - '{"ONE": "", "TWO": "", "UNKNOWN_VARIANT": ""}'
     # https://github.com/palantir/conjure/issues/193
-    # negative:
+    negative:
+        - 'null'
+        - '[]'
     #     - '{"ONE": "", "TWO": "", "INVALID CHARS": ""}'
 singleHeaderParam:
 - type: bearertoken
