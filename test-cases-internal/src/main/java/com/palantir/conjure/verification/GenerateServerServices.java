@@ -29,44 +29,61 @@ public final class GenerateServerServices {
         Files.createDirectories(outputDir.toPath());
         MoreFiles.deleteDirectoryContents(outputDir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
 
-        writeServiceDefinition(new File(outputDir, "auto-deserialize-service.conjure.yml"),
+        writeServiceDefinition(
+                new File(outputDir, "auto-deserialize-service.conjure.yml"),
                 "AutoDeserializeService",
                 generateAutoDeserializeService(testCases.getBody()));
         writeServiceDefinition(
                 new File(outputDir, "auto-deserialize-confirm-service.conjure.yml"),
                 "AutoDeserializeConfirmService",
                 generateAutoDeserializeConfirmService(testCases.getBody()));
-        writeServiceDefinition(new File(outputDir, "single-header-service.conjure.yml"),
+        writeServiceDefinition(
+                new File(outputDir, "single-header-service.conjure.yml"),
                 "SingleHeaderService",
                 generateSingleHeaderService(testCases.getSingleHeaderParam()));
-        writeServiceDefinition(new File(outputDir, "single-path-param-service.conjure.yml"),
+        writeServiceDefinition(
+                new File(outputDir, "single-path-param-service.conjure.yml"),
                 "SinglePathParamService",
                 generateSinglePathParamService(testCases.getSinglePathParam()));
-        writeServiceDefinition(new File(outputDir, "single-query-param-service.conjure.yml"),
+        writeServiceDefinition(
+                new File(outputDir, "single-query-param-service.conjure.yml"),
                 "SingleQueryParamService",
                 generateSingleQueryParamService(testCases.getSingleQueryParam()));
     }
 
     private static Map<String, Object> generateAutoDeserializeConfirmService(List<BodyTests> body) {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
-        endpoints.put("confirm", ImmutableMap.builder()
-                .put("http", "POST /{endpoint}/{index}")
-                .put("docs", "Send the response received for positive test cases here to verify that it has been "
-                        + "serialized and deserialized properly.")
-                .put("args", ImmutableMap.builder()
-                        .put("endpoint", "testCases.EndpointName")
-                        .put("index", "integer")
-                        .put("body", "any")
-                        .build())
-                .build());
+        endpoints.put(
+                "confirm",
+                ImmutableMap.builder()
+                        .put("http", "POST /{endpoint}/{index}")
+                        .put(
+                                "docs",
+                                "Send the response received for positive test cases here to verify that it has been "
+                                        + "serialized and deserialized properly.")
+                        .put(
+                                "args",
+                                ImmutableMap.builder()
+                                        .put("endpoint", "testCases.EndpointName")
+                                        .put("index", "integer")
+                                        .put("body", "any")
+                                        .build())
+                        .build());
 
-        body.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
-            String endpointName = TestCasesUtils.typeToEndpointName("receive", conjureType);
-            String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
-            endpoints.put(endpointName, ImmutableMap.of(
-                    "http", "POST /" + endpointName + "/{index}",
-                    "args", ImmutableMap.of("index", "integer", "body", typeName)));
-        });
+        body.stream()
+                .map(BodyTests::getType)
+                .map(TestCasesUtils::parseConjureType)
+                .forEach(conjureType -> {
+                    String endpointName = TestCasesUtils.typeToEndpointName("receive", conjureType);
+                    String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
+                    endpoints.put(
+                            endpointName,
+                            ImmutableMap.of(
+                                    "http",
+                                    "POST /" + endpointName + "/{index}",
+                                    "args",
+                                    ImmutableMap.of("index", "integer", "body", typeName)));
+                });
 
         return ImmutableMap.of(
                 "name", "Auto Deserialize Confirm Service",
@@ -76,17 +93,21 @@ public final class GenerateServerServices {
                 "endpoints", endpoints.build());
     }
 
-    private static void writeServiceDefinition(
-            File fileName, String serviceName, Map<String, Object> service) throws IOException {
-        TestCasesUtils.YAML_MAPPER.writeValue(fileName,
-                createConjureYmlBuilder().put("services", ImmutableMap.of(serviceName, service)).build());
+    private static void writeServiceDefinition(File fileName, String serviceName, Map<String, Object> service)
+            throws IOException {
+        TestCasesUtils.YAML_MAPPER.writeValue(
+                fileName,
+                createConjureYmlBuilder()
+                        .put("services", ImmutableMap.of(serviceName, service))
+                        .build());
     }
 
     private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {
         ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
         builder.put(
                 "types",
-                ImmutableMap.of("conjure-imports",
+                ImmutableMap.of(
+                        "conjure-imports",
                         ImmutableMap.of(
                                 "examples", "../example-types.conjure.yml",
                                 "testCases", "../test-cases.conjure.yml")));
@@ -96,14 +117,22 @@ public final class GenerateServerServices {
     private static Map<String, Object> generateAutoDeserializeService(List<BodyTests> bodyTests) {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
-        bodyTests.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
-            String endpointName = TestCasesUtils.typeToEndpointName("receive", conjureType);
-            String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
-            endpoints.put(endpointName, ImmutableMap.of(
-                    "http", "GET /" + endpointName + "/{index}",
-                    "returns", typeName,
-                    "args", ImmutableMap.of("index", "integer")));
-        });
+        bodyTests.stream()
+                .map(BodyTests::getType)
+                .map(TestCasesUtils::parseConjureType)
+                .forEach(conjureType -> {
+                    String endpointName = TestCasesUtils.typeToEndpointName("receive", conjureType);
+                    String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
+                    endpoints.put(
+                            endpointName,
+                            ImmutableMap.of(
+                                    "http",
+                                    "GET /" + endpointName + "/{index}",
+                                    "returns",
+                                    typeName,
+                                    "args",
+                                    ImmutableMap.of("index", "integer")));
+                });
 
         return ImmutableMap.of(
                 "name", "Auto Deserialize Service",
@@ -116,21 +145,26 @@ public final class GenerateServerServices {
     private static Map<String, Object> generateSingleHeaderService(List<SingleHeaderParamTests> testCases) {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
-        testCases
-                .stream()
+        testCases.stream()
                 .map(SingleHeaderParamTests::getType)
                 .map(TestCasesUtils::parseConjureType)
                 .forEach(conjureType -> {
                     String endpointName = TestCasesUtils.typeToEndpointName("header", conjureType);
                     String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
-                    endpoints.put(endpointName, ImmutableMap.of(
-                            "http", "POST /" + endpointName + "/{index}",
-                            "args", ImmutableMap.of(
-                                    "index", "integer",
-                                    "header", ImmutableMap.of(
-                                            "type", typeName,
-                                            "param-type", "header",
-                                            "param-id", "Some-Header"))));
+                    endpoints.put(
+                            endpointName,
+                            ImmutableMap.of(
+                                    "http",
+                                    "POST /" + endpointName + "/{index}",
+                                    "args",
+                                    ImmutableMap.of(
+                                            "index",
+                                            "integer",
+                                            "header",
+                                            ImmutableMap.of(
+                                                    "type", typeName,
+                                                    "param-type", "header",
+                                                    "param-id", "Some-Header"))));
                 });
 
         return ImmutableMap.of(
@@ -144,18 +178,19 @@ public final class GenerateServerServices {
     private static Map<String, Object> generateSinglePathParamService(List<SinglePathParamTests> testCases) {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
-        testCases
-                .stream()
+        testCases.stream()
                 .map(SinglePathParamTests::getType)
                 .map(TestCasesUtils::parseConjureType)
                 .forEach(conjureType -> {
                     String endpointName = TestCasesUtils.typeToEndpointName("pathParam", conjureType);
                     String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
-                    endpoints.put(endpointName, ImmutableMap.of(
-                            "http", "POST /" + endpointName + "/{index}/{param}",
-                            "args", ImmutableMap.of(
-                                    "index", "integer",
-                                    "param", typeName)));
+                    endpoints.put(
+                            endpointName,
+                            ImmutableMap.of(
+                                    "http",
+                                    "POST /" + endpointName + "/{index}/{param}",
+                                    "args",
+                                    ImmutableMap.of("index", "integer", "param", typeName)));
                 });
 
         return ImmutableMap.of(
@@ -175,14 +210,20 @@ public final class GenerateServerServices {
                 .forEach(conjureType -> {
                     String endpointName = TestCasesUtils.typeToEndpointName("queryParam", conjureType);
                     String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
-                    endpoints.put(endpointName, ImmutableMap.of(
-                            "http", "POST /" + endpointName + "/{index}",
-                            "args", ImmutableMap.of(
-                                    "index", "integer",
-                                    "someQuery", ImmutableMap.of(
-                                            "type", typeName,
-                                            "param-type", "query",
-                                            "param-id", "foo"))));
+                    endpoints.put(
+                            endpointName,
+                            ImmutableMap.of(
+                                    "http",
+                                    "POST /" + endpointName + "/{index}",
+                                    "args",
+                                    ImmutableMap.of(
+                                            "index",
+                                            "integer",
+                                            "someQuery",
+                                            ImmutableMap.of(
+                                                    "type", typeName,
+                                                    "param-type", "query",
+                                                    "param-id", "foo"))));
                 });
 
         return ImmutableMap.of(
@@ -192,5 +233,4 @@ public final class GenerateServerServices {
                 "base-path", "/single-query-param",
                 "endpoints", endpoints.build());
     }
-
 }

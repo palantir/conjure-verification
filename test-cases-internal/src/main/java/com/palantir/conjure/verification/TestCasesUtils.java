@@ -27,8 +27,7 @@ import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 
 public final class TestCasesUtils {
-    public static final ObjectMapper YAML_MAPPER = ObjectMappers
-            .withDefaultModules(new ObjectMapper(new YAMLFactory()))
+    public static final ObjectMapper YAML_MAPPER = ObjectMappers.withDefaultModules(new ObjectMapper(new YAMLFactory()))
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     private TestCasesUtils() {}
