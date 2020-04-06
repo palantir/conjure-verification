@@ -69,8 +69,7 @@ public final class CompileVerificationClientTestCasesJson {
         System.out.println("Total test cases: " + total);
         jsonMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, testCases);
 
-        List<File> files = Streams
-                .stream(MoreFiles.fileTraverser().breadthFirst(Paths.get("src/main/conjure")))
+        List<File> files = Streams.stream(MoreFiles.fileTraverser().breadthFirst(Paths.get("src/main/conjure")))
                 .filter(MoreFiles.isDirectory().negate())
                 .filter(path -> path.getFileName().toString().endsWith(".yml"))
                 .map(Path::toFile)
@@ -78,8 +77,8 @@ public final class CompileVerificationClientTestCasesJson {
         ConjureDefinition ir = Conjure.parse(files);
 
         checkEndpointNamesMatchPaths(ir);
-        checkNoLeftovers(outputFile, serverTestCases.getAutoDeserialize().keySet(),
-                serviceByName(ir, "AutoDeserializeService"));
+        checkNoLeftovers(
+                outputFile, serverTestCases.getAutoDeserialize().keySet(), serviceByName(ir, "AutoDeserializeService"));
     }
 
     private static long countPositiveAndNegative(Map<EndpointName, PositiveAndNegativeTestCases> tests) {
@@ -93,21 +92,19 @@ public final class CompileVerificationClientTestCasesJson {
             String name = service.getServiceName().getName();
 
             service.getEndpoints().forEach(endpoint -> {
-                if (!endpoint.getHttpPath().get().contains(endpoint.getEndpointName().get())) {
+                if (!endpoint.getHttpPath()
+                        .get()
+                        .contains(endpoint.getEndpointName().get())) {
                     throw new RuntimeException(String.format(
                             "%s#%s has an inconsistent path: %s",
-                            name,
-                            endpoint.getEndpointName(),
-                            endpoint.getHttpPath()));
+                            name, endpoint.getEndpointName(), endpoint.getHttpPath()));
                 }
             });
         });
     }
 
     private static void checkNoLeftovers(
-            File outputFile,
-            Set<EndpointName> testCases,
-            ServiceDefinition serviceDefinition) {
+            File outputFile, Set<EndpointName> testCases, ServiceDefinition serviceDefinition) {
 
         Set<String> fromTestCasesYml = testCases.stream().map(EndpointName::get).collect(toSet());
 
@@ -129,28 +126,27 @@ public final class CompileVerificationClientTestCasesJson {
     }
 
     private static ServiceDefinition serviceByName(ConjureDefinition ir, String name) {
-        return ir.getServices().stream().filter(s -> s.getServiceName().getName().equals(name)).findFirst().get();
+        return ir.getServices().stream()
+                .filter(s -> s.getServiceName().getName().equals(name))
+                .findFirst()
+                .get();
     }
 
     private static Map<EndpointName, PositiveAndNegativeTestCases> generateBodyTestCases(List<BodyTests> bodyTests) {
         ImmutableMap.Builder<EndpointName, PositiveAndNegativeTestCases> builder = ImmutableMap.builder();
-        bodyTests.forEach(t ->
-                builder.put(endpointName("get", t.getType()),
-                        PositiveAndNegativeTestCases
-                                .builder()
-                                .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
-                                .negative(t.getNegative().stream().map(TestCase::get).collect(Collectors.toList()))
-                                .addAllNegative(t
-                                        .getClientPositiveServerFail()
-                                        .stream()
-                                        .map(TestCase::get)
-                                        .collect(Collectors.toList()))
-                                .build()));
+        bodyTests.forEach(t -> builder.put(
+                endpointName("get", t.getType()),
+                PositiveAndNegativeTestCases.builder()
+                        .positive(t.getPositive().stream().map(TestCase::get).collect(Collectors.toList()))
+                        .negative(t.getNegative().stream().map(TestCase::get).collect(Collectors.toList()))
+                        .addAllNegative(t.getClientPositiveServerFail().stream()
+                                .map(TestCase::get)
+                                .collect(Collectors.toList()))
+                        .build()));
         return builder.build();
     }
 
     private static EndpointName endpointName(String prefix, ConjureTypeString type) {
-        return EndpointName.of(
-                TestCasesUtils.typeToEndpointName(prefix, TestCasesUtils.parseConjureType(type)));
+        return EndpointName.of(TestCasesUtils.typeToEndpointName(prefix, TestCasesUtils.parseConjureType(type)));
     }
 }

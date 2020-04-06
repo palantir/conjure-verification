@@ -46,8 +46,8 @@ public final class EndpointNameConjureTypeVisitor implements ConjureTypeVisitor<
 
     @Override
     public String visitMap(MapType type) {
-        return "mapOf" + StringUtils.capitalize(type.keyType().visit(this))
-                + "To" + StringUtils.capitalize(type.valueType().visit(this));
+        return "mapOf" + StringUtils.capitalize(type.keyType().visit(this)) + "To"
+                + StringUtils.capitalize(type.valueType().visit(this));
     }
 
     @Override

@@ -35,17 +35,21 @@ public final class GenerateClientServices {
                 generateAutoDeserializeService(testCases.getBody()));
     }
 
-    private static void writeServiceDefinition(
-            File fileName, String serviceName, Map<String, Object> service) throws IOException {
-        TestCasesUtils.YAML_MAPPER.writeValue(fileName,
-                createConjureYmlBuilder().put("services", ImmutableMap.of(serviceName, service)).build());
+    private static void writeServiceDefinition(File fileName, String serviceName, Map<String, Object> service)
+            throws IOException {
+        TestCasesUtils.YAML_MAPPER.writeValue(
+                fileName,
+                createConjureYmlBuilder()
+                        .put("services", ImmutableMap.of(serviceName, service))
+                        .build());
     }
 
     private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {
         ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
         builder.put(
                 "types",
-                ImmutableMap.of("conjure-imports",
+                ImmutableMap.of(
+                        "conjure-imports",
                         ImmutableMap.of(
                                 "examples", "../example-types.conjure.yml",
                                 "testCases", "../test-cases.conjure.yml")));
@@ -55,14 +59,22 @@ public final class GenerateClientServices {
     private static Map<String, Object> generateAutoDeserializeService(List<BodyTests> bodyTests) {
         ImmutableMap.Builder<String, Object> endpoints = ImmutableMap.builder();
 
-        bodyTests.stream().map(BodyTests::getType).map(TestCasesUtils::parseConjureType).forEach(conjureType -> {
-            String endpointName = TestCasesUtils.typeToEndpointName("get", conjureType);
-            String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
-            endpoints.put(endpointName, ImmutableMap.of(
-                    "http", "POST /" + endpointName,
-                    "returns", typeName,
-                    "args", ImmutableMap.of("body", typeName)));
-        });
+        bodyTests.stream()
+                .map(BodyTests::getType)
+                .map(TestCasesUtils::parseConjureType)
+                .forEach(conjureType -> {
+                    String endpointName = TestCasesUtils.typeToEndpointName("get", conjureType);
+                    String typeName = conjureType.visit(new ResolveLocalReferencesConjureTypeVisitor());
+                    endpoints.put(
+                            endpointName,
+                            ImmutableMap.of(
+                                    "http",
+                                    "POST /" + endpointName,
+                                    "returns",
+                                    typeName,
+                                    "args",
+                                    ImmutableMap.of("body", typeName)));
+                });
 
         return ImmutableMap.of(
                 "name", "Auto Deserialize Service",
