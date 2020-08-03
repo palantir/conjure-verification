@@ -1,4 +1,4 @@
-com.fasterxml.jackson.*:* = 2.11.1
+com.fasterxml.jackson.*:* = 2.11.2
 com.google.guava:guava = 23.6-jre
 com.palantir.conjure.java.runtime:* = 6.3.0
 com.palantir.conjure.java:* = 5.26.0
