@@ -26,16 +26,15 @@ buildscript {
     }
 
     dependencies {
+        classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:0.4.8'
         classpath 'com.palantir.javaformat:gradle-palantir-java-format:1.0.1'
-        classpath 'com.netflix.nebula:gradle-info-plugin:9.3.0'
-        classpath 'com.netflix.nebula:nebula-publishing-plugin:17.3.2'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
         classpath 'com.palantir.baseline:gradle-baseline-java:2.49.2'
         classpath 'com.palantir.gradle.conjure:gradle-conjure:5.1.1'
         classpath 'com.palantir.gradle.gitversion:gradle-git-version:0.12.3'
     }
 }
 
+apply plugin: 'com.palantir.external-publish'
 apply plugin: 'com.palantir.git-version'
 apply plugin: 'com.palantir.baseline'
 apply from: 'gradle/publish-rust-dist.gradle'
