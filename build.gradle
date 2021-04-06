@@ -54,7 +54,7 @@ allprojects {
     apply plugin: 'java-library'
 }
 
-variants.each { String variant ->
+['server', 'client'].each { String variant ->
     task "${variant}DistTarLinux"(type: Tar) {
         from "target/release/conjure-verification-${variant}"
         baseName = "verification-${variant}-linux"
