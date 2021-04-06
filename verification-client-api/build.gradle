@@ -1,5 +1,6 @@
-apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
 apply plugin: 'com.palantir.conjure'
+apply plugin: 'com.palantir.external-publish-conjure'
+apply plugin: 'com.palantir.external-publish-custom'
 
 dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind'
@@ -10,7 +11,8 @@ dependencies {
     compile project(':test-cases-internal')
     compile project(':test-cases-internal:test-cases-internal-objects')
     
-    runtimeOnly 'org.slf4j:slf4j-simple'}
+    runtimeOnly 'org.slf4j:slf4j-simple'
+}
 
 // Ensure we generate definitions first before conjure tries to compile them
 tasks.copyConjureSourcesIntoBuild {
@@ -30,24 +32,12 @@ task compileTestCasesJson(type: JavaExec) {
 build.dependsOn compileTestCasesJson
 task generate(dependsOn: compileTestCasesJson)
 
-publishing {
-    publications {
-        conjureIr(MavenPublication) {
-            artifactId project.name
-            artifact (compileIr.outputs.files.singleFile) {
-                extension 'conjure.json'
-                builtBy compileIr
-            }
-        }
-
-        testCases(MavenPublication) {
-            artifactId "verification-client-test-cases"
-            artifact (compileTestCasesJson.outputs.files.singleFile) {
-                extension 'json'
-                builtBy compileTestCasesJson
-            }
+externalPublishing {
+    publication('testCases') {
+        artifactId 'verification-client-test-cases'
+        artifact (compileTestCasesJson.outputs.files.singleFile) {
+            extension 'json'
+            builtBy compileTestCasesJson
         }
     }
 }
-
-

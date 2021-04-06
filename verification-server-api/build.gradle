@@ -1,5 +1,7 @@
-apply from: "${rootDir}/gradle/publish-json-artifacts.gradle"
 apply plugin: 'com.palantir.conjure'
+apply plugin: 'com.palantir.external-publish-conjure'
+apply plugin: 'com.palantir.external-publish-custom'
+
 
 dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind'
@@ -31,22 +33,12 @@ task compileTestCasesJson(type: JavaExec) {
 build.dependsOn compileTestCasesJson
 task generate(dependsOn: compileTestCasesJson)
 
-publishing {
-    publications {
-        conjureIr(MavenPublication) {
-            artifactId project.name
-            artifact (compileIr.outputs.files.singleFile) {
-                extension 'conjure.json'
-                builtBy compileIr
-            }
-        }
-
-        testCases(MavenPublication) {
-            artifactId "verification-server-test-cases"
-            artifact (compileTestCasesJson.outputs.files.singleFile) {
-                extension 'json'
-                builtBy compileTestCasesJson
-            }
+externalPublishing {
+    publication('testCases') {
+        artifactId 'verification-server-test-cases'
+        artifact (compileTestCasesJson.outputs.files.singleFile) {
+            extension 'json'
+            builtBy compileTestCasesJson
         }
     }
 }

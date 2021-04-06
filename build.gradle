@@ -26,19 +26,18 @@ buildscript {
     }
 
     dependencies {
+        classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:0.4.10'
         classpath 'com.palantir.javaformat:gradle-palantir-java-format:1.0.1'
-        classpath 'com.netflix.nebula:gradle-info-plugin:9.3.0'
-        classpath 'com.netflix.nebula:nebula-publishing-plugin:17.3.2'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
         classpath 'com.palantir.baseline:gradle-baseline-java:2.49.2'
         classpath 'com.palantir.gradle.conjure:gradle-conjure:5.2.0'
         classpath 'com.palantir.gradle.gitversion:gradle-git-version:0.12.3'
     }
 }
 
+apply plugin: 'com.palantir.external-publish'
 apply plugin: 'com.palantir.git-version'
 apply plugin: 'com.palantir.baseline'
-apply from: 'gradle/publish-rust-dist.gradle'
+apply plugin: 'com.palantir.external-publish-custom'
 
 allprojects {
     apply plugin: 'com.palantir.java-format'
@@ -51,8 +50,36 @@ allprojects {
             url 'https://dl.bintray.com/palantir/releases/'
         }
     }
+
+    apply plugin: 'java-library'
 }
 
-subprojects {
-    apply plugin: 'java-library'
+['server', 'client'].each { String variant ->
+    task "${variant}DistTarLinux"(type: Tar) {
+        from "target/release/conjure-verification-${variant}"
+        baseName = "verification-${variant}-linux"
+        compression = Compression.GZIP
+    }
+
+    task "${variant}DistTarOsx"(type: Tar) {
+        from "target/x86_64-apple-darwin/release/conjure-verification-${variant}"
+        baseName = "verification-${variant}-osx"
+        compression = Compression.GZIP
+    }
+
+    externalPublishing {
+        publication("${variant}DistTarLinux") {
+            artifactId "verification-$variant"
+            artifact (tasks["${variant}DistTarLinux"]) {
+                classifier "linux"
+            }
+        }
+
+        publication("${variant}DistTarOsx") {
+            artifactId "verification-$variant"
+            artifact (tasks["${variant}DistTarOsx"]) {
+                classifier "osx"
+            }
+        }
+    }
 }
