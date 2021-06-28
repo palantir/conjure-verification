@@ -80,7 +80,7 @@ jobs:
 
   cargo-build-osx:
     macos:
-      xcode: "9.4.1"
+      xcode: 12.5.0
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
