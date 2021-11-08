@@ -4,7 +4,7 @@
 
 # conjure-verification
 
-Behaviour aims to satisfy [RFC 004: Consistent wire-format test cases](https://github.com/palantir/conjure/blob/develop/docs/rfc/004-consistent-wire-format-test-cases.md), but there are a few differences.
+Behaviour aims to satisfy [RFC 004: Consistent wire-format test cases](https://github.com/palantir/conjure/blob/master/docs/rfc/004-consistent-wire-format-test-cases.md), but there are a few differences.
 
 This project has two main components:
 * a [_verification server_](/docs/verification_server.md), is a reference server used to test Conjure client generators and libraries.
