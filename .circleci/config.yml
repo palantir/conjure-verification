@@ -220,6 +220,8 @@ workflows:
             - gradle-build
       - cargo-build-osx:
           filters: { tags: { only: /.*/ } }
+      - cargo-build-osx-aarch64:
+          filters: { tags: { only: /.*/ } }
       - gradle-build:
           filters: { tags: { only: /.*/ } }
       - publish-docker:
@@ -230,5 +232,6 @@ workflows:
           requires:
             - cargo-build-linux
             - cargo-build-osx
+            - cargo-build-osx-aarch64
             - gradle-build
           filters: { branches: { ignore: /.*/ }, tags: { only: /.*/ } }
