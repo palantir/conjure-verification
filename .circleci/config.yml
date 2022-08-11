@@ -126,6 +126,7 @@ jobs:
       RUST_CHANNEL: 1.63.0
       TARGET: aarch64-apple-darwin
       SOURCE: x86_64-apple-darwin
+      PKG_CONFIG_ALLOW_CROSS: 1
     steps:
     - checkout
     - run:
