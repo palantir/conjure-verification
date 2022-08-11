@@ -55,7 +55,13 @@ allprojects {
 
     task "${variant}DistTarOsx"(type: Tar) {
         from "target/x86_64-apple-darwin/release/conjure-verification-${variant}"
-        baseName = "verification-${variant}-osx"
+        baseName = "verification-${variant}-osx-x86_64"
+        compression = Compression.GZIP
+    }
+
+    task "${variant}DistTarOsx"(type: Tar) {
+        from "target/aarch64-apple-darwin/release/conjure-verification-${variant}"
+        baseName = "verification-${variant}-osx-aarch64"
         compression = Compression.GZIP
     }
 
@@ -67,10 +73,17 @@ allprojects {
             }
         }
 
-        publication("${variant}DistTarOsx") {
+        publication("${variant}DistTarOsxX86_64") {
             artifactId "verification-$variant"
             artifact (tasks["${variant}DistTarOsx"]) {
-                classifier "osx"
+                classifier "osx-x86_64"
+            }
+        }
+
+        publication("${variant}DistTarOsxAarch64") {
+            artifactId "verification-$variant"
+            artifact (tasks["${variant}DistTarOsx"]) {
+                classifier "osx-aarch64"
             }
         }
     }

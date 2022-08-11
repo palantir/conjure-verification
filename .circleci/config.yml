@@ -33,7 +33,7 @@ jobs:
 
   cargo-build-linux:
     docker:
-    - image: circleci/rust:1.29.2
+    - image: circleci/rust:1.54.0
     environment:
       RUSTFLAGS: -D warnings
     steps:
@@ -84,7 +84,7 @@ jobs:
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
-      RUST_CHANNEL: 1.29.2
+      RUST_CHANNEL: 1.54.0
       TARGET: x86_64-apple-darwin
     steps:
     - checkout
@@ -116,6 +116,45 @@ jobs:
         path: ./target/x86_64-apple-darwin/release/conjure-verification-server
     - store_artifacts:
         path: ./target/x86_64-apple-darwin/release/conjure-verification-client
+
+  cargo-build-osx-aarch64:
+    macos:
+      xcode: "9.4.1"
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
+      FL_OUTPUT_DIR: output
+      RUST_CHANNEL: 1.54.0
+      TARGET: aarch64-apple-darwin
+    steps:
+    - checkout
+    - run:
+        name: 'Add ~/.cargo/bin to the PATH'
+        command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
+    - run: echo "$RUST_CHANNEL-$TARGET" > /tmp/rust-toolchain
+    - *RESTORE_RUSTUP
+    - run:
+        name: Install rustup
+        command: |
+          if [[ ! -e ~/.cargo/bin/rustup ]]; then
+             curl https://sh.rustup.rs -sSf | sh -s -- --no-modify-path --default-toolchain none -y
+          fi
+    - run: rustup default $(cat /tmp/rust-toolchain)
+    - *SAVE_RUSTUP
+    - run: rustc --version > ~/rust-version
+    - *RESTORE_REGISTRY
+    - *RESTORE_DEPS
+    - run: cargo build --target $TARGET --release
+    - *SAVE_DEPS
+    - *SAVE_REGISTRY
+    - persist_to_workspace:
+        root: .
+        paths:
+          - ./target/aarch64-apple-darwin/release/conjure-verification-server
+          - ./target/aarch64-apple-darwin/release/conjure-verification-client
+    - store_artifacts:
+        path: ./target/aarch64-apple-darwin/release/conjure-verification-server
+    - store_artifacts:
+        path: ./target/aarch64-apple-darwin/release/conjure-verification-client
 
   publish:
     docker:
