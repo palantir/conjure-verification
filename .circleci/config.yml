@@ -125,12 +125,13 @@ jobs:
       FL_OUTPUT_DIR: output
       RUST_CHANNEL: 1.63.0
       TARGET: aarch64-apple-darwin
+      SOURCE: x86_64-apple-darwin
     steps:
     - checkout
     - run:
         name: 'Add ~/.cargo/bin to the PATH'
         command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
-    - run: echo "$RUST_CHANNEL-$TARGET" > /tmp/rust-toolchain
+    - run: echo "$RUST_CHANNEL-$SOURCE" > /tmp/rust-toolchain
     - *RESTORE_RUSTUP
     - run:
         name: Install rustup
