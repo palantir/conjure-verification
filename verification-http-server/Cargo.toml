@@ -10,7 +10,7 @@ conjure-verification-error = { path = "../verification-error" }
 conjure-verification-error-derive = { path = "../verification-error-derive" }
 
 bytes = "0.4"
-flate2 = "1.0"
+flate2 = "1.0.24"
 futures = "0.1.21"
 http = "0.1"
 hyper = "0.12"
