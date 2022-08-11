@@ -1,0 +1,21 @@
+type: improvement
+improvement:
+  description: |-
+    Add support for aarch64
+
+    This causes a breaking change for any direct consumers as the
+    coordinates for the osx bundle will be changing such that there
+    is now a:
+
+    osx-x86_64 package
+
+    and
+
+    osx-aarch64 package
+
+    This adds a bit more safety to ensure that consumers don't inadvertently
+    grab the incorrect package.
+
+    Also bump the rust version to 1.54.0. Versions prior to 1.49.0 do not have support for aarch64. I arbitrarily picked 1.54.0 even though 1.63.0 was just published since I didn't want to go too bleeding edge.
+  links:
+  - https://github.com/palantir/conjure-verification/pull/522
