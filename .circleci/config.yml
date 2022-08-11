@@ -138,8 +138,8 @@ jobs:
           if [[ ! -e ~/.cargo/bin/rustup ]]; then
              curl https://sh.rustup.rs -sSf | sh -s -- --no-modify-path --default-toolchain none -y
           fi
-    - run: rustup target add aarch64-apple-darwin
     - run: rustup default $(cat /tmp/rust-toolchain)
+    - run: rustup target add aarch64-apple-darwin
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
