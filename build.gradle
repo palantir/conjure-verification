@@ -59,7 +59,7 @@ allprojects {
         compression = Compression.GZIP
     }
 
-    task "${variant}DistTarOsx"(type: Tar) {
+    task "${variant}DistTarOsxAarch64"(type: Tar) {
         from "target/aarch64-apple-darwin/release/conjure-verification-${variant}"
         baseName = "verification-${variant}-osx-aarch64"
         compression = Compression.GZIP
@@ -82,7 +82,7 @@ allprojects {
 
         publication("${variant}DistTarOsxAarch64") {
             artifactId "verification-$variant"
-            artifact (tasks["${variant}DistTarOsx"]) {
+            artifact (tasks["${variant}DistTarOsxAarch64"]) {
                 classifier "osx-aarch64"
             }
         }
