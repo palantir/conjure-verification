@@ -141,7 +141,7 @@ jobs:
     - run: rustup default $(cat /tmp/rust-toolchain)
     - run: rustup target add aarch64-apple-darwin
     - *SAVE_RUSTUP
-    - run: echo "1.63.0" > ~/rust-version
+    - run: echo $RUST_CHANNEL > ~/rust-version
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
     - run: cargo build --target $TARGET --release
