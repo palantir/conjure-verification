@@ -33,7 +33,8 @@ jobs:
 
   cargo-build-linux:
     docker:
-    - image: cimg/rust:1.63.0
+    # cimg/rust:1.63.0 wasn't available at the time of this commit
+    - image: cimg/rust:1.62.0
     environment:
       RUSTFLAGS: -D warnings
     steps:
