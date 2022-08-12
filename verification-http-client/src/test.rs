@@ -173,7 +173,8 @@ fn google() {
             ServiceConfig::builder()
                 .uris(vec!["https://www.google.com".parse().unwrap()])
                 .build(),
-        ).build();
+        )
+        .build();
 
     let agent = UserAgent::new(Agent::new("test", "1.0"));
     let tracer = Tracer::builder().build(Endpoint::builder().build());
@@ -198,8 +199,10 @@ fn google_http_proxy() {
                         .host_and_port(HostAndPort::new("localhost", 8080))
                         .credentials(Some(BasicCredentials::new("admin", "palantir")))
                         .build(),
-                )).build(),
-        ).build();
+                ))
+                .build(),
+        )
+        .build();
 
     let agent = UserAgent::new(Agent::new("test", "1.0"));
     let tracer = Tracer::builder().build(Endpoint::builder().build());
@@ -224,13 +227,17 @@ fn google_https_proxy() {
                         .host_and_port(HostAndPort::new("localhost", 8080))
                         .credentials(Some(BasicCredentials::new("admin", "palantir")))
                         .build(),
-                )).security(
+                ))
+                .security(
                     SecurityConfig::builder()
                         .ca_file(Some(
                             "/Users/sfackler/.mitmproxy/mitmproxy-ca-cert.pem".into(),
-                        )).build(),
-                ).build(),
-        ).build();
+                        ))
+                        .build(),
+                )
+                .build(),
+        )
+        .build();
 
     let agent = UserAgent::new(Agent::new("test", "1.0"));
     let tracer = Tracer::builder().build(Endpoint::builder().build());

@@ -93,7 +93,8 @@ where
                     negative: cases.negative.clone(),
                 };
                 Ok((endpoint.clone(), new_v))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
         single_path_param_service: client_test_cases
             .single_path_param_service
             .iter()
@@ -107,7 +108,8 @@ where
                         conjure_type: conjure_type.clone(),
                     },
                 ))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
         single_query_param_service: client_test_cases
             .single_query_param_service
             .iter()
@@ -121,7 +123,8 @@ where
                         conjure_type: conjure_type.clone(),
                     },
                 ))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
         single_header_service: client_test_cases
             .single_header_service
             .iter()
@@ -135,7 +138,8 @@ where
                         conjure_type: conjure_type.clone(),
                     },
                 ))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
     })
 }
 

@@ -75,7 +75,8 @@ impl<'a> Request<'a> {
                         },
                     )
                 })
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn query_param<T>(&self, name: &str) -> Result<T>

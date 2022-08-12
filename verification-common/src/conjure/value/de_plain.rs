@@ -97,7 +97,8 @@ mod test {
         let value = deserialize_plain(
             &optional_type(primitive_type(PrimitiveType::Integer)),
             "123",
-        ).expect("Should parse optional<integer>");
+        )
+        .expect("Should parse optional<integer>");
         assert_eq!(
             value,
             ConjureValue::Optional(Some(

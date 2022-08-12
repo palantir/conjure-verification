@@ -34,7 +34,8 @@ impl NodeSelector {
                 let mut url = url.clone();
                 url.path_segments_mut().unwrap().pop_if_empty();
                 Node { url }
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         // randomize node order so all services don't hotspot on one node, but we want deterministic tests
         if cfg!(not(test)) {

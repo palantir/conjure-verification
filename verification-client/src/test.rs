@@ -304,11 +304,11 @@ mod setup {
     ) -> Router {
         setup_routes(|test_cases, param_types| {
             test_cases.auto_deserialize = hashmap!(
-                    EndpointName::new(endpoint_name) => PositiveAndNegativeTestCases {
-                        positive: vec![test_body.to_string()],
-                        negative: vec![],
-                    }
-                );
+                EndpointName::new(endpoint_name) => PositiveAndNegativeTestCases {
+                    positive: vec![test_body.to_string()],
+                    negative: vec![],
+                }
+            );
             param_types.add(
                 TestType::Body,
                 EndpointName::new(endpoint_name),
@@ -426,7 +426,8 @@ mod server_under_test {
             bound_addr.ip(),
             bound_addr.port(),
             prefix
-        ).parse()
+        )
+        .parse()
         .unwrap();
         f(url);
 

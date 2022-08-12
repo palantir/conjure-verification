@@ -315,8 +315,10 @@ impl VerificationClientResource {
                                     url: base_url.to_string(),
                                 },
                             )
-                        })?]).build(),
-                ).build(),
+                        })?])
+                        .build(),
+                )
+                .build(),
         )
     }
 }

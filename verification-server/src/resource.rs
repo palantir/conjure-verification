@@ -114,7 +114,8 @@ impl SpecTestResource {
                     };
 
                     deserialize_plain(conjure_type, str.as_str()).map_err(|e| handle_err(e.into()))
-                }).unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
+                })
+                .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
             if param != *expected_param {
                 let error = "Param didn't match expected value";
                 return Err(Error::new_safe(
@@ -179,10 +180,12 @@ impl SpecTestResource {
                     ConjureValue::Primitive(ConjurePrimitiveValue::Binary(binary)) => {
                         StreamingResponse {
                             data: binary.0.to_owned(),
-                        }.into_response(request)
+                        }
+                        .into_response(request)
                     }
                     _ => SpecTestResource::response_non_streaming(case.0.text.as_str(), request),
-                }).map_right(|case| SpecTestResource::response_non_streaming(case.0, request))
+                })
+                .map_right(|case| SpecTestResource::response_non_streaming(case.0, request))
                 .into_inner();
         }
     }
@@ -510,7 +513,8 @@ mod test {
             |req| {
                 req.headers.insert(header_name, "yo".parse().unwrap());
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -519,7 +523,8 @@ mod test {
             |req| {
                 req.headers.insert(header_name, "-1234".parse().unwrap());
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -528,14 +533,16 @@ mod test {
             |req| {
                 req.headers.insert(header_name, "false".parse().unwrap());
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
             "/single-header-param/opt/0",
             0,
             |_| {},
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -578,7 +585,8 @@ mod test {
             |req| {
                 req.query_params.insert("foo".into(), vec!["yo".into()]);
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -587,7 +595,8 @@ mod test {
             |req| {
                 req.query_params.insert("foo".into(), vec!["-1234".into()]);
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -596,14 +605,16 @@ mod test {
             |req| {
                 req.query_params.insert("foo".into(), vec!["false".into()]);
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
             "/single-query-param/opt/0",
             0,
             |_| {},
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]

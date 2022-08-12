@@ -50,7 +50,8 @@ pub fn resolve_type(types: &[TypeDefinition], t: &Type) -> ResolvedType {
                     "Map key type should be primitive or enum but found: {:?}",
                     it
                 ),
-            }).into(),
+            })
+            .into(),
             value_type: resolve_type(types, &value_type).into(),
         }),
     }

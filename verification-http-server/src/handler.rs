@@ -201,7 +201,8 @@ impl SyncHandler {
                 &endpoint,
                 &path_params,
                 &query_params,
-            ).unwrap_or_else(|e| self.handler_error(&e));
+            )
+            .unwrap_or_else(|e| self.handler_error(&e));
 
         self.write_response(&parts.headers, response, body.size, sender, &response_size);
     }
@@ -376,7 +377,8 @@ impl Service for HttpService {
                 maybe_path_params,
                 query_params,
                 response_size,
-            ).map({ move |(response, _request_size)| response });
+            )
+            .map({ move |(response, _request_size)| response });
 
         Box::new(f)
     }

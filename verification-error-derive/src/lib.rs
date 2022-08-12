@@ -51,7 +51,7 @@ fn expand_derive_error_type(input: &DeriveInput) -> Result<TokenStream, String> 
     let unsafe_params_body = body_params(ident, data, false)?;
     let parse_body = parse(input, data)?;
 
-    let generated = quote!{
+    let generated = quote! {
         #[allow(non_upper_case_globals)]
         const #dummy_const: () = {
             extern crate conjure_verification_error as _conjure_verification_error;
@@ -169,7 +169,8 @@ fn code(ident: &Ident, data: &DataEnum) -> Result<TokenStream, String> {
             let code = string_attr(&v.attrs, "code")?;
             let code = Ident::new(&code, Span::call_site());
             Ok(quote!(#pattern => _conjure_verification_error::Code::#code))
-        }).collect::<Result<Vec<_>, String>>()?;
+        })
+        .collect::<Result<Vec<_>, String>>()?;
 
     let generated = quote! {
         match *self {
@@ -242,7 +243,8 @@ fn body_params(ident: &Ident, data: &DataEnum, safe: bool) -> Result<TokenStream
             };
 
             Ok(generated)
-        }).collect::<Result<Vec<_>, String>>()?;
+        })
+        .collect::<Result<Vec<_>, String>>()?;
 
     let generated = quote! {
         match *self {
@@ -300,7 +302,8 @@ fn parse(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream, String> {
             };
 
             Ok(generated)
-        }).collect::<Result<Vec<_>, _>>()?;
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     let generated = quote! {
         let _params = error.params();

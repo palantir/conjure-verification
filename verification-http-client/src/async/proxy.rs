@@ -109,17 +109,20 @@ impl PollProxyConnect for ProxyConnect {
                     .connect(proxy.addr.host(), proxy.addr.port()),
                 proxy,
                 dst: start.dst,
-            }.into(),
+            }
+            .into(),
             (Some(proxy), _) => ConnectingHttpProxy {
                 conn: start
                     .connector
                     .connect(proxy.addr.host(), proxy.addr.port()),
-            }.into(),
+            }
+            .into(),
             (None, _) => {
                 let port = start.dst.port().unwrap_or(default_port);
                 ConnectingDirect {
                     conn: start.connector.connect(start.dst.host(), port),
-                }.into()
+                }
+                .into()
             }
         };
 
@@ -155,7 +158,8 @@ impl PollProxyConnect for ProxyConnect {
                 conn: conn::handshake(stream),
                 proxy: state.proxy,
                 dst: state.dst,
-            }.into(),
+            }
+            .into(),
         ))
     }
 

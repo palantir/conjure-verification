@@ -29,7 +29,8 @@ pub fn without_defaults(generics: &Generics) -> Generics {
                     ..param.clone()
                 }),
                 _ => param.clone(),
-            }).collect(),
+            })
+            .collect(),
         ..generics.clone()
     }
 }
@@ -48,7 +49,8 @@ pub fn with_bound(generics: &Generics, bound: &Path) -> Generics {
                 modifier: TraitBoundModifier::None,
                 lifetimes: None,
                 path: bound.clone(),
-            })).into_iter()
+            }))
+            .into_iter()
             .collect(),
         })
     });

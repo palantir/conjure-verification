@@ -84,14 +84,15 @@ fn serialize_struct_body(fields: &FieldsNamed) -> TokenStream {
         .map(|f| {
             let ident = f.ident.as_ref().unwrap();
             let name = snake_to_camel(&ident.to_string());
-            quote!{
+            quote! {
                 _serde_conjure::serde::ser::SerializeMap::serialize_entry(
                     &mut __serde_state,
                     &#name,
                     &self.#ident,
                 )?;
             }
-        }).collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
 
     quote! {
         let mut __serde_state =

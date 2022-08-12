@@ -49,7 +49,8 @@ pub fn enum_definition(name: &str, variants: &[&str]) -> ResolvedType {
             .iter()
             .map(|value| ir::EnumValueDefinition {
                 value: value.to_string(),
-            }).collect(),
+            })
+            .collect(),
     })
 }
 

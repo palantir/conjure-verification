@@ -73,17 +73,13 @@ pub fn resolve_types<'a, 'b>(
                     // Resolve aliases
                     let type_ = resolve_type(&ir.types, type_for_endpoint_fn(&e));
                     // Create a unique map
-                    assert!(
-                        endpoint_map
-                            .insert(e.endpoint_name.clone().into(), type_)
-                            .is_none()
-                    );
+                    assert!(endpoint_map
+                        .insert(e.endpoint_name.clone().into(), type_)
+                        .is_none());
                 }
-                assert!(
-                    param_types
-                        .insert(test_type.clone(), endpoint_map)
-                        .is_none()
-                );
+                assert!(param_types
+                    .insert(test_type.clone(), endpoint_map)
+                    .is_none());
             } else {
                 panic!("Unable to find matching service for {}", service_name);
             }
