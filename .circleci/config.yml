@@ -36,7 +36,7 @@ jobs:
     # cimg/rust:1.63.0 wasn't available at the time of this commit
     - image: cimg/rust:1.62.0
     environment:
-      RUSTFLAGS: -D warnings
+      RUSTFLAGS: -W warnings -W deprecated
     steps:
     - checkout
     - run: rustc --version > ~/rust-version
