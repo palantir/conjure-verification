@@ -42,3 +42,6 @@ externalPublishing {
         }
     }
 }
+
+sourceCompatibility = 11
+
