@@ -178,7 +178,7 @@ jobs:
 
   gradle-build:
     docker:
-      - image: cimg/openjdk:11.0-node-browsers
+      - image: cimg/openjdk:11.0-browsers
     steps:
       - checkout
       - restore_cache:
