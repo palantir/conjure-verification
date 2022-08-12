@@ -3,13 +3,13 @@ apply plugin: 'com.palantir.external-publish-conjure'
 apply plugin: 'com.palantir.external-publish-custom'
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-databind'
-    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    compile 'com.palantir.conjure:conjure-core'
-    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
-    compile project("${project.name}-objects")
-    compile project(':test-cases-internal')
-    compile project(':test-cases-internal:test-cases-internal-objects')
+    imiplementation 'com.fasterxml.jackson.core:jackson-databind'
+    imiplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    imiplementation 'com.palantir.conjure:conjure-core'
+    imiplementation 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
+    imiplementation project("${project.name}-objects")
+    imiplementation project(':test-cases-internal')
+    imiplementation project(':test-cases-internal:test-cases-internal-objects')
     
     runtimeOnly 'org.slf4j:slf4j-simple'
 }
