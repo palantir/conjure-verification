@@ -28,7 +28,7 @@ pub fn derive_error_type(input: proc_macro::TokenStream) -> proc_macro::TokenStr
     let input = syn::parse(input).unwrap();
     match expand_derive_error_type(&input) {
         Ok(expanded) => expanded.into(),
-        Err(msg) => panic!(msg),
+        Err(msg) => panic!("{}", msg),
     }
 }
 
