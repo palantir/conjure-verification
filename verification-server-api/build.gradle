@@ -4,13 +4,13 @@ apply plugin: 'com.palantir.external-publish-custom'
 
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-databind'
-    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    compile 'com.palantir.conjure:conjure-core'
-    compile 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
-    compile project("${project.name}-objects")
-    compile project(':test-cases-internal')
-    compile project(':test-cases-internal:test-cases-internal-objects')
+    api 'com.fasterxml.jackson.core:jackson-databind'
+    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    api 'com.palantir.conjure:conjure-core'
+    api 'com.palantir.conjure.java.runtime:conjure-java-jackson-serialization'
+    api project("${project.name}-objects")
+    api project(':test-cases-internal')
+    api project(':test-cases-internal:test-cases-internal-objects')
 
     runtimeOnly 'org.slf4j:slf4j-simple'
 }
@@ -22,7 +22,7 @@ tasks.copyConjureSourcesIntoBuild {
 
 task compileTestCasesJson(type: JavaExec) {
     description = "Generate server-specific test cases"
-    main = "com.palantir.conjure.verification.server.CompileVerificationServerTestCasesJson"
+    mainClass = "com.palantir.conjure.verification.server.CompileVerificationServerTestCasesJson"
     classpath = sourceSets.main.runtimeClasspath
     args rootProject.file('master-test-cases.yml'), "$buildDir/test-cases.json"
 
@@ -35,9 +35,9 @@ task generate(dependsOn: compileTestCasesJson)
 
 externalPublishing {
     publication('testCases') {
-        artifactId 'verification-server-test-cases'
+        artifactId = 'verification-server-test-cases'
         artifact (compileTestCasesJson.outputs.files.singleFile) {
-            extension 'json'
+            extension = 'json'
             builtBy compileTestCasesJson
         }
     }

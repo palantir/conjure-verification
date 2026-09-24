@@ -12,6 +12,11 @@ This project has two main components:
 
 ## Development
 
+Use JDK 17 to run the Gradle build. Run
+`./gradlew build` to generate the Conjure definitions and Java test cases. Rust
+binaries are built separately; Gradle skips packaging them during `build` if
+those binaries are not present.
+
 - Install rustup using instructions on https://rustup.rs
 - Set up rustup to use the stable toolchain by default (note: nightly's cargofmt output will be different)
     ```

@@ -55,7 +55,7 @@ jobs:
 
   publish-docker:
     docker:
-    - image: circleci/openjdk:8u171-jdk
+    - image: cimg/openjdk:17.0
     steps:
     - setup_remote_docker
     - checkout
@@ -119,7 +119,7 @@ jobs:
 
   publish:
     docker:
-      - image: circleci/openjdk:8u171-jdk
+      - image: cimg/openjdk:17.0
     steps:
       - checkout
       - attach_workspace: { at: . }
@@ -135,7 +135,7 @@ jobs:
 
   gradle-build:
     docker:
-      - image: circleci/openjdk:8u171-jdk-node-browsers
+      - image: cimg/openjdk:17.0
     steps:
       - checkout
       - restore_cache:
