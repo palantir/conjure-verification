@@ -39,7 +39,11 @@ impl NodeSelector {
 
         // randomize node order so all services don't hotspot on one node, but we want deterministic tests
         if cfg!(not(test)) {
-            rand::thread_rng().shuffle(&mut nodes);
+            {
+            use rand::seq::SliceRandom;
+            let mut rng = rand::rng();
+            nodes.shuffle(&mut rng);
+        }
         }
 
         NodeSelector {

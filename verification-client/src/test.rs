@@ -47,6 +47,7 @@ use std::sync::Arc;
 use tokio::prelude::Write;
 use conjure_verification_http::headers;
 use url::Url;
+use derive_new::new;
 
 #[test]
 fn test_content_type_error() {

@@ -49,7 +49,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::executor::thread_pool::ThreadPool;
 use conjure_verification_http::headers::{self, Encoding};
-use url::{form_urlencoded, percent_encoding};
+use url::form_urlencoded;
 
 pub struct HttpService {
     router: Arc<Router>,
@@ -88,7 +88,7 @@ impl HttpService {
         let mut map = HashMap::new();
         if let RouteResult::Matched { ref params, .. } = *route {
             for (k, v) in params {
-                let value = percent_encoding::percent_decode(v.as_bytes())
+                let value = percent_encoding::percent_decode_str(v)
                     .decode_utf8()
                     .map_err(|e| Error::new_safe(e, ConjureVerificationError::InvalidUrl))?;
 

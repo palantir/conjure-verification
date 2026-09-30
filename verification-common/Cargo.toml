@@ -11,16 +11,16 @@ conjure-verification-error-derive = { path = "../verification-error-derive" }
 serde-conjure = { path = "../serde-conjure" }
 serde-conjure-derive = { path = "../serde-conjure-derive" }
 
-base64 = "0.9"
+base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
-derive_more = "0.11"
-derive-new = "0.5"
+derive_more = { version = "1", features = ["from", "display"] }
+derive-new = "0.7"
 either = "1.5"
-itertools = "0.7.4"
+itertools = "0.14"
 serde = "1.0"
 serde-value = "0.5.2"
 serde_derive = "1.0"
 serde_json = "1.0"
-serde_yaml = "0.7"
+serde_yaml_ng = "0.10"
 serde_plain = "0.3"
-uuid = { version = "0.6", features = ["v4", "serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }

@@ -32,7 +32,6 @@ extern crate pretty_env_logger;
 extern crate serde_conjure;
 extern crate serde_json;
 extern crate serde_plain;
-extern crate serde_yaml;
 #[macro_use]
 extern crate serde_conjure_derive;
 extern crate itertools;

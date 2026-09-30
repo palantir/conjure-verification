@@ -50,6 +50,7 @@ use conjure_verification_http_server::RouteWithOptions;
 
 use self::client_config::ServiceConfig;
 use self::client_config::ServiceDiscoveryConfig;
+use derive_more::From;
 
 lazy_static! {
     static ref USER_AGENT: UserAgent =
@@ -335,7 +336,7 @@ fn deserialize_expected_value(
 
 /// The full index among `PositiveAndNegativeTests` where positives start at index 0, and after them
 /// come the negative tests.
-#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
+#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, derive_more::Display)]
 pub struct TestIndex(usize);
 
 fn get_test_case_at_index(

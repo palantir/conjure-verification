@@ -16,7 +16,6 @@ extern crate base64;
 extern crate bytes;
 extern crate conjure_verification_error;
 extern crate conjure_verification_http_client_config;
-extern crate crossbeam;
 extern crate flate2;
 extern crate hyper;
 extern crate hyper_openssl;
@@ -49,7 +48,7 @@ extern crate tokio_openssl;
 
 use crate::config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
 use crate::errors::{Error, Result, SerializableError};
-use crossbeam::sync::ArcCell;
+use arc_swap::ArcSwap;
 use hyper::header::HeaderValue;
 use hyper::{Method, StatusCode};
 use hyper_openssl::HttpsConnector;
@@ -251,7 +250,7 @@ pub struct Client {
     service: String,
     user_agent: HeaderValue,
     reload: Option<Reloadable<ServiceDiscoveryConfig>>,
-    state: ArcCell<ClientState>,
+    state: ArcSwap<ClientState>,
 }
 
 impl Client {
@@ -282,7 +281,7 @@ impl Client {
             service: service.to_string(),
             user_agent: HeaderValue::from_str(&user_agent.to_string()).unwrap(),
             reload: None,
-            state: ArcCell::new(Arc::new(state)),
+            state: ArcSwap::new(Arc::new(state)),
         })
     }
 
@@ -292,7 +291,7 @@ impl Client {
                 Ok(state) => {
                     info!("reloaded client for service: {}", self.service);
                     let state = Arc::new(state);
-                    self.state.set(state.clone());
+                    self.state.store(state.clone());
                     state
                 }
                 Err(e) => {
@@ -300,10 +299,10 @@ impl Client {
                         "error reloading client, service: {}, error: {}",
                         self.service, e
                     );
-                    self.state.get()
+                    self.state.load_full()
                 }
             },
-            None => self.state.get(),
+            None => self.state.load_full(),
         }
     }
 

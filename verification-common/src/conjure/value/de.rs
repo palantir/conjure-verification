@@ -22,6 +22,7 @@
 
 pub use serde::de::DeserializeSeed;
 
+use ::base64::Engine;
 use super::*;
 use crate::conjure::ir::EnumDefinition;
 use crate::conjure::ir::PrimitiveType;
@@ -171,7 +172,7 @@ impl<'de> Deserialize<'de> for Binary {
             where
                 E: Error,
             {
-                let decoded = ::base64::decode(v)
+                let decoded = ::base64::engine::general_purpose::STANDARD.decode(v)
                     .map_err(|e| Error::custom(format_args!("Couldn't decode base64: {}", e)))?;
                 Ok(Binary(decoded))
             }

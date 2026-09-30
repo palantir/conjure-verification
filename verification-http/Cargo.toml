@@ -6,7 +6,7 @@ authors = ["Steven Fackler <sfackler@palantir.com>", "Dan Sanduleac <dsanduleac@
 license-file = "../LICENSE"
 
 [dependencies]
-base64 = "0.9"
+base64 = "0.22"
 httpdate = "0.3"
 conjure-verification-error = { path = "../verification-error" }
 conjure-verification-error-derive = { path = "../verification-error-derive" }
@@ -17,4 +17,4 @@ lazy_static = "1.0"
 mime = "0.3"
 serde = "1.0"
 serde_json = "1.0"
-url = "1.0"
+url = "2"

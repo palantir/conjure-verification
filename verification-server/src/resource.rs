@@ -47,6 +47,7 @@ use conjure_verification_http::response::Response;
 use conjure_verification_http::SerializableFormat;
 use conjure_verification_http::headers;
 use conjure_verification_http_server::RouteWithOptions;
+use derive_more::From;
 
 pub struct SpecTestResource {
     test_cases: Box<ResolvedClientTestCases>,
@@ -283,7 +284,7 @@ impl Resource for SpecTestResource {
 
 /// The full index among `PositiveAndNegativeTests` where positives start at index 0, and after them
 /// come the negative tests.
-#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
+#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, derive_more::Display)]
 pub struct TestIndex(usize);
 
 #[derive(Debug, From)]

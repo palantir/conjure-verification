@@ -26,6 +26,7 @@ use crate::conjure::resolved_type::ResolvedType;
 use crate::conjure::type_resolution::resolve_type;
 use crate::test_spec::EndpointName;
 use std::collections::HashMap;
+use derive_new::new;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 /// The types of tests that you can run.

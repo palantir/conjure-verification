@@ -13,8 +13,9 @@
 // limitations under the License.
 use core::result::Result as StdResult;
 use std::str::FromStr;
+use derive_more::From;
 
-#[derive(Deserialize, Serialize, Debug, Eq, PartialEq, Hash, Clone, From, Display)]
+#[derive(Deserialize, Serialize, Debug, Eq, PartialEq, Hash, Clone, From, derive_more::Display)]
 pub struct EndpointName(pub String);
 
 impl FromStr for EndpointName {

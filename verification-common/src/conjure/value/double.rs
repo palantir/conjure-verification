@@ -37,7 +37,7 @@ pub enum ConjureDouble {
 /// Represents a finite `f64` (which cannot be NaN / NegativeInfinity / PositiveInfinity).
 /// Field is private so users can't create a FiniteDouble that's not actually finite.
 /// To access the value, use `FiniteDouble::value`.
-#[derive(Serialize, Debug, PartialEq, PartialOrd, Display)]
+#[derive(Serialize, Debug, PartialEq, PartialOrd, derive_more::Display)]
 pub struct FiniteDouble(f64);
 
 impl FiniteDouble {
