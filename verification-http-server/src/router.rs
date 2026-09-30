@@ -58,15 +58,14 @@ impl Router {
             Err(_) => return RouteResult::NotFound,
         };
 
-        match matches.handler.endpoints.get(&method) {
+        let handler = matches.handler();
+        match handler.endpoints.get(&method) {
             Some(endpoint) => RouteResult::Matched {
-                pattern: matches.handler.pattern.clone(),
-                params: matches.params,
+                pattern: handler.pattern.clone(),
+                params: matches.params().clone(),
                 endpoint: endpoint.clone(),
             },
-            None => {
-                RouteResult::MethodNotAllowed(matches.handler.endpoints.keys().cloned().collect())
-            }
+            None => RouteResult::MethodNotAllowed(handler.endpoints.keys().cloned().collect()),
         }
     }
 }

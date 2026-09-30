@@ -18,10 +18,7 @@ binaries are built separately; Gradle skips packaging them during `build` if
 those binaries are not present.
 
 - Install rustup using instructions on https://rustup.rs
-- Set up rustup to use the stable toolchain by default (note: nightly's cargofmt output will be different)
-    ```
-    rustup default stable
-    ```
+- The Rust toolchain is pinned in [`rust-toolchain.toml`](rust-toolchain.toml); rustup will automatically download and use it for any cargo command run in this repo.
 - Create an ssh key if you don't have one, and add it to [github](https://github.com/settings/keys)
 - make sure the key is added to the ssh-agent, so that cargo can login to github, in order to access the palantir repository index
     ```
