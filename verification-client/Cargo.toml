@@ -1,5 +1,6 @@
 [package]
 name = "conjure-verification-client"
+edition = "2021"
 version = "0.1.0"
 authors = ["Felipe Orozco <forozco@palantir.com>", "Dan Sanduleac <dsanduleac@palantir.com>"]
 license-file = "../LICENSE"
@@ -34,7 +35,6 @@ serde_json = "1.0"
 serde_yaml = "0.7"
 serde_plain = "0.3"
 typed-headers = "0.1"
-zipkin = "0.3"
 
 [dev-dependencies]
 tokio = "0.1"

@@ -22,8 +22,8 @@ extern crate typed_headers;
 #[macro_use]
 extern crate conjure_verification_error_derive;
 
+use crate::request::Format;
 use mime::{Mime, APPLICATION_JSON};
-use request::Format;
 
 pub mod auth;
 pub mod error;

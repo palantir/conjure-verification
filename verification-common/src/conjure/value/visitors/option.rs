@@ -20,8 +20,8 @@
 //! the deserialization process (contextual deserialization) instead of the usual context-free
 //! deserialization.
 
-use conjure::resolved_type::ResolvedType;
-use conjure::value::*;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::value::*;
 use core::fmt;
 pub use serde::de::DeserializeSeed;
 use serde::de::Visitor;

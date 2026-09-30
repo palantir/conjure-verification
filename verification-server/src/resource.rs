@@ -23,8 +23,17 @@ use either::{Either, Left, Right};
 use http::Method;
 use serde_json;
 
-use conjure::value::*;
+use crate::errors::*;
+use crate::fixed_streaming::StreamingResponse;
+use crate::raw_json::RawJson;
+use crate::resolved_test_cases::ResolvedClientTestCases;
+use crate::resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
+use crate::resolved_test_cases::ResolvedTestCase;
+use crate::resolved_test_cases::ResolvedTestCases;
+use crate::test_spec::EndpointName;
+use crate::DynamicResource;
 use conjure_verification_common::conjure::value::de_plain::deserialize_plain;
+use conjure_verification_common::conjure::value::*;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
 use conjure_verification_http::error::ConjureVerificationError;
@@ -37,16 +46,7 @@ use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http::SerializableFormat;
 use conjure_verification_http_server::RouteWithOptions;
-use errors::*;
-use fixed_streaming::StreamingResponse;
-use raw_json::RawJson;
-use resolved_test_cases::ResolvedClientTestCases;
-use resolved_test_cases::ResolvedPositiveAndNegativeTestCases;
-use resolved_test_cases::ResolvedTestCase;
-use resolved_test_cases::ResolvedTestCases;
-use test_spec::EndpointName;
 use typed_headers::{ContentLength, ContentType, HeaderMapExt};
-use DynamicResource;
 
 pub struct SpecTestResource {
     test_cases: Box<ResolvedClientTestCases>,
@@ -99,7 +99,7 @@ impl SpecTestResource {
             let param = param_str
                 .as_ref()
                 .map(|str| {
-                    let handle_err = |e: Box<StdError + Sync + Send>| {
+                    let handle_err = |e: Box<dyn StdError + Sync + Send>| {
                         let error_message = format!("{}", e);
                         Error::new_safe(
                             e,
@@ -114,7 +114,8 @@ impl SpecTestResource {
                     };
 
                     deserialize_plain(conjure_type, str.as_str()).map_err(|e| handle_err(e.into()))
-                }).unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
+                })
+                .unwrap_or_else(|| Ok(ConjureValue::Optional(None)))?;
             if param != *expected_param {
                 let error = "Param didn't match expected value";
                 return Err(Error::new_safe(
@@ -179,10 +180,12 @@ impl SpecTestResource {
                     ConjureValue::Primitive(ConjurePrimitiveValue::Binary(binary)) => {
                         StreamingResponse {
                             data: binary.0.to_owned(),
-                        }.into_response(request)
+                        }
+                        .into_response(request)
                     }
                     _ => SpecTestResource::response_non_streaming(case.0.text.as_str(), request),
-                }).map_right(|case| SpecTestResource::response_non_streaming(case.0, request))
+                })
+                .map_right(|case| SpecTestResource::response_non_streaming(case.0, request))
                 .into_inner();
         }
     }
@@ -431,17 +434,17 @@ mod test {
     use mime::APPLICATION_JSON;
     use typed_headers::{ContentType, HeaderMapExt};
 
-    use conjure::ir;
-    use conjure::resolved_type::builders::*;
-    use conjure::resolved_type::OptionalType;
-    use conjure::resolved_type::ResolvedType;
-    use register_resource;
-    use resolved_test_cases;
-    use router;
-    use router::RouteResult;
-    use router::Router;
-    use test_spec::ClientTestCases;
-    use test_spec::{EndpointName, PositiveAndNegativeTestCases};
+    use crate::register_resource;
+    use crate::resolved_test_cases;
+    use crate::test_spec::ClientTestCases;
+    use crate::test_spec::{EndpointName, PositiveAndNegativeTestCases};
+    use conjure_verification_common::conjure::ir;
+    use conjure_verification_common::conjure::resolved_type::builders::*;
+    use conjure_verification_common::conjure::resolved_type::OptionalType;
+    use conjure_verification_common::conjure::resolved_type::ResolvedType;
+    use conjure_verification_http_server::router;
+    use conjure_verification_http_server::router::RouteResult;
+    use conjure_verification_http_server::router::Router;
 
     use super::*;
     use conjure_verification_common::type_mapping::builder::*;
@@ -510,7 +513,8 @@ mod test {
             |req| {
                 req.headers.insert(header_name, "yo".parse().unwrap());
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -519,7 +523,8 @@ mod test {
             |req| {
                 req.headers.insert(header_name, "-1234".parse().unwrap());
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -528,14 +533,16 @@ mod test {
             |req| {
                 req.headers.insert(header_name, "false".parse().unwrap());
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
             "/single-header-param/opt/0",
             0,
             |_| {},
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -578,7 +585,8 @@ mod test {
             |req| {
                 req.query_params.insert("foo".into(), vec!["yo".into()]);
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -587,7 +595,8 @@ mod test {
             |req| {
                 req.query_params.insert("foo".into(), vec!["-1234".into()]);
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
@@ -596,14 +605,16 @@ mod test {
             |req| {
                 req.query_params.insert("foo".into(), vec!["false".into()]);
             },
-        ).unwrap();
+        )
+        .unwrap();
         send_request(
             &router,
             Method::POST,
             "/single-query-param/opt/0",
             0,
             |_| {},
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -685,9 +696,11 @@ mod test {
         let mut test_cases = ClientTestCases::default();
         let mut param_types_builder = ParamTypesBuilder::default();
         f(&mut test_cases, &mut param_types_builder);
-        let resolved_test_cases =
-            resolved_test_cases::resolve_test_cases(&param_types_builder.build(), &test_cases)
-                .unwrap();
+        let resolved_test_cases = crate::resolved_test_cases::resolve_test_cases(
+            &param_types_builder.build(),
+            &test_cases,
+        )
+        .unwrap();
         let (router, _) = create_resource(resolved_test_cases);
         router
     }
@@ -708,7 +721,8 @@ mod test {
             primitive_type(ir::PrimitiveType::Binary),
         );
         let resolved_test_cases =
-            resolved_test_cases::resolve_test_cases(&param_types.build(), &test_cases).unwrap();
+            crate::resolved_test_cases::resolve_test_cases(&param_types.build(), &test_cases)
+                .unwrap();
         let (router, resource) = create_resource(resolved_test_cases);
         (expected_body, router, resource)
     }
@@ -735,7 +749,8 @@ mod test {
             ),
         );
         let resolved_test_cases =
-            resolved_test_cases::resolve_test_cases(&param_types.build(), &test_cases).unwrap();
+            crate::resolved_test_cases::resolve_test_cases(&param_types.build(), &test_cases)
+                .unwrap();
         let (router, resource) = create_resource(resolved_test_cases);
         (expected_body, router, resource)
     }

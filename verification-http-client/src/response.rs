@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use errors::{Error, Result};
+use crate::errors::{Error, Result};
 use flate2::bufread::{GzDecoder, ZlibDecoder};
 use futures::stream::{self, Stream};
 use hyper::{self, Body, HeaderMap, StatusCode};
@@ -24,7 +24,7 @@ use serde_urlencoded;
 use std::io::{self, BufRead, BufReader, Cursor, Read};
 use typed_headers::{ContentCoding, ContentEncoding, ContentType, HeaderMapExt};
 
-use {RemoteError, APPLICATION_CBOR};
+use crate::{RemoteError, APPLICATION_CBOR};
 
 /// An HTTP response.
 pub struct Response {
@@ -121,7 +121,7 @@ impl Response {
             .typed_get::<ContentEncoding>()
             .map_err(Error::internal_safe)?;
 
-        let body: Box<BufRead> = match encoding.as_ref().map(|c| &***c) {
+        let body: Box<dyn BufRead> = match encoding.as_ref().map(|c| &***c) {
             None | Some([ContentCoding::IDENTITY]) => Box::new(self.body),
             Some([ContentCoding::GZIP]) => Box::new(BufReader::new(GzDecoder::new(self.body))),
             Some([ContentCoding::DEFLATE]) => Box::new(BufReader::new(ZlibDecoder::new(self.body))),
@@ -155,7 +155,7 @@ impl Format {
         }
     }
 
-    fn deserialize<T>(&self, r: &mut Read) -> Result<T>
+    fn deserialize<T>(&self, r: &mut dyn Read) -> Result<T>
     where
         T: DeserializeOwned,
     {
@@ -168,7 +168,7 @@ impl Format {
     }
 }
 
-pub struct ResponseBody(pub Box<BufRead>);
+pub struct ResponseBody(pub Box<dyn BufRead>);
 
 impl Read for ResponseBody {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {

@@ -1,5 +1,6 @@
 [package]
 name = "conjure-verification-http-client-config"
+edition = "2021"
 version = "0.10.0"
 authors = ["Steven Fackler <sfackler@palantir.com>"]
 

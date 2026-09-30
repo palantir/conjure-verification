@@ -42,7 +42,8 @@ fn minimal() {
             ServiceConfig::builder()
                 .uris(vec!["http://foo1.com".parse().unwrap()])
                 .build(),
-        ).build();
+        )
+        .build();
     assert_eq!(config, expected);
 }
 
@@ -84,17 +85,20 @@ fn root_defaults() {
                     SecurityConfig::builder()
                         .ca_file(Some("/foo/bar".into()))
                         .build(),
-                ).proxy(ProxyConfig::Http(
+                )
+                .proxy(ProxyConfig::Http(
                     HttpProxyConfig::builder()
                         .host_and_port(HostAndPort::new("localhost", 1234))
                         .credentials(Some(BasicCredentials::new("admin", "palantir")))
                         .build(),
-                )).connect_timeout(Duration::from_secs(10))
+                ))
+                .connect_timeout(Duration::from_secs(10))
                 .read_timeout(Duration::from_secs(11))
                 .write_timeout(Duration::from_secs(12))
                 .keep_alive(true)
                 .build(),
-        ).build();
+        )
+        .build();
     assert_eq!(config, expected);
 }
 
@@ -147,15 +151,18 @@ fn service_overrides() {
                     SecurityConfig::builder()
                         .ca_file(Some("/fizz/buzz".into()))
                         .build(),
-                ).proxy(ProxyConfig::Mesh(
+                )
+                .proxy(ProxyConfig::Mesh(
                     MeshProxyConfig::builder()
                         .host_and_port(HostAndPort::new("localhost", 5678))
                         .build(),
-                )).connect_timeout(Duration::from_secs(13))
+                ))
+                .connect_timeout(Duration::from_secs(13))
                 .read_timeout(Duration::from_secs(14))
                 .write_timeout(Duration::from_secs(15))
                 .keep_alive(false)
                 .build(),
-        ).build();
+        )
+        .build();
     assert_eq!(config, expected);
 }

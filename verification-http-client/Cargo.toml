@@ -1,5 +1,6 @@
 [package]
 name = "conjure-verification-http-client"
+edition = "2021"
 version = "0.1.0"
 authors = ["Steven Fackler <sfackler@palantir.com>"]
 license-file = "../LICENSE"
@@ -13,7 +14,6 @@ flate2 = "1.0"
 futures = "0.1.15"
 hyper = "0.12.2"
 hyper-openssl = "0.6"
-http-zipkin = "0.1"
 lazy_static = "1.0"
 log = "0.4"
 mime = "0.3"
@@ -32,7 +32,6 @@ tokio-io-timeout = "0.3"
 tokio-threadpool = "0.1"
 typed-headers = "0.1"
 url = "1.0"
-zipkin = "0.3"
 conjure-verification-error = { path = "../verification-error" }
 conjure-verification-http-client-config = { path = "../verification-http-client-config" }
 

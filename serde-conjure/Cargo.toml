@@ -1,5 +1,6 @@
 [package]
 name = "serde-conjure"
+edition = "2021"
 version = "0.1.4"
 authors = ["Steven Fackler <sfackler@palantir.com>"]
 

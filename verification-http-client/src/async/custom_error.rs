@@ -17,10 +17,10 @@ use hyper::client::connect::{Connect, Connected, Destination};
 use std::error::Error;
 use std::fmt;
 
-use async::alpn::AlpnConnector;
+use crate::r#async::alpn::AlpnConnector;
 
 #[derive(Debug)]
-pub struct ConnectError(pub Box<Error + Sync + Send>);
+pub struct ConnectError(pub Box<dyn Error + Sync + Send>);
 
 impl fmt::Display for ConnectError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -43,7 +43,7 @@ pub struct CustomErrorConnector(pub AlpnConnector);
 impl Connect for CustomErrorConnector {
     type Transport = <AlpnConnector as Connect>::Transport;
     type Error = ConnectError;
-    type Future = Box<Future<Item = (Self::Transport, Connected), Error = ConnectError> + Send>;
+    type Future = Box<dyn Future<Item = (Self::Transport, Connected), Error = ConnectError> + Send>;
 
     fn connect(&self, dst: Destination) -> Self::Future {
         Box::new(self.0.connect(dst).map_err(ConnectError))

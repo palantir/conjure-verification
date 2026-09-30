@@ -14,8 +14,8 @@
 use conjure_verification_error::Result;
 use http::Method;
 
-use request::Request;
-use response::IntoResponse;
+use crate::request::Request;
+use crate::response::IntoResponse;
 
 pub trait Resource: Sized + 'static + Sync + Send {
     const BASE_PATH: &'static str;

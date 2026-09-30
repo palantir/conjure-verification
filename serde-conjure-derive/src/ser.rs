@@ -15,8 +15,10 @@
 use proc_macro2::{Span, TokenStream};
 use syn::{self, Data, DataEnum, DataStruct, DeriveInput, Fields, FieldsNamed, Ident};
 
-use bound;
-use {pascal_to_camel, pascal_to_screaming, snake_to_camel, EnumKind};
+use crate::bound;
+use crate::{pascal_to_camel, pascal_to_screaming, snake_to_camel, EnumKind};
+use quote::quote;
+use syn::parse_quote;
 
 pub fn expand_derive_serialize(input: &DeriveInput) -> Result<TokenStream, String> {
     let ident = &input.ident;
@@ -29,7 +31,7 @@ pub fn expand_derive_serialize(input: &DeriveInput) -> Result<TokenStream, Strin
     let body = serialize_body(input);
 
     let generated = quote! {
-        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications, non_local_definitions)]
         const #dummy_const: () = {
             extern crate serde_conjure as _serde_conjure;
 
@@ -40,7 +42,7 @@ pub fn expand_derive_serialize(input: &DeriveInput) -> Result<TokenStream, Strin
                 fn serialize<__S>(
                     &self,
                     __serializer: __S
-                ) -> _serde_conjure::serde::export::Result<__S::Ok, __S::Error>
+                ) -> ::std::result::Result<__S::Ok, __S::Error>
                 where
                     __S: _serde_conjure::serde::Serializer
                 {
@@ -84,14 +86,15 @@ fn serialize_struct_body(fields: &FieldsNamed) -> TokenStream {
         .map(|f| {
             let ident = f.ident.as_ref().unwrap();
             let name = snake_to_camel(&ident.to_string());
-            quote!{
+            quote! {
                 _serde_conjure::serde::ser::SerializeMap::serialize_entry(
                     &mut __serde_state,
                     &#name,
                     &self.#ident,
                 )?;
             }
-        }).collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
 
     quote! {
         let mut __serde_state =

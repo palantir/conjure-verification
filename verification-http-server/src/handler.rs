@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error_handling;
+use crate::router::Endpoint;
+use crate::router::RouteResult;
+use crate::router::Router;
 use bytes::BytesMut;
 use conjure_verification_error::Code;
 use conjure_verification_error::Error;
@@ -20,7 +24,6 @@ use conjure_verification_http::error::ConjureVerificationError;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::response::*;
 use core::mem;
-use error_handling;
 use flate2::bufread::{GzDecoder, ZlibDecoder};
 use futures::future;
 use futures::stream;
@@ -34,9 +37,6 @@ use hyper::service::Service;
 use hyper::{self, Chunk, HeaderMap, StatusCode, Uri};
 use itertools::Itertools;
 use log::Level;
-use router::Endpoint;
-use router::RouteResult;
-use router::Router;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::io;
@@ -106,8 +106,10 @@ impl HttpService {
         query_params: HashMap<String, Vec<String>>,
         response_size: Arc<AtomicUsize>,
     ) -> Box<
-        Future<Item = (hyper::Response<hyper::Body>, u64), Error = Box<StdError + Sync + Send>>
-            + Send,
+        dyn Future<
+                Item = (hyper::Response<hyper::Body>, u64),
+                Error = Box<dyn StdError + Sync + Send>,
+            > + Send,
     > {
         match (route, path_params) {
             (RouteResult::NotFound, _) => {
@@ -201,7 +203,8 @@ impl SyncHandler {
                 &endpoint,
                 &path_params,
                 &query_params,
-            ).unwrap_or_else(|e| self.handler_error(&e));
+            )
+            .unwrap_or_else(|e| self.handler_error(&e));
 
         self.write_response(&parts.headers, response, body.size, sender, &response_size);
     }
@@ -234,7 +237,7 @@ impl SyncHandler {
         &self,
         headers: &HeaderMap,
         body: &'a mut SizeTrackingReader<BodyReader>,
-    ) -> Result<Box<Read + 'a>> {
+    ) -> Result<Box<dyn Read + 'a>> {
         match headers.typed_get::<ContentEncoding>() {
             Ok(Some(encoding)) => {
                 match &**encoding {
@@ -354,16 +357,19 @@ impl SyncHandler {
 impl Service for HttpService {
     type ReqBody = hyper::Body;
     type ResBody = hyper::Body;
-    type Error = Box<StdError + Sync + Send>;
+    type Error = Box<dyn StdError + Sync + Send>;
     type Future = Box<
-        Future<Item = hyper::Response<hyper::Body>, Error = Box<StdError + Sync + Send>> + Send,
+        dyn Future<Item = hyper::Response<hyper::Body>, Error = Box<dyn StdError + Sync + Send>>
+            + Send,
     >;
 
     fn call(
         &mut self,
         request: hyper::Request<<Self as Service>::ReqBody>,
-    ) -> Box<Future<Item = hyper::Response<hyper::Body>, Error = Box<StdError + Sync + Send>> + Send>
-    {
+    ) -> Box<
+        dyn Future<Item = hyper::Response<hyper::Body>, Error = Box<dyn StdError + Sync + Send>>
+            + Send,
+    > {
         let route = self.route(&request);
         let query_params = self.query_params(request.uri());
         let maybe_path_params = self.path_params(&route);
@@ -376,7 +382,8 @@ impl Service for HttpService {
                 maybe_path_params,
                 query_params,
                 response_size,
-            ).map({ move |(response, _request_size)| response });
+            )
+            .map(move |(response, _request_size)| response);
 
         Box::new(f)
     }

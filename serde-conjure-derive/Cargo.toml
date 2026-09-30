@@ -2,14 +2,15 @@
 name = "serde-conjure-derive"
 version = "0.1.4"
 authors = ["Steven Fackler <sfackler@palantir.com>"]
+edition = "2021"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "0.14", features = ["visit"] }
-proc-macro2 = "0.4"
-quote = "0.6"
+syn = { version = "2", features = ["visit"] }
+proc-macro2 = "1"
+quote = "1"
 
 [dev-dependencies]
 serde = "1.0"

@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use crate::error::ConjureVerificationError;
 use bytes::Bytes;
 use conjure_verification_error::{Error, Result};
-use error::ConjureVerificationError;
 use http::header::{HeaderMap, HeaderValue};
 use http::StatusCode;
 use serde::Serialize;
@@ -21,8 +21,8 @@ use serde_json;
 use std::io::Write;
 use typed_headers::{ContentLength, ContentType, HeaderMapExt};
 
-use request::{Format, Request};
-use SerializableFormat;
+use crate::request::{Format, Request};
+use crate::SerializableFormat;
 
 pub struct Response {
     pub status: StatusCode,
@@ -43,11 +43,11 @@ impl Response {
 pub enum Body {
     Empty,
     Fixed(Bytes),
-    Streaming(Box<WriteBody>),
+    Streaming(Box<dyn WriteBody>),
 }
 
 pub trait WriteBody {
-    fn write_body(&mut self, w: &mut Write) -> Result<()>;
+    fn write_body(&mut self, w: &mut dyn Write) -> Result<()>;
 }
 
 pub trait IntoResponse {
@@ -119,7 +119,7 @@ impl<T> WriteBody for SerializableBody<T>
 where
     T: Serialize,
 {
-    fn write_body(&mut self, res: &mut Write) -> Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> Result<()> {
         match self.format {
             SerializableFormat::Json => serde_json::to_writer(res, &self.body).map_err(|e| {
                 if e.is_io() {

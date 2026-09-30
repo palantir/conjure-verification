@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use auth::AuthToken;
+use crate::auth::AuthToken;
+use crate::error::ConjureVerificationError;
 use conjure_verification_error::{Code, Error, Result};
-use error::ConjureVerificationError;
 use http::header::HeaderMap;
 use mime::{Mime, STAR};
 use serde::de::DeserializeOwned;
@@ -25,7 +25,7 @@ use std::io::Read;
 use std::str::FromStr;
 use typed_headers::{Accept, Authorization, ContentType, HeaderMapExt, QualityItem};
 
-use SerializableFormat;
+use crate::SerializableFormat;
 
 const BODY_SIZE_LIMIT_BYTES: u64 = 1024 * 1024;
 
@@ -33,7 +33,7 @@ pub struct Request<'a> {
     path_params: &'a HashMap<String, String>,
     query_params: &'a HashMap<String, Vec<String>>,
     headers: &'a HeaderMap,
-    body: &'a mut Read,
+    body: &'a mut dyn Read,
     body_size_limit: u64,
 }
 
@@ -42,7 +42,7 @@ impl<'a> Request<'a> {
         path_params: &'a HashMap<String, String>,
         query_params: &'a HashMap<String, Vec<String>>,
         headers: &'a HeaderMap,
-        body: &'a mut Read,
+        body: &'a mut dyn Read,
     ) -> Request<'a> {
         Request {
             path_params,
@@ -75,7 +75,8 @@ impl<'a> Request<'a> {
                         },
                     )
                 })
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn query_param<T>(&self, name: &str) -> Result<T>
@@ -154,7 +155,7 @@ impl<'a> Request<'a> {
 
         let mut reader = self.body.take(self.body_size_limit);
 
-        let (is_io, error): (bool, Box<StdError + Sync + Send>) = match format {
+        let (is_io, error): (bool, Box<dyn StdError + Sync + Send>) = match format {
             SerializableFormat::Json => match serde_json::from_reader(&mut reader) {
                 Ok(t) => return Ok(t),
                 Err(e) => (e.is_io(), Box::new(e)),
@@ -173,7 +174,7 @@ impl<'a> Request<'a> {
         Err(Error::new(error, code))
     }
 
-    pub fn raw_body(&mut self) -> &mut Read {
+    pub fn raw_body(&mut self) -> &mut dyn Read {
         &mut self.body
     }
 

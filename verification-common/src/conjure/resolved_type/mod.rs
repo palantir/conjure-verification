@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::ir::EnumDefinition;
-use conjure::ir::PrimitiveType;
-use conjure::ir::TypeName;
+use crate::conjure::ir::EnumDefinition;
+use crate::conjure::ir::PrimitiveType;
+use crate::conjure::ir::TypeName;
 
 pub mod builders;
 

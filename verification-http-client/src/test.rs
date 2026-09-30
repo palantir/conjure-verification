@@ -30,13 +30,12 @@ use tokio::net::TcpStream;
 use tokio::reactor::Handle;
 use tokio::runtime::current_thread::Runtime;
 use tokio_openssl::SslAcceptorExt;
-use zipkin::{Endpoint, Tracer};
 
-use config::{
+use crate::config::{
     BasicCredentials, HostAndPort, HttpProxyConfig, ProxyConfig, SecurityConfig, ServiceConfig,
     ServiceDiscoveryConfig,
 };
-use {Agent, Client, UserAgent};
+use crate::{Agent, Client, UserAgent};
 
 struct TestService<F>(Arc<Mutex<F>>);
 
@@ -47,7 +46,7 @@ where
     type ReqBody = Body;
     type ResBody = Body;
     type Error = hyper::Error;
-    type Future = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
+    type Future = Box<dyn Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let mut f = self.0.lock();
@@ -161,8 +160,7 @@ impl Drop for TestTlsServer {
 fn client(config: &str) -> Client {
     let config = serde_json::from_str(&config).unwrap();
     let agent = UserAgent::new(Agent::new("test", "1.0"));
-    let tracer = Tracer::builder().build(Endpoint::builder().build());
-    Client::new_static("service", agent, &tracer, &config).unwrap()
+    Client::new_static("service", agent, &config).unwrap()
 }
 
 #[test]
@@ -173,11 +171,11 @@ fn google() {
             ServiceConfig::builder()
                 .uris(vec!["https://www.google.com".parse().unwrap()])
                 .build(),
-        ).build();
+        )
+        .build();
 
     let agent = UserAgent::new(Agent::new("test", "1.0"));
-    let tracer = Tracer::builder().build(Endpoint::builder().build());
-    let client = Client::new_static("google", agent, &tracer, &discovery).unwrap();
+    let client = Client::new_static("google", agent, &discovery).unwrap();
 
     let response = client.get("/").send().unwrap();
     let mut body = vec![];
@@ -198,12 +196,13 @@ fn google_http_proxy() {
                         .host_and_port(HostAndPort::new("localhost", 8080))
                         .credentials(Some(BasicCredentials::new("admin", "palantir")))
                         .build(),
-                )).build(),
-        ).build();
+                ))
+                .build(),
+        )
+        .build();
 
     let agent = UserAgent::new(Agent::new("test", "1.0"));
-    let tracer = Tracer::builder().build(Endpoint::builder().build());
-    let client = Client::new_static("google", agent, &tracer, &discovery).unwrap();
+    let client = Client::new_static("google", agent, &discovery).unwrap();
 
     let response = client.get("/").send().unwrap();
     let mut body = vec![];
@@ -224,17 +223,20 @@ fn google_https_proxy() {
                         .host_and_port(HostAndPort::new("localhost", 8080))
                         .credentials(Some(BasicCredentials::new("admin", "palantir")))
                         .build(),
-                )).security(
+                ))
+                .security(
                     SecurityConfig::builder()
                         .ca_file(Some(
                             "/Users/sfackler/.mitmproxy/mitmproxy-ca-cert.pem".into(),
-                        )).build(),
-                ).build(),
-        ).build();
+                        ))
+                        .build(),
+                )
+                .build(),
+        )
+        .build();
 
     let agent = UserAgent::new(Agent::new("test", "1.0"));
-    let tracer = Tracer::builder().build(Endpoint::builder().build());
-    let client = Client::new_static("google", agent, &tracer, &discovery).unwrap();
+    let client = Client::new_static("google", agent, &discovery).unwrap();
 
     let response = client.get("/").send().unwrap();
     let mut body = vec![];

@@ -17,7 +17,7 @@ use hyper::client::connect::{Connect, Connected, Destination};
 use hyper_openssl::{HttpsConnector, MaybeHttpsStream};
 use std::error::Error;
 
-use async::proxy::ProxyConnector;
+use crate::r#async::proxy::ProxyConnector;
 
 pub struct AlpnConnector {
     connector: HttpsConnector<ProxyConnector>,
@@ -35,9 +35,11 @@ impl AlpnConnector {
 
 impl Connect for AlpnConnector {
     type Transport = <HttpsConnector<ProxyConnector> as Connect>::Transport;
-    type Error = Box<Error + Sync + Send>;
-    type Future =
-        Box<Future<Item = (Self::Transport, Connected), Error = Box<Error + Sync + Send>> + Send>;
+    type Error = Box<dyn Error + Sync + Send>;
+    type Future = Box<
+        dyn Future<Item = (Self::Transport, Connected), Error = Box<dyn Error + Sync + Send>>
+            + Send,
+    >;
 
     fn connect(&self, dst: Destination) -> Self::Future {
         let require_http2 = self.require_http2;

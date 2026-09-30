@@ -46,7 +46,8 @@ impl WriteBody for StreamingResponse {
                 } else {
                     Done(chunk_res)
                 };
-            }).into_inner();
+            })
+            .into_inner();
     }
 }
 

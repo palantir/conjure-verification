@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use syn::punctuated::Punctuated;
 use syn::{
-    GenericParam, Generics, Path, PredicateType, TraitBound, TraitBoundModifier, Type, TypeParam,
+    GenericParam, Generics, Path, PredicateType, TraitBound, TraitBoundModifier, Type,
     TypeParamBound, TypePath, WherePredicate,
 };
 
@@ -23,13 +24,15 @@ pub fn without_defaults(generics: &Generics) -> Generics {
             .params
             .iter()
             .map(|param| match param {
-                GenericParam::Type(param) => GenericParam::Type(TypeParam {
-                    eq_token: None,
-                    default: None,
-                    ..param.clone()
-                }),
+                GenericParam::Type(param) => {
+                    let mut param = param.clone();
+                    param.eq_token = None;
+                    param.default = None;
+                    GenericParam::Type(param)
+                }
                 _ => param.clone(),
-            }).collect(),
+            })
+            .collect(),
         ..generics.clone()
     }
 }
@@ -43,13 +46,12 @@ pub fn with_bound(generics: &Generics, bound: &Path) -> Generics {
                 path: ty.ident.clone().into(),
             }),
             colon_token: Default::default(),
-            bounds: Some(TypeParamBound::Trait(TraitBound {
+            bounds: Punctuated::from_iter([TypeParamBound::Trait(TraitBound {
                 paren_token: None,
                 modifier: TraitBoundModifier::None,
                 lifetimes: None,
                 path: bound.clone(),
-            })).into_iter()
-            .collect(),
+            })]),
         })
     });
 

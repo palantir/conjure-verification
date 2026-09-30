@@ -15,10 +15,13 @@
 #[allow(unused_imports)]
 use conjure_verification_common::conjure;
 
+use crate::resource::*;
+use crate::test_spec::ServerTestCases;
+use crate::test_spec::{EndpointName, PositiveAndNegativeTestCases};
 use bytes::Bytes;
-use conjure::ir;
-use conjure::resolved_type::builders::*;
-use conjure::resolved_type::ResolvedType;
+use conjure_verification_common::conjure::ir;
+use conjure_verification_common::conjure::resolved_type::builders::*;
+use conjure_verification_common::conjure::resolved_type::ResolvedType;
 use conjure_verification_common::conjure::value::Binary;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::{Error, Result};
@@ -29,21 +32,18 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http::response::{Body, WriteBody};
+use conjure_verification_http_server::router;
+use conjure_verification_http_server::router::RouteResult;
+use conjure_verification_http_server::router::Router;
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
 use hyper::Method;
 use hyper::StatusCode;
 use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
-use resource::*;
-use router;
-use router::RouteResult;
-use router::Router;
 use serde_json;
 use std::collections::HashMap;
 use std::sync::Arc;
-use test_spec::ServerTestCases;
-use test_spec::{EndpointName, PositiveAndNegativeTestCases};
 use tokio::prelude::Write;
 use typed_headers::{ContentType, HeaderMapExt};
 use url::Url;
@@ -211,7 +211,7 @@ fn test_octet_stream() {
 pub struct StreamingResponse(Vec<u8>);
 
 impl WriteBody for StreamingResponse {
-    fn write_body(&mut self, w: &mut Write) -> Result<()> {
+    fn write_body(&mut self, w: &mut dyn Write) -> Result<()> {
         return w.write_all(self.0.as_ref()).map_err(Error::internal);
     }
 }
@@ -304,11 +304,11 @@ mod setup {
     ) -> Router {
         setup_routes(|test_cases, param_types| {
             test_cases.auto_deserialize = hashmap!(
-                    EndpointName::new(endpoint_name) => PositiveAndNegativeTestCases {
-                        positive: vec![test_body.to_string()],
-                        negative: vec![],
-                    }
-                );
+                EndpointName::new(endpoint_name) => PositiveAndNegativeTestCases {
+                    positive: vec![test_body.to_string()],
+                    negative: vec![],
+                }
+            );
             param_types.add(
                 TestType::Body,
                 EndpointName::new(endpoint_name),
@@ -376,7 +376,7 @@ mod server_under_test {
     use conjure_verification_http_server::router::Binder;
     use conjure_verification_http_server::DynamicResource;
 
-    pub type ResponseFunction = Fn(&mut Request) -> Result<Response> + Send + Sync + 'static;
+    pub type ResponseFunction = dyn Fn(&mut Request) -> Result<Response> + Send + Sync + 'static;
 
     #[derive(new)]
     pub struct ResponseMapping {
@@ -426,7 +426,8 @@ mod server_under_test {
             bound_addr.ip(),
             bound_addr.port(),
             prefix
-        ).parse()
+        )
+        .parse()
         .unwrap();
         f(url);
 

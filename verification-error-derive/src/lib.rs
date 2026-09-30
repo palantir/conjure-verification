@@ -14,21 +14,18 @@
 #![recursion_limit = "256"]
 
 extern crate proc_macro;
-extern crate proc_macro2;
-extern crate syn;
-
-#[macro_use]
-extern crate quote;
 
 use proc_macro2::{Span, TokenStream};
-use syn::{Attribute, Data, DataEnum, DeriveInput, Fields, Ident, Lit, Meta, NestedMeta};
+use quote::quote;
+use syn::punctuated::Punctuated;
+use syn::{Attribute, Data, DataEnum, DeriveInput, Expr, Fields, Ident, Lit, Meta, Token};
 
 #[proc_macro_derive(ErrorType, attributes(error_type))]
 pub fn derive_error_type(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse(input).unwrap();
     match expand_derive_error_type(&input) {
         Ok(expanded) => expanded.into(),
-        Err(msg) => panic!(msg),
+        Err(msg) => panic!("{}", msg),
     }
 }
 
@@ -51,8 +48,8 @@ fn expand_derive_error_type(input: &DeriveInput) -> Result<TokenStream, String> 
     let unsafe_params_body = body_params(ident, data, false)?;
     let parse_body = parse(input, data)?;
 
-    let generated = quote!{
-        #[allow(non_upper_case_globals)]
+    let generated = quote! {
+        #[allow(non_upper_case_globals, non_local_definitions)]
         const #dummy_const: () = {
             extern crate conjure_verification_error as _conjure_verification_error;
 
@@ -87,25 +84,23 @@ fn expand_derive_error_type(input: &DeriveInput) -> Result<TokenStream, String> 
 
 fn string_attr(attrs: &[Attribute], target: &str) -> Result<String, String> {
     for attr in attrs {
-        let attr = match attr.interpret_meta() {
-            Some(attr) => attr,
-            None => continue,
-        };
-
-        if attr.name() != "error_type" {
+        if !attr.path().is_ident("error_type") {
             continue;
         }
 
-        let list = match attr {
-            Meta::List(ref list) => list,
-            _ => return Err("expected #[error_type(...)]".to_string()),
+        let nested = match attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated) {
+            Ok(nested) => nested,
+            Err(_) => return Err("expected #[error_type(...)]".to_string()),
         };
 
-        for item in &list.nested {
+        for item in &nested {
             match *item {
-                NestedMeta::Meta(Meta::NameValue(ref meta)) if meta.ident == target => {
-                    let value = match meta.lit {
-                        Lit::Str(ref s) => s,
+                Meta::NameValue(ref meta) if meta.path.is_ident(target) => {
+                    let value = match meta.value {
+                        Expr::Lit(ref expr_lit) => match expr_lit.lit {
+                            Lit::Str(ref s) => s,
+                            _ => return Err("expected a string literal".to_string()),
+                        },
                         _ => return Err("expected a string literal".to_string()),
                     };
 
@@ -124,23 +119,18 @@ fn string_attr(attrs: &[Attribute], target: &str) -> Result<String, String> {
 
 fn unit_attr(attrs: &[Attribute], target: &str) -> Result<bool, String> {
     for attr in attrs {
-        let attr = match attr.interpret_meta() {
-            Some(attr) => attr,
-            None => continue,
-        };
-
-        if attr.name() != "error_type" {
+        if !attr.path().is_ident("error_type") {
             continue;
         }
 
-        let list = match attr {
-            Meta::List(list) => list,
-            _ => return Err("expected #[error_type(...)]".to_string()),
+        let nested = match attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated) {
+            Ok(nested) => nested,
+            Err(_) => return Err("expected #[error_type(...)]".to_string()),
         };
 
-        for item in &list.nested {
+        for item in &nested {
             match *item {
-                NestedMeta::Meta(Meta::Word(ref name)) if name == target => {
+                Meta::Path(ref path) if path.is_ident(target) => {
                     return Ok(true);
                 }
                 _ => {}
@@ -169,7 +159,8 @@ fn code(ident: &Ident, data: &DataEnum) -> Result<TokenStream, String> {
             let code = string_attr(&v.attrs, "code")?;
             let code = Ident::new(&code, Span::call_site());
             Ok(quote!(#pattern => _conjure_verification_error::Code::#code))
-        }).collect::<Result<Vec<_>, String>>()?;
+        })
+        .collect::<Result<Vec<_>, String>>()?;
 
     let generated = quote! {
         match *self {
@@ -242,7 +233,8 @@ fn body_params(ident: &Ident, data: &DataEnum, safe: bool) -> Result<TokenStream
             };
 
             Ok(generated)
-        }).collect::<Result<Vec<_>, String>>()?;
+        })
+        .collect::<Result<Vec<_>, String>>()?;
 
     let generated = quote! {
         match *self {
@@ -300,7 +292,8 @@ fn parse(input: &DeriveInput, data: &DataEnum) -> Result<TokenStream, String> {
             };
 
             Ok(generated)
-        }).collect::<Result<Vec<_>, _>>()?;
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     let generated = quote! {
         let _params = error.params();

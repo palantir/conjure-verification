@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use config::HostAndPort;
+use crate::config::HostAndPort;
 use futures::{Async, Future, Poll};
 use hyper::client::conn::{self, Connection, Handshake, ResponseFuture};
 use hyper::client::connect::{Connect, Connected, Destination};
@@ -23,7 +23,7 @@ use tokio::net::TcpStream;
 use tokio_io_timeout::TimeoutStream;
 use typed_headers::{HeaderMapExt, Host, ProxyAuthorization};
 
-use async::socket::{SocketConnectFuture, SocketConnector};
+use crate::r#async::socket::{SocketConnectFuture, SocketConnector};
 
 #[derive(Clone)]
 pub struct ProxyConnectorConfig {
@@ -44,7 +44,7 @@ impl ProxyConnector {
 
 impl Connect for ProxyConnector {
     type Transport = TimeoutStream<TcpStream>;
-    type Error = Box<Error + Sync + Send>;
+    type Error = Box<dyn Error + Sync + Send>;
     type Future = ProxyConnectFuture;
 
     fn connect(&self, dst: Destination) -> ProxyConnectFuture {
@@ -87,13 +87,13 @@ pub enum ProxyConnect {
     #[state_machine_future(ready)]
     Finished((TimeoutStream<TcpStream>, Connected)),
     #[state_machine_future(error)]
-    Failed(Box<Error + Sync + Send>),
+    Failed(Box<dyn Error + Sync + Send>),
 }
 
 impl PollProxyConnect for ProxyConnect {
     fn poll_start<'a>(
         start: &'a mut RentToOwn<'a, Start>,
-    ) -> Poll<AfterStart, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterStart, Box<dyn Error + Sync + Send>> {
         let start = start.take();
 
         let default_port = match start.dst.scheme() {
@@ -109,17 +109,20 @@ impl PollProxyConnect for ProxyConnect {
                     .connect(proxy.addr.host(), proxy.addr.port()),
                 proxy,
                 dst: start.dst,
-            }.into(),
+            }
+            .into(),
             (Some(proxy), _) => ConnectingHttpProxy {
                 conn: start
                     .connector
                     .connect(proxy.addr.host(), proxy.addr.port()),
-            }.into(),
+            }
+            .into(),
             (None, _) => {
                 let port = start.dst.port().unwrap_or(default_port);
                 ConnectingDirect {
                     conn: start.connector.connect(start.dst.host(), port),
-                }.into()
+                }
+                .into()
             }
         };
 
@@ -128,7 +131,7 @@ impl PollProxyConnect for ProxyConnect {
 
     fn poll_connecting_direct<'a>(
         state: &'a mut RentToOwn<'a, ConnectingDirect>,
-    ) -> Poll<AfterConnectingDirect, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterConnectingDirect, Box<dyn Error + Sync + Send>> {
         let stream = try_ready!(state.conn.poll());
         let connected = Connected::new();
 
@@ -137,7 +140,7 @@ impl PollProxyConnect for ProxyConnect {
 
     fn poll_connecting_http_proxy<'a>(
         state: &'a mut RentToOwn<'a, ConnectingHttpProxy>,
-    ) -> Poll<AfterConnectingHttpProxy, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterConnectingHttpProxy, Box<dyn Error + Sync + Send>> {
         let stream = try_ready!(state.conn.poll());
         let connected = Connected::new().proxy(true);
 
@@ -146,7 +149,7 @@ impl PollProxyConnect for ProxyConnect {
 
     fn poll_connecting_https_proxy<'a>(
         state: &'a mut RentToOwn<'a, ConnectingHttpsProxy>,
-    ) -> Poll<AfterConnectingHttpsProxy, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterConnectingHttpsProxy, Box<dyn Error + Sync + Send>> {
         let stream = try_ready!(state.conn.poll());
         let state = state.take();
 
@@ -155,13 +158,14 @@ impl PollProxyConnect for ProxyConnect {
                 conn: conn::handshake(stream),
                 proxy: state.proxy,
                 dst: state.dst,
-            }.into(),
+            }
+            .into(),
         ))
     }
 
     fn poll_tunnel_handshaking<'a>(
         state: &'a mut RentToOwn<'a, TunnelHandshaking>,
-    ) -> Poll<AfterTunnelHandshaking, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterTunnelHandshaking, Box<dyn Error + Sync + Send>> {
         let (mut sender, conn) = try_ready!(state.conn.poll());
         let state = state.take();
 
@@ -187,7 +191,7 @@ impl PollProxyConnect for ProxyConnect {
 
     fn poll_tunnel_connecting<'a>(
         state: &'a mut RentToOwn<'a, TunnelConnecting>,
-    ) -> Poll<AfterTunnelConnecting, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterTunnelConnecting, Box<dyn Error + Sync + Send>> {
         state.conn.poll_without_shutdown()?;
         let resp = try_ready!(state.resp.poll());
         let state = state.take();

@@ -14,9 +14,9 @@
 
 pub use serde::de::DeserializeSeed;
 
-use conjure::resolved_type::FieldDefinition;
-use conjure::resolved_type::ResolvedType;
-use conjure::value::*;
+use crate::conjure::resolved_type::FieldDefinition;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::value::*;
 use core::fmt;
 use itertools::Itertools;
 use serde;

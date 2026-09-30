@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::errors::{Error, Result};
 use bytes::Bytes;
-use errors::{Error, Result};
 use mime::{self, Mime};
 use serde::Serialize;
 use serde_cbor;
@@ -21,7 +21,7 @@ use serde_json;
 use serde_urlencoded;
 use std::io::Write;
 
-use APPLICATION_CBOR;
+use crate::APPLICATION_CBOR;
 
 /// A request body.
 pub trait Body {
@@ -39,7 +39,7 @@ pub trait Body {
     }
 
     /// Writes the body data out.
-    fn write(&mut self, w: &mut Write) -> Result<()>;
+    fn write(&mut self, w: &mut dyn Write) -> Result<()>;
 
     /// Resets the body to its start.
     ///
@@ -149,7 +149,7 @@ impl Body for BytesBody {
         Some(self.body.clone())
     }
 
-    fn write(&mut self, _: &mut Write) -> Result<()> {
+    fn write(&mut self, _: &mut dyn Write) -> Result<()> {
         unreachable!()
     }
 

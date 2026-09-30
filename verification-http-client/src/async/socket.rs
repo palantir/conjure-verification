@@ -60,13 +60,13 @@ pub enum SocketConnect {
     #[state_machine_future(ready)]
     Ready(TimeoutStream<TcpStream>),
     #[state_machine_future(error)]
-    Failed(Box<Error + Sync + Send>),
+    Failed(Box<dyn Error + Sync + Send>),
 }
 
 impl PollSocketConnect for SocketConnect {
     fn poll_start<'a>(
         start: &'a mut RentToOwn<'a, Start>,
-    ) -> Poll<AfterStart, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterStart, Box<dyn Error + Sync + Send>> {
         let mut addrs = try_ready!(tokio_threadpool::blocking(|| {
             debug!(
                 "resolving addresses, host: {}, port: {}",
@@ -99,7 +99,7 @@ impl PollSocketConnect for SocketConnect {
 
     fn poll_connecting<'a>(
         connecting: &'a mut RentToOwn<'a, Connecting>,
-    ) -> Poll<AfterConnecting, Box<Error + Sync + Send>> {
+    ) -> Poll<AfterConnecting, Box<dyn Error + Sync + Send>> {
         loop {
             let r = match connecting.cur.poll() {
                 Ok(Async::Ready(stream)) => Ok(stream),

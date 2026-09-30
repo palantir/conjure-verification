@@ -23,16 +23,16 @@
 pub use serde::de::DeserializeSeed;
 
 use super::*;
-use conjure::ir::EnumDefinition;
-use conjure::ir::PrimitiveType;
-use conjure::resolved_type::ResolvedType::*;
-use conjure::resolved_type::*;
-use conjure::value::visitors::map::ConjureMapVisitor;
-use conjure::value::visitors::object::ConjureObjectVisitor;
-use conjure::value::visitors::option::ConjureOptionVisitor;
-use conjure::value::visitors::seq::ConjureSeqVisitor;
-use conjure::value::visitors::set::ConjureSetVisitor;
-use conjure::value::visitors::union::ConjureUnionVisitor;
+use crate::conjure::ir::EnumDefinition;
+use crate::conjure::ir::PrimitiveType;
+use crate::conjure::resolved_type::ResolvedType::*;
+use crate::conjure::resolved_type::*;
+use crate::conjure::value::visitors::map::ConjureMapVisitor;
+use crate::conjure::value::visitors::object::ConjureObjectVisitor;
+use crate::conjure::value::visitors::option::ConjureOptionVisitor;
+use crate::conjure::value::visitors::seq::ConjureSeqVisitor;
+use crate::conjure::value::visitors::set::ConjureSetVisitor;
+use crate::conjure::value::visitors::union::ConjureUnionVisitor;
 use core::fmt;
 use serde::de::Error;
 use serde::de::Visitor;
@@ -184,8 +184,8 @@ impl<'de> Deserialize<'de> for Binary {
 #[cfg(test)]
 mod test {
     use super::*;
-    use conjure::ir::TypeName;
-    use more_serde_json::from_str;
+    use crate::conjure::ir::TypeName;
+    use crate::more_serde_json::from_str;
 
     #[test]
     fn test_double() {

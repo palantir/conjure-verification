@@ -24,11 +24,12 @@ use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
 use serde_json;
 use typed_headers::{ContentType, HeaderMapExt};
-use zipkin::Endpoint;
-use zipkin::Tracer;
 
-use conjure::resolved_type::ResolvedType;
-use conjure::value::*;
+use crate::errors::*;
+use crate::test_spec::*;
+use conjure_verification_common::conjure::resolved_type::ResolvedType;
+use conjure_verification_common::conjure::value::*;
+use conjure_verification_common::more_serde_json;
 use conjure_verification_common::type_mapping::ParamTypes;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Error;
@@ -45,9 +46,6 @@ use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
 use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
-use errors::*;
-use more_serde_json;
-use test_spec::*;
 
 use self::client_config::ServiceConfig;
 use self::client_config::ServiceDiscoveryConfig;
@@ -301,7 +299,6 @@ impl VerificationClientResource {
         Client::new_static(
             service_name,
             USER_AGENT.clone(),
-            &Tracer::builder().build(Endpoint::builder().build()),
             &ServiceDiscoveryConfig::builder()
                 .service(
                     service_name,
@@ -315,8 +312,10 @@ impl VerificationClientResource {
                                     url: base_url.to_string(),
                                 },
                             )
-                        })?]).build(),
-                ).build(),
+                        })?])
+                        .build(),
+                )
+                .build(),
         )
     }
 }

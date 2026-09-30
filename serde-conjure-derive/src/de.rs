@@ -14,12 +14,13 @@
 
 use proc_macro2::{Span, TokenStream};
 use syn::{
-    Data, DataEnum, DataStruct, DeriveInput, Fields, FieldsNamed, GenericParam, Ident,
-    ImplGenerics, Lifetime, LifetimeDef, TypeGenerics, WhereClause,
+    parse_quote, Data, DataEnum, DataStruct, DeriveInput, Fields, FieldsNamed, GenericParam, Ident,
+    ImplGenerics, Lifetime, LifetimeParam, TypeGenerics, WhereClause,
 };
 
-use bound;
-use {pascal_to_camel, pascal_to_screaming, snake_to_camel, EnumKind};
+use crate::bound;
+use crate::{pascal_to_camel, pascal_to_screaming, snake_to_camel, EnumKind};
+use quote::quote;
 
 pub fn expand_derive_deserialize(input: &DeriveInput) -> Result<TokenStream, String> {
     let ident = &input.ident;
@@ -35,7 +36,7 @@ pub fn expand_derive_deserialize(input: &DeriveInput) -> Result<TokenStream, Str
     let mut impl_generics = generics.clone();
     impl_generics
         .params
-        .push(GenericParam::Lifetime(LifetimeDef::new(Lifetime::new(
+        .push(GenericParam::Lifetime(LifetimeParam::new(Lifetime::new(
             "'de",
             Span::call_site(),
         ))));
@@ -51,7 +52,7 @@ pub fn expand_derive_deserialize(input: &DeriveInput) -> Result<TokenStream, Str
 
     let generated = quote! {
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications,
-                non_camel_case_types, unreachable_patterns)]
+                non_camel_case_types, unreachable_patterns, non_local_definitions)]
         const #dummy_const: () = {
             extern crate serde_conjure as _serde_conjure;
 
@@ -61,7 +62,7 @@ pub fn expand_derive_deserialize(input: &DeriveInput) -> Result<TokenStream, Str
             {
                 fn deserialize<__D>(
                     __deserializer: __D,
-                ) -> _serde_conjure::serde::export::Result<Self, __D::Error>
+                ) -> ::std::result::Result<Self, __D::Error>
                 where
                     __D: _serde_conjure::serde::Deserializer<'de>
                 {
@@ -134,10 +135,10 @@ fn deserialize_struct_body(
         let var = Ident::new(&format!("__field_{}", ident), Span::call_site());
         quote! {
             __Field::#ident => {
-                if _serde_conjure::serde::export::Option::is_some(&#var) {
+                if ::std::option::Option::is_some(&#var) {
                     return Err(_serde_conjure::serde::de::Error::duplicate_field(#name));
                 }
-                #var = _serde_conjure::serde::export::Some(
+                #var = ::std::option::Option::Some(
                     _serde_conjure::serde::de::MapAccess::next_value(&mut __map)?,
                 );
             }
@@ -151,8 +152,8 @@ fn deserialize_struct_body(
 
         quote! {
             let #var = match #var {
-                _serde_conjure::serde::export::Some(#var) => #var,
-                _serde_conjure::serde::export::None => _serde_conjure::missing_field(#name)?,
+                ::std::option::Option::Some(#var) => #var,
+                ::std::option::Option::None => _serde_conjure::missing_field(#name)?,
             };
         }
     });
@@ -167,7 +168,7 @@ fn deserialize_struct_body(
         #struct_fields
 
         struct __Visitor #ty_generics(
-            _serde_conjure::serde::export::PhantomData<#ty_name #ty_generics>
+            ::std::marker::PhantomData<#ty_name #ty_generics>
         );
 
         impl #impl_generics _serde_conjure::serde::de::Visitor<'de> for __Visitor #ty_generics
@@ -177,22 +178,22 @@ fn deserialize_struct_body(
 
             fn expecting(
                 &self,
-                fmt: &mut _serde_conjure::serde::export::Formatter
-            ) -> _serde_conjure::serde::export::fmt::Result {
-                _serde_conjure::serde::export::Formatter::write_str(fmt, #expecting)
+                fmt: &mut ::std::fmt::Formatter
+            ) -> ::std::fmt::Result {
+                ::std::fmt::Formatter::write_str(fmt, #expecting)
             }
 
             #[inline]
             fn visit_map<__A>(
                 self,
                 mut __map: __A
-            ) -> _serde_conjure::serde::export::Result<Self::Value, __A::Error>
+            ) -> ::std::result::Result<Self::Value, __A::Error>
             where
                 __A: _serde_conjure::serde::de::MapAccess<'de>
             {
                 #(#option_decls)*
 
-                while let _serde_conjure::serde::export::Some(__key) =
+                while let ::std::option::Option::Some(__key) =
                     _serde_conjure::serde::de::MapAccess::next_key::<__Field>(&mut __map)?
                 {
                     match __key {
@@ -206,13 +207,13 @@ fn deserialize_struct_body(
 
                 #(#var_extracts)*
 
-                _serde_conjure::serde::export::Ok(#ty_name {
+                ::std::result::Result::Ok(#ty_name {
                     #(#vars,)*
                 })
             }
         }
 
-        let __visitor = __Visitor(_serde_conjure::serde::export::PhantomData);
+        let __visitor = __Visitor(::std::marker::PhantomData);
         _serde_conjure::serde::Deserializer::deserialize_map(__deserializer, __visitor)
     }
 }
@@ -231,7 +232,7 @@ fn deserialize_struct_fields(fields: &FieldsNamed) -> TokenStream {
     let arms = fields.named.iter().map(|f| {
         let ident = f.ident.as_ref().unwrap();
         let name = snake_to_camel(&ident.to_string());
-        quote!(#name => _serde_conjure::serde::export::Ok(__Field::#ident))
+        quote!(#name => ::std::result::Result::Ok(__Field::#ident))
     });
 
     quote! {
@@ -245,7 +246,7 @@ fn deserialize_struct_fields(fields: &FieldsNamed) -> TokenStream {
         impl<'de> _serde_conjure::serde::Deserialize<'de> for __Field {
             fn deserialize<__D>(
                 __deserializer: __D
-            ) -> _serde_conjure::serde::export::Result<__Field, __D::Error>
+            ) -> ::std::result::Result<__Field, __D::Error>
             where
                 __D: _serde_conjure::serde::Deserializer<'de>
             {
@@ -260,21 +261,21 @@ fn deserialize_struct_fields(fields: &FieldsNamed) -> TokenStream {
 
             fn expecting(
                 &self,
-                fmt: &mut _serde_conjure::serde::export::Formatter
-            ) -> _serde_conjure::serde::export::fmt::Result {
-                _serde_conjure::serde::export::Formatter::write_str(fmt, "field name")
+                fmt: &mut ::std::fmt::Formatter
+            ) -> ::std::fmt::Result {
+                ::std::fmt::Formatter::write_str(fmt, "field name")
             }
 
             fn visit_str<__E>(
                 self,
                 __value: &str
-            ) -> _serde_conjure::serde::export::Result<Self::Value, __E>
+            ) -> ::std::result::Result<Self::Value, __E>
             where
                 __E: _serde_conjure::serde::de::Error
             {
                 match __value {
                     #(#arms,)*
-                    _ => _serde_conjure::serde::export::Ok(__Field::__ignore),
+                    _ => ::std::result::Result::Ok(__Field::__ignore),
                 }
             }
         }
@@ -287,7 +288,7 @@ fn deserialize_enum_body(ty_name: &Ident, e: &DataEnum) -> TokenStream {
     let arms = e.variants.iter().map(|v| {
         let variant = &v.ident;
         let name = pascal_to_screaming(&variant.to_string());
-        quote!(#name => _serde_conjure::serde::export::Result::Ok(#ty_name::#variant),)
+        quote!(#name => ::std::result::Result::Ok(#ty_name::#variant),)
     });
 
     let names = e
@@ -305,21 +306,21 @@ fn deserialize_enum_body(ty_name: &Ident, e: &DataEnum) -> TokenStream {
 
             fn expecting(
                 &self,
-                fmt: &mut _serde_conjure::serde::export::Formatter
-            ) -> _serde_conjure::serde::export::fmt::Result {
-                _serde_conjure::serde::export::Formatter::write_str(fmt, #expecting)
+                fmt: &mut ::std::fmt::Formatter
+            ) -> ::std::fmt::Result {
+                ::std::fmt::Formatter::write_str(fmt, #expecting)
             }
 
             fn visit_str<__E>(
                 self,
                 __value: &str
-            ) -> _serde_conjure::serde::export::Result<Self::Value, __E>
+            ) -> ::std::result::Result<Self::Value, __E>
             where
                 __E: _serde_conjure::serde::de::Error
             {
                 match __value {
                     #(#arms)*
-                    _ => _serde_conjure::serde::export::Err(
+                    _ => ::std::result::Result::Err(
                         _serde_conjure::serde::de::Error::unknown_variant(__value, VARIANTS)
                     ),
                 }
@@ -344,9 +345,9 @@ fn deserialize_union_body(
     let type_first_arms = e.variants.iter().map(|v| {
         let ident = &v.ident;
         quote! {
-            (__Variant::#ident, _serde_conjure::serde::export::Some(__Variant::#ident)) => {
+            (__Variant::#ident, ::std::option::Option::Some(__Variant::#ident)) => {
                 let __value = _serde_conjure::serde::de::MapAccess::next_value(&mut __map)?;
-                _serde_conjure::serde::export::Ok(#ty_name::#ident(__value))
+                ::std::result::Result::Ok(#ty_name::#ident(__value))
             }
         }
     });
@@ -370,7 +371,7 @@ fn deserialize_union_body(
         #union_variants
 
         struct __Visitor #ty_generics(
-            _serde_conjure::serde::export::PhantomData<#ty_name #ty_generics>,
+            ::std::marker::PhantomData<#ty_name #ty_generics>,
         );
 
         impl #impl_generics _serde_conjure::serde::de::Visitor<'de> for __Visitor #ty_generics
@@ -380,31 +381,31 @@ fn deserialize_union_body(
 
             fn expecting(
                 &self,
-                fmt: &mut _serde_conjure::serde::export::Formatter,
-            ) -> _serde_conjure::serde::export::fmt::Result {
-                _serde_conjure::serde::export::Formatter::write_str(fmt, #expecting)
+                fmt: &mut ::std::fmt::Formatter,
+            ) -> ::std::fmt::Result {
+                ::std::fmt::Formatter::write_str(fmt, #expecting)
             }
 
             #[inline]
             fn visit_map<__A>(
                 self,
                 mut __map: __A
-            ) -> _serde_conjure::serde::export::Result<Self::Value, __A::Error>
+            ) -> ::std::result::Result<Self::Value, __A::Error>
             where
                 __A: _serde_conjure::serde::de::MapAccess<'de>
             {
                 match _serde_conjure::serde::de::MapAccess::next_key::
                     <_serde_conjure::UnionField<__Variant>>(&mut __map)?
                 {
-                    _serde_conjure::serde::export::Some(_serde_conjure::UnionField::Type) => {
+                    ::std::option::Option::Some(_serde_conjure::UnionField::Type) => {
                         let __variant = _serde_conjure::serde::de::MapAccess::next_value::
                             <__Variant>(&mut __map)?;
                         let __key = _serde_conjure::serde::de::MapAccess::next_key::
                             <__Variant>(&mut __map)?;
                         match (__variant, __key) {
                             #(#type_first_arms,)*
-                            (__variant, _serde_conjure::serde::export::Some(__key)) => {
-                                _serde_conjure::serde::export::Err(
+                            (__variant, ::std::option::Option::Some(__key)) => {
+                                ::std::result::Result::Err(
                                     _serde_conjure::serde::de::Error::invalid_value(
                                         _serde_conjure::serde::de::Unexpected::Str(
                                             __Variant::field(&__key),
@@ -413,8 +414,8 @@ fn deserialize_union_body(
                                     ),
                                 )
                             }
-                            (__variant, _serde_conjure::serde::export::None) => {
-                                _serde_conjure::serde::export::Err(
+                            (__variant, ::std::option::Option::None) => {
+                                ::std::result::Result::Err(
                                     _serde_conjure::serde::de::Error::missing_field(
                                         __Variant::field(&__variant),
                                     )
@@ -422,7 +423,7 @@ fn deserialize_union_body(
                             }
                         }
                     }
-                    _serde_conjure::serde::export::Some(
+                    ::std::option::Option::Some(
                         _serde_conjure::UnionField::Data(__variant),
                     ) => {
                         let __value = match __variant {
@@ -436,10 +437,10 @@ fn deserialize_union_body(
                                 <__Variant>(&mut __map)?;
                         match (__variant, __type_variant) {
                             #(#variant_match_patterns)|* => {
-                                _serde_conjure::serde::export::Ok(__value)
+                                ::std::result::Result::Ok(__value)
                             }
                             (__variant, __type_variant) => {
-                                _serde_conjure::serde::export::Err(
+                                ::std::result::Result::Err(
                                     _serde_conjure::serde::de::Error::invalid_value(
                                         _serde_conjure::serde::de::Unexpected::Str(
                                             __Variant::field(&__type_variant),
@@ -450,14 +451,14 @@ fn deserialize_union_body(
                             }
                         }
                     }
-                    _serde_conjure::serde::export::None => {
+                    ::std::option::Option::None => {
                         Err(_serde_conjure::serde::de::Error::missing_field("type"))
                     }
                 }
             }
         }
 
-        let __visitor = __Visitor(_serde_conjure::serde::export::PhantomData);
+        let __visitor = __Visitor(::std::marker::PhantomData);
         _serde_conjure::serde::Deserializer::deserialize_map(__deserializer, __visitor)
     }
 }
@@ -477,7 +478,7 @@ fn deserialize_union_variants(e: &DataEnum) -> TokenStream {
     let arms = e.variants.iter().map(|v| {
         let ident = &v.ident;
         let name = pascal_to_camel(&ident.to_string());
-        quote!(#name => _serde_conjure::serde::export::Ok(__Variant::#ident))
+        quote!(#name => ::std::result::Result::Ok(__Variant::#ident))
     });
 
     let variants = e.variants.iter().map(|v| {
@@ -503,7 +504,7 @@ fn deserialize_union_variants(e: &DataEnum) -> TokenStream {
         impl<'de> _serde_conjure::serde::Deserialize<'de> for __Variant {
             fn deserialize<__D>(
                 __deserializer: __D
-            ) -> _serde_conjure::serde::export::Result<__Variant, __D::Error>
+            ) -> ::std::result::Result<__Variant, __D::Error>
             where
                 __D: _serde_conjure::serde::Deserializer<'de>
             {
@@ -521,15 +522,15 @@ fn deserialize_union_variants(e: &DataEnum) -> TokenStream {
 
             fn expecting(
                 &self,
-                fmt: &mut _serde_conjure::serde::export::Formatter
-            ) -> _serde_conjure::serde::export::fmt::Result {
-                _serde_conjure::serde::export::Formatter::write_str(fmt, "variant name")
+                fmt: &mut ::std::fmt::Formatter
+            ) -> ::std::fmt::Result {
+                ::std::fmt::Formatter::write_str(fmt, "variant name")
             }
 
             fn visit_str<__E>(
                 self,
                 __value: &str,
-            ) -> _serde_conjure::serde::export::Result<Self::Value, __E>
+            ) -> ::std::result::Result<Self::Value, __E>
             where
                 __E: _serde_conjure::serde::de::Error
             {

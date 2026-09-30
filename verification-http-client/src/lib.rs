@@ -18,7 +18,6 @@ extern crate conjure_verification_error;
 extern crate conjure_verification_http_client_config;
 extern crate crossbeam;
 extern crate flate2;
-extern crate http_zipkin;
 extern crate hyper;
 extern crate hyper_openssl;
 extern crate mime;
@@ -36,7 +35,6 @@ extern crate tokio_io_timeout;
 extern crate tokio_threadpool;
 extern crate typed_headers;
 extern crate url;
-extern crate zipkin;
 
 #[macro_use]
 extern crate futures;
@@ -50,9 +48,9 @@ extern crate log;
 #[cfg(test)]
 extern crate tokio_openssl;
 
-use config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
+use crate::config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
+use crate::errors::{Error, Result, SerializableError};
 use crossbeam::sync::ArcCell;
-use errors::{Error, Result, SerializableError};
 use hyper::header::HeaderValue;
 use hyper::{Method, StatusCode};
 use hyper_openssl::HttpsConnector;
@@ -65,18 +63,17 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::runtime::{self, Runtime};
 use typed_headers::{Credentials, ProxyAuthorization};
-use zipkin::Tracer;
 
-use async::alpn::AlpnConnector;
-use async::custom_error::CustomErrorConnector;
-use async::proxy::{ProxyConnector, ProxyConnectorConfig};
-use async::socket::{SocketConnector, Timeouts};
-pub use body::*;
-use node_selector::NodeSelector;
-pub use reloadable::*;
-pub use request::*;
-pub use response::*;
-pub use user_agent::*;
+pub use crate::body::*;
+use crate::node_selector::NodeSelector;
+use crate::r#async::alpn::AlpnConnector;
+use crate::r#async::custom_error::CustomErrorConnector;
+use crate::r#async::proxy::{ProxyConnector, ProxyConnectorConfig};
+use crate::r#async::socket::{SocketConnector, Timeouts};
+pub use crate::reloadable::*;
+pub use crate::request::*;
+pub use crate::response::*;
+pub use crate::user_agent::*;
 
 #[doc(inline)]
 pub use hyper::header;
@@ -89,7 +86,7 @@ mod errors {
     pub use conjure_verification_error::*;
 }
 
-pub mod async;
+pub mod r#async;
 pub mod backoff;
 pub mod body;
 pub mod node_selector;
@@ -258,7 +255,6 @@ enum ProxyState {
 pub struct Client {
     service: String,
     user_agent: HeaderValue,
-    tracer: Tracer,
     reload: Option<Reloadable<ServiceDiscoveryConfig>>,
     state: ArcCell<ClientState>,
 }
@@ -267,13 +263,12 @@ impl Client {
     pub fn new(
         service: &str,
         user_agent: UserAgent,
-        tracer: &Tracer,
         config: Reloadable<ServiceDiscoveryConfig>,
     ) -> Result<Client> {
         let cur_config = config
             .take()
             .expect("config must be present during client construction");
-        let mut client = Client::new_static(service, user_agent, tracer, &cur_config)?;
+        let mut client = Client::new_static(service, user_agent, &cur_config)?;
         client.reload = Some(config);
 
         Ok(client)
@@ -282,7 +277,6 @@ impl Client {
     pub fn new_static(
         service: &str,
         mut user_agent: UserAgent,
-        tracer: &Tracer,
         config: &ServiceDiscoveryConfig,
     ) -> Result<Client> {
         user_agent.push_agent(Agent::new("chatter", env!("CARGO_PKG_VERSION")));
@@ -292,7 +286,6 @@ impl Client {
         Ok(Client {
             service: service.to_string(),
             user_agent: HeaderValue::from_str(&user_agent.to_string()).unwrap(),
-            tracer: tracer.clone(),
             reload: None,
             state: ArcCell::new(Arc::new(state)),
         })

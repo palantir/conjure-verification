@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub use serde::de::DeserializeSeed;
-
-use conjure::resolved_type::ResolvedType;
-use conjure::value::*;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::value::*;
 use core::fmt;
 use serde::de::Error;
 use serde::de::SeqAccess;

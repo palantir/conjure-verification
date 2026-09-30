@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::errors::{Error, Result};
 use bytes::BytesMut;
-use errors::{Error, Result};
 use futures::sync::oneshot;
 use futures::{Async, Future, Poll};
-use http_zipkin;
 use hyper::body::{Chunk, Sender};
 use hyper::header::{
     HeaderValue, ACCEPT, ACCEPT_ENCODING, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE, HOST,
@@ -32,12 +31,11 @@ use typed_headers::{
     Authorization, ContentLength, ContentType, Credentials, HeaderMapExt, Host, RetryAfter, Token68,
 };
 use url::Url;
-use zipkin::{Endpoint, Kind, TraceContext};
 
-use async::custom_error::ConnectError;
-use backoff::BackoffIterator;
-use node_selector::Node;
-use {Body, Client, ClientState, IntoBody, ProxyState, Response, RUNTIME};
+use crate::backoff::BackoffIterator;
+use crate::node_selector::Node;
+use crate::r#async::custom_error::ConnectError;
+use crate::{Body, Client, ClientState, IntoBody, ProxyState, Response, RUNTIME};
 
 lazy_static! {
     static ref DEFAULT_ACCEPT: HeaderValue =
@@ -51,7 +49,7 @@ pub struct RequestBuilder<'a> {
     pub(crate) pattern: &'static str,
     pub(crate) params: HashMap<String, Vec<String>>,
     pub(crate) headers: HeaderMap,
-    pub(crate) body: Option<Result<Box<Body + 'a>>>,
+    pub(crate) body: Option<Result<Box<dyn Body + 'a>>>,
     pub(crate) idempotent: bool,
 }
 
@@ -146,7 +144,7 @@ impl<'a> RequestBuilder<'a> {
         T: IntoBody,
         T::Target: 'a,
     {
-        self.body = Some(body.into_body().map(|b| Box::new(b) as Box<Body>));
+        self.body = Some(body.into_body().map(|b| Box::new(b) as Box<dyn Body>));
         self
     }
 
@@ -245,9 +243,9 @@ impl<'a> RequestBuilder<'a> {
         &mut self,
         node: &Node,
         state: &ClientState,
-        body: Option<&mut Box<Body + 'a>>,
+        body: Option<&mut Box<dyn Body + 'a>>,
     ) -> result::Result<Response, SendError> {
-        match self.send_traced(node, state, body) {
+        match self.send_raw(&node.url, state, body) {
             Ok(response) => {
                 let status = response.status();
 
@@ -281,46 +279,11 @@ impl<'a> RequestBuilder<'a> {
         }
     }
 
-    fn send_traced(
-        &mut self,
-        node: &Node,
-        state: &ClientState,
-        body: Option<&mut Box<Body + 'a>>,
-    ) -> result::Result<Response, RawError> {
-        let mut span = self.client.tracer.next_span();
-        span.name(&format!("{} {}", self.method, self.pattern));
-        span.tag("http.method", &self.method.to_string());
-        span.tag("http.path", self.pattern);
-        span.kind(Kind::Client);
-        // FIXME once we have more control over hyper we should attach the IP/port
-        span.remote_endpoint(
-            Endpoint::builder()
-                .service_name(&self.client.service)
-                .build(),
-        );
-
-        let r = self.send_raw(&node.url, &state, span.context(), body);
-
-        let status = match r {
-            Ok(ref response) => Some(response.status()),
-            Err(_) => None,
-        };
-
-        if let Some(status) = status {
-            if !status.is_success() {
-                span.tag("http.status_code", &status.to_string());
-            }
-        }
-
-        r
-    }
-
     fn send_raw(
         &mut self,
         url: &Url,
         state: &ClientState,
-        context: TraceContext,
-        body: Option<&mut Box<Body + 'a>>,
+        body: Option<&mut Box<dyn Body + 'a>>,
     ) -> result::Result<Response, RawError> {
         let mut url = self.build_url(url);
 
@@ -330,7 +293,6 @@ impl<'a> RequestBuilder<'a> {
         headers.remove(&PROXY_AUTHORIZATION);
         headers.remove(&CONTENT_LENGTH);
         headers.remove(&CONTENT_TYPE);
-        http_zipkin::set_trace_context(context, &mut headers);
 
         match state.proxy {
             Some(ProxyState::Http { ref credentials }) => {
@@ -470,7 +432,7 @@ impl BodyWriter {
 
         let hup = match self.sender {
             Some(ref mut sender) => {
-                let mut future = SendFuture {
+                let future = SendFuture {
                     sender,
                     data: Some(Chunk::from(self.buf.take().freeze())),
                 };

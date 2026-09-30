@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::resolved_type::ResolvedType;
-use conjure::value::*;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::value::*;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
-use serde::private::de::size_hint;
 use serde::Deserializer;
 use std::error::Error;
 use std::fmt;
@@ -50,7 +49,7 @@ impl<'de: 'a, 'a> Visitor<'de> for ConjureSeqVisitor<'a> {
     where
         A: SeqAccess<'de>,
     {
-        let mut values = Vec::with_capacity(size_hint::cautious(seq.size_hint()));
+        let mut values = Vec::with_capacity(seq.size_hint().unwrap_or(0).min(4096));
 
         while let Some(value) = seq.next_element_seed(self.0)? {
             values.push(value);

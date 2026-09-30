@@ -26,18 +26,18 @@
 //! [ResolvedType]: ../../conjure_verification_common/conjure/resolved_type/ResolvedType.t.html
 //! [ConjureValue]: ../../conjure_verification_common/conjure/value/struct.ConjureValue.html
 
-use conjure::resolved_type::ResolvedType;
-use conjure::value::ConjureValue;
+use crate::errors::VerificationError;
+use crate::test_spec::ClientTestCases;
+use crate::test_spec::EndpointName;
+use crate::test_spec::PositiveAndNegativeTestCases;
+use conjure_verification_common::conjure::resolved_type::ResolvedType;
+use conjure_verification_common::conjure::value::ConjureValue;
 use conjure_verification_common::more_serde_json;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Error;
 use conjure_verification_error::Result;
-use errors::VerificationError;
 use std::collections::HashMap;
 use std::ops::Index;
-use test_spec::ClientTestCases;
-use test_spec::EndpointName;
-use test_spec::PositiveAndNegativeTestCases;
 
 pub struct ResolvedClientTestCases {
     pub auto_deserialize: HashMap<EndpointName, ResolvedPositiveAndNegativeTestCases>,
@@ -93,7 +93,8 @@ where
                     negative: cases.negative.clone(),
                 };
                 Ok((endpoint.clone(), new_v))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
         single_path_param_service: client_test_cases
             .single_path_param_service
             .iter()
@@ -107,7 +108,8 @@ where
                         conjure_type: conjure_type.clone(),
                     },
                 ))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
         single_query_param_service: client_test_cases
             .single_query_param_service
             .iter()
@@ -121,7 +123,8 @@ where
                         conjure_type: conjure_type.clone(),
                     },
                 ))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
         single_header_service: client_test_cases
             .single_header_service
             .iter()
@@ -135,7 +138,8 @@ where
                         conjure_type: conjure_type.clone(),
                     },
                 ))
-            }).collect::<Result<HashMap<_, _>>>()?,
+            })
+            .collect::<Result<HashMap<_, _>>>()?,
     })
 }
 

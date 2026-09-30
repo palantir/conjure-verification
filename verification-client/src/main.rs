@@ -48,7 +48,6 @@ extern crate serde_plain;
 extern crate serde_value;
 extern crate serde_yaml;
 extern crate typed_headers;
-extern crate zipkin;
 
 #[cfg(test)]
 extern crate tokio;
@@ -58,21 +57,20 @@ extern crate url;
 #[macro_use]
 extern crate pretty_assertions;
 
-use conjure::ir::Conjure;
-use conjure_verification_common::conjure;
-use conjure_verification_common::more_serde_json;
+use crate::resource::VerificationClientResource;
+use crate::test_spec::TestCases;
+use conjure_verification_common::conjure::ir::Conjure;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::ServiceTypeMapping;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http_server::router::Binder;
+use conjure_verification_http_server::router::Router;
 pub use conjure_verification_http_server::*;
 use futures::{future, Future};
 use handler::HttpService;
 use hyper::Server;
-use resource::VerificationClientResource;
-use router::Router;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
@@ -80,7 +78,6 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
-use test_spec::TestCases;
 
 mod errors;
 mod resource;
