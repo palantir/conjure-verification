@@ -27,9 +27,7 @@ use std::io::{self, Write};
 use std::result;
 use std::thread;
 use std::time::{Duration, SystemTime};
-use typed_headers::{
-    Authorization, ContentLength, ContentType, Credentials, HeaderMapExt, Host, RetryAfter, Token68,
-};
+use conjure_verification_http::headers::{self, RetryAfter};
 use url::Url;
 
 use crate::backoff::BackoffIterator;
@@ -103,10 +101,7 @@ impl<'a> RequestBuilder<'a> {
     ///
     /// This is a simple convenience wrapper.
     pub fn bearer_token(&mut self, token: &str) -> &mut RequestBuilder<'a> {
-        let token = Token68::new(token).expect("invalid bearer token");
-        let credentials = Credentials::bearer(token);
-        let value = Authorization(credentials);
-        self.headers.typed_insert(&value);
+        headers::set_bearer_token(&mut self.headers, token);
         self
     }
 
@@ -252,9 +247,9 @@ impl<'a> RequestBuilder<'a> {
                 if status.is_success() {
                     Ok(response)
                 } else if status == StatusCode::TOO_MANY_REQUESTS {
-                    let backoff = match response.headers().typed_get() {
+                    let backoff = match headers::get_retry_after(response.headers()) {
                         Ok(Some(RetryAfter::DelaySeconds(s))) => Some(Duration::from_secs(s)),
-                        Ok(Some(RetryAfter::HttpDate(date))) => SystemTime::from(date)
+                        Ok(Some(RetryAfter::HttpDate(date))) => date
                             .duration_since(SystemTime::now())
                             .ok(),
                         _ => None,
@@ -297,15 +292,13 @@ impl<'a> RequestBuilder<'a> {
         match state.proxy {
             Some(ProxyState::Http { ref credentials }) => {
                 if url.scheme() == "http" {
-                    if let Some(ref credentials) = *credentials {
-                        headers.typed_insert(credentials);
+                    if let Some((ref username, ref password)) = *credentials {
+                        headers::set_proxy_authorization_basic(&mut headers, username, password);
                     }
                 }
             }
             Some(ProxyState::Mesh { ref host }) => {
-                let header = Host::new(url.host_str().unwrap(), url.port())
-                    .expect("url host should be valid");
-                headers.typed_insert(&header);
+                headers::set_host(&mut headers, url.host_str().unwrap(), url.port());
                 url.set_host(Some(host.host())).unwrap();
                 url.set_port(Some(host.port())).unwrap();
             }
@@ -315,9 +308,9 @@ impl<'a> RequestBuilder<'a> {
         let (body, hyper_body) = match body {
             Some(body) => {
                 if let Some(length) = body.content_length() {
-                    headers.typed_insert(&ContentLength(length));
+                    headers::set_content_length(&mut headers, length);
                 }
-                headers.typed_insert(&ContentType(body.content_type()));
+                headers::set_content_type(&mut headers, &body.content_type());
 
                 match body.full_body() {
                     Some(body) => (None, hyper::Body::from(body)),

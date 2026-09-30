@@ -33,7 +33,6 @@ extern crate tokio;
 extern crate tokio_io;
 extern crate tokio_io_timeout;
 extern crate tokio_threadpool;
-extern crate typed_headers;
 extern crate url;
 
 #[macro_use]
@@ -62,7 +61,6 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::runtime::{self, Runtime};
-use typed_headers::{Credentials, ProxyAuthorization};
 
 pub use crate::body::*;
 use crate::node_selector::NodeSelector;
@@ -178,14 +176,9 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
 
     let (proxy_state, proxy) = match *service_config.proxy() {
         ProxyConfig::Http(ref config) => {
-            let credentials = match config.credentials() {
-                Some(credentials) => {
-                    let creds = Credentials::basic(credentials.username(), credentials.password())
-                        .map_err(Error::internal_safe)?;
-                    Some(ProxyAuthorization(creds))
-                }
-                None => None,
-            };
+            let credentials = config
+                .credentials()
+                .map(|c| (c.username().to_string(), c.password().to_string()));
 
             (
                 Some(ProxyState::Http {
@@ -242,9 +235,11 @@ struct ClientState {
     proxy: Option<ProxyState>,
 }
 
+pub(crate) type ProxyAuthorization = (String, String);
+
 enum ProxyState {
     Http {
-        credentials: Option<ProxyAuthorization>,
+        credentials: Option<(String, String)>,
     },
     Mesh {
         host: HostAndPort,

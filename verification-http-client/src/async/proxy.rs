@@ -21,7 +21,8 @@ use state_machine_future::RentToOwn;
 use std::error::Error;
 use tokio::net::TcpStream;
 use tokio_io_timeout::TimeoutStream;
-use typed_headers::{HeaderMapExt, Host, ProxyAuthorization};
+use crate::ProxyAuthorization;
+use conjure_verification_http::headers;
 
 use crate::r#async::socket::{SocketConnectFuture, SocketConnector};
 
@@ -173,15 +174,18 @@ impl PollProxyConnect for ProxyConnect {
             .parse()
             .unwrap();
 
-        let host = Host::new(state.proxy.addr.host(), Some(state.proxy.addr.port()))?;
+        let host = (
+            state.proxy.addr.host().to_string(),
+            Some(state.proxy.addr.port()),
+        );
 
         let mut request = Request::new(Body::empty());
         *request.method_mut() = Method::CONNECT;
         *request.uri_mut() = dst;
         *request.version_mut() = Version::HTTP_11;
-        request.headers_mut().typed_insert(&host);
-        if let Some(ref auth) = state.proxy.credentials {
-            request.headers_mut().typed_insert(auth);
+        headers::set_host(request.headers_mut(), &host.0, host.1);
+        if let Some((ref username, ref password)) = state.proxy.credentials {
+            headers::set_proxy_authorization_basic(request.headers_mut(), username, password);
         }
 
         let resp = sender.send_request(request);

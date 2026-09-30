@@ -47,7 +47,6 @@ extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
 extern crate serde_yaml;
-extern crate typed_headers;
 
 #[cfg(test)]
 extern crate tokio;

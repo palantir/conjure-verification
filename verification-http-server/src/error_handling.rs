@@ -17,19 +17,15 @@ use conjure_verification_error::Error;
 use conjure_verification_http::response::{Body, Response};
 use hyper::StatusCode;
 use mime::APPLICATION_JSON;
+use conjure_verification_http::headers;
 use serde_json;
-use typed_headers::{ContentLength, ContentType, HeaderMapExt};
 
 pub fn response(error: &Error) -> Response {
     let status = StatusCode::from_u16(error.code().http_error_code()).unwrap();
     let mut response = Response::new(status);
     let body = serde_json::to_vec(&error).unwrap();
-    response
-        .headers
-        .typed_insert(&ContentType(APPLICATION_JSON));
-    response
-        .headers
-        .typed_insert(&ContentLength(body.len() as u64));
+    headers::set_content_type(&mut response.headers, &APPLICATION_JSON);
+    headers::set_content_length(&mut response.headers, body.len() as u64);
     response.body = Body::Fixed(Bytes::from(body));
     response
 }

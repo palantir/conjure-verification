@@ -45,8 +45,8 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http::SerializableFormat;
+use conjure_verification_http::headers;
 use conjure_verification_http_server::RouteWithOptions;
-use typed_headers::{ContentLength, ContentType, HeaderMapExt};
 
 pub struct SpecTestResource {
     test_cases: Box<ResolvedClientTestCases>,
@@ -222,15 +222,13 @@ impl SpecTestResource {
         // raw_body() and when to deserialize it to JSON.
 
         // Special handling for when body is empty - allow no content type (or otherwise expect JSON).
-        let request_body_value: serde_json::Value = if let Some(ContentLength(0)) = request
-            .headers()
-            .typed_get::<ContentLength>()
-            .map_err(Error::internal_safe)?
+        let request_body_value: serde_json::Value = if headers::get_content_length(
+            request.headers(),
+        )
+        .map_err(Error::internal_safe)?
+            == Some(0)
         {
-            let mime_opt = request
-                .headers()
-                .typed_get::<ContentType>()
-                .map(|o| o.map(|ct| ct.0))
+            let mime_opt = headers::get_content_type(request.headers())
                 .map_err(|e| Error::new_safe(e, Code::InvalidArgument))?;
             if mime_opt.map(|mime| SerializableFormat::Json.matches(&mime)) == Some(false) {
                 return Err(Error::new_safe(
@@ -432,7 +430,7 @@ mod test {
     use hyper::HeaderMap;
     use hyper::Method;
     use mime::APPLICATION_JSON;
-    use typed_headers::{ContentType, HeaderMapExt};
+    use conjure_verification_http::headers;
 
     use crate::register_resource;
     use crate::resolved_test_cases;
@@ -654,7 +652,7 @@ mod test {
         {
             let mut builder = RequestBuilder::default();
             builder.path_params = hashmap!("index" => "0", "endpoint" => "foo");
-            builder.headers.typed_insert(&ContentType(APPLICATION_JSON));
+            headers::set_content_type(&mut builder.headers, &APPLICATION_JSON);
             builder.body = body;
             let result: Result<Response> = builder.with_request(|req| endpoint.handler.handle(req));
             match expected_error {

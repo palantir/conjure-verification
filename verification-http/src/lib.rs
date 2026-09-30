@@ -17,7 +17,6 @@ extern crate http;
 extern crate mime;
 extern crate serde;
 extern crate serde_json;
-extern crate typed_headers;
 
 #[macro_use]
 extern crate conjure_verification_error_derive;
@@ -27,6 +26,7 @@ use mime::{Mime, APPLICATION_JSON};
 
 pub mod auth;
 pub mod error;
+pub mod headers;
 pub mod request;
 pub mod resource;
 pub mod response;

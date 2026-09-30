@@ -23,7 +23,8 @@ use hyper::StatusCode;
 use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
 use serde_json;
-use typed_headers::{ContentType, HeaderMapExt};
+use conjure_verification_http::headers;
+use mime::Mime;
 
 use crate::errors::*;
 use crate::test_spec::*;
@@ -156,9 +157,7 @@ impl VerificationClientResource {
         }
 
         // Have to save this before the response is consumed by `Response::body`
-        let content_type = response
-            .headers()
-            .typed_get::<ContentType>()
+        let content_type: Option<Mime> = headers::get_content_type(response.headers())
             .map_err(Error::internal_safe)?;
 
         let conjure_type = get_endpoint(&self.param_types[&TestType::Body], &endpoint)?;
@@ -186,14 +185,14 @@ impl VerificationClientResource {
             &content_type,
             &mut vec![APPLICATION_JSON, APPLICATION_OCTET_STREAM]
                 .into_iter()
-                .map(|mime| Some(ContentType(mime))),
+                .map(Some),
         )?;
 
         // We deserialize into serde_json::Value first because .body()'s return type needs
         // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
         let response_body;
         let response_body_value: serde_json::Value;
-        if content_type.unwrap() == ContentType(APPLICATION_JSON) {
+        if content_type.as_ref() == Some(&APPLICATION_JSON) {
             response_body_value = response.body()?;
             response_body = VerificationClientResource::try_parse_response_body(
                 conjure_type,
@@ -275,8 +274,8 @@ impl VerificationClientResource {
     }
 
     /// Assert content-type header matches one of the expected ones.
-    fn assert_content_type<ExpectedTypes: Iterator<Item = Option<ContentType>>>(
-        response_content_type: &Option<ContentType>,
+    fn assert_content_type<ExpectedTypes: Iterator<Item = Option<Mime>>>(
+        response_content_type: &Option<Mime>,
         expected_content_types: &mut ExpectedTypes,
     ) -> Result<()> {
         if expected_content_types.any(|expected| expected == *response_content_type) {

@@ -48,7 +48,7 @@ use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::executor::thread_pool::ThreadPool;
-use typed_headers::{Allow, ContentCoding, ContentEncoding, HeaderMapExt};
+use conjure_verification_http::headers::{self, Encoding};
 use url::{form_urlencoded, percent_encoding};
 
 pub struct HttpService {
@@ -127,7 +127,7 @@ impl HttpService {
                 );
                 let mut response = hyper::Response::new(hyper::Body::empty());
                 *response.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
-                response.headers_mut().typed_insert(&Allow(methods));
+                headers::set_allow(response.headers_mut(), &methods);
                 Box::new(future::ok((response, 0)))
             }
             (_, Err(e)) => {
@@ -238,12 +238,12 @@ impl SyncHandler {
         headers: &HeaderMap,
         body: &'a mut SizeTrackingReader<BodyReader>,
     ) -> Result<Box<dyn Read + 'a>> {
-        match headers.typed_get::<ContentEncoding>() {
-            Ok(Some(encoding)) => {
-                match &**encoding {
-                    [] | [ContentCoding::IDENTITY] => Ok(Box::new(body)),
-                    [ContentCoding::GZIP] => Ok(Box::new(BufReader::new(GzDecoder::new(body)))),
-                    [ContentCoding::DEFLATE] => {
+        match headers::get_content_encoding(headers) {
+            Ok(encoding) => {
+                match encoding.as_slice() {
+                    [] | [Encoding::Identity] => Ok(Box::new(body)),
+                    [Encoding::Gzip] => Ok(Box::new(BufReader::new(GzDecoder::new(body)))),
+                    [Encoding::Deflate] => {
                         Ok(Box::new(BufReader::new(ZlibDecoder::new(body))))
                     }
                     // this forbids encodings we "could" support like `gzip, deflate, identity, gzip`, but that's a
@@ -254,7 +254,6 @@ impl SyncHandler {
                     )),
                 }
             }
-            Ok(None) => Ok(Box::new(body)),
             Err(e) => Err(Error::new_safe(e, Code::CustomClient)),
         }
     }

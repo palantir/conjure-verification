@@ -30,9 +30,9 @@ tokio = "0.1.11"
 tokio-io = "0.1"
 tokio-io-timeout = "0.3"
 tokio-threadpool = "0.1"
-typed-headers = "0.1"
 url = "1.0"
 conjure-verification-error = { path = "../verification-error" }
+conjure-verification-http = { path = "../verification-http" }
 conjure-verification-http-client-config = { path = "../verification-http-client-config" }
 
 [dev-dependencies]

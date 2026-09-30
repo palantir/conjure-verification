@@ -29,7 +29,6 @@ extern crate mime;
 extern crate route_recognizer;
 extern crate serde_json;
 extern crate tokio;
-extern crate typed_headers;
 extern crate url;
 
 use conjure_verification_http::{request, resource, response};

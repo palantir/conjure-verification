@@ -22,7 +22,8 @@ use serde_cbor;
 use serde_json;
 use serde_urlencoded;
 use std::io::{self, BufRead, BufReader, Cursor, Read};
-use typed_headers::{ContentCoding, ContentEncoding, ContentType, HeaderMapExt};
+use conjure_verification_http::headers::{self, Encoding};
+use mime::Mime;
 
 use crate::{RemoteError, APPLICATION_CBOR};
 
@@ -57,10 +58,8 @@ impl Response {
     }
 
     fn format(&self) -> Result<Format> {
-        let content_type = self
-            .headers
-            .typed_get::<ContentType>()
-            .map_err(Error::internal_safe)?;
+        let content_type =
+            headers::get_content_type(&self.headers).map_err(Error::internal_safe)?;
         Format::new(content_type)
     }
 
@@ -116,16 +115,14 @@ impl Response {
 
     /// Returns a reader of the raw response body.
     pub fn raw_body(self) -> Result<ResponseBody> {
-        let encoding = self
-            .headers
-            .typed_get::<ContentEncoding>()
-            .map_err(Error::internal_safe)?;
+        let encoding =
+            headers::get_content_encoding(&self.headers).map_err(Error::internal_safe)?;
 
-        let body: Box<dyn BufRead> = match encoding.as_ref().map(|c| &***c) {
-            None | Some([ContentCoding::IDENTITY]) => Box::new(self.body),
-            Some([ContentCoding::GZIP]) => Box::new(BufReader::new(GzDecoder::new(self.body))),
-            Some([ContentCoding::DEFLATE]) => Box::new(BufReader::new(ZlibDecoder::new(self.body))),
-            Some(v) => {
+        let body: Box<dyn BufRead> = match encoding.as_slice() {
+            [] | [Encoding::Identity] => Box::new(self.body),
+            [Encoding::Gzip] => Box::new(BufReader::new(GzDecoder::new(self.body))),
+            [Encoding::Deflate] => Box::new(BufReader::new(ZlibDecoder::new(self.body))),
+            v => {
                 return Err(Error::internal_safe("unsupported Content-Encoding")
                     .with_safe_param("encoding", format!("{:?}", v)))
             }
@@ -143,12 +140,12 @@ enum Format {
 }
 
 impl Format {
-    fn new(content_type: Option<ContentType>) -> Result<Format> {
+    fn new(content_type: Option<Mime>) -> Result<Format> {
         match content_type {
-            Some(ref v) if v.0 == mime::APPLICATION_JSON => Ok(Format::Json),
-            Some(ref v) if v.0 == *APPLICATION_CBOR => Ok(Format::Cbor),
-            Some(ref v) if v.0 == mime::APPLICATION_WWW_FORM_URLENCODED => Ok(Format::Urlencoded),
-            Some(ref v) if v.0 == mime::APPLICATION_OCTET_STREAM => Ok(Format::OctetStream),
+            Some(ref v) if *v == mime::APPLICATION_JSON => Ok(Format::Json),
+            Some(ref v) if *v == *APPLICATION_CBOR => Ok(Format::Cbor),
+            Some(ref v) if *v == mime::APPLICATION_WWW_FORM_URLENCODED => Ok(Format::Urlencoded),
+            Some(ref v) if *v == mime::APPLICATION_OCTET_STREAM => Ok(Format::OctetStream),
             Some(v) => Err(Error::internal_safe("unsupported Content-Type")
                 .with_safe_param("type", format!("{:?}", v))),
             None => Err(Error::internal_safe("Content-Type header missing")),

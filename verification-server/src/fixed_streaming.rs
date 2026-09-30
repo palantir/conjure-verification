@@ -24,7 +24,7 @@ use mime::APPLICATION_OCTET_STREAM;
 use std::io::Write;
 use std::thread;
 use std::time;
-use typed_headers::{ContentType, HeaderMapExt};
+use conjure_verification_http::headers;
 
 pub struct StreamingResponse {
     pub data: Vec<u8>,
@@ -54,9 +54,7 @@ impl WriteBody for StreamingResponse {
 impl IntoResponse for StreamingResponse {
     fn into_response(self, _request: &Request) -> Result<Response> {
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(APPLICATION_OCTET_STREAM));
+        headers::set_content_type(&mut response.headers, &APPLICATION_OCTET_STREAM);
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));

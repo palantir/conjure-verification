@@ -45,7 +45,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::prelude::Write;
-use typed_headers::{ContentType, HeaderMapExt};
+use conjure_verification_http::headers;
 use url::Url;
 
 #[test]
@@ -219,9 +219,7 @@ impl WriteBody for StreamingResponse {
 impl IntoResponse for StreamingResponse {
     fn into_response(self, _request: &Request) -> Result<Response> {
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(APPLICATION_OCTET_STREAM));
+        headers::set_content_type(&mut response.headers, &APPLICATION_OCTET_STREAM);
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
@@ -272,7 +270,7 @@ mod setup {
     use conjure_verification_common::type_mapping::ParamTypes;
     use conjure_verification_common::type_mapping::TestType;
     use conjure_verification_http_server::router::Binder;
-    use typed_headers::{ContentType, HeaderMapExt};
+    use conjure_verification_http::headers;
 
     /// Simulate asking the VerificationClientService to run a test case against a server-under-test.
     pub(crate) fn run_test_case<F>(router: &Router, req: &ClientRequest, response_assertion: F)
@@ -281,7 +279,7 @@ mod setup {
     {
         if let RouteResult::Matched { endpoint, .. } = router.route(&Method::POST, "/runTestCase") {
             let mut builder = RequestBuilder::default();
-            builder.headers.typed_insert(&ContentType(APPLICATION_JSON));
+            headers::set_content_type(&mut builder.headers, &APPLICATION_JSON);
             builder.body = serde_json::to_vec(req).unwrap();
             let result: Result<Response> = builder.with_request(|req| endpoint.handler.handle(req));
             println!(

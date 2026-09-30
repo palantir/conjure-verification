@@ -19,8 +19,7 @@ use http::StatusCode;
 use serde::Serialize;
 use serde_json;
 use std::io::Write;
-use typed_headers::{ContentLength, ContentType, HeaderMapExt};
-
+use crate::headers;
 use crate::request::{Format, Request};
 use crate::SerializableFormat;
 
@@ -72,12 +71,8 @@ where
         };
 
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(format.mime().clone()));
-        response
-            .headers
-            .typed_insert(&ContentLength(buf.len() as u64));
+        headers::set_content_type(&mut response.headers, format.mime());
+        headers::set_content_length(&mut response.headers, buf.len() as u64);
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
@@ -96,9 +91,7 @@ where
         let format = *request.response_format(&[SerializableFormat::Json])?;
 
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(format.mime().clone()));
+        headers::set_content_type(&mut response.headers, format.mime());
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
