@@ -1,8 +1,8 @@
-FROM rust:1.29.0-stretch
+FROM debian:bookworm-slim
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends dumb-init; \
+    apt-get install -y --no-install-recommends dumb-init libssl3 ca-certificates; \
     rm -rf /var/lib/apt/lists/*; \
     mkdir -p /opt/palantir/services/conjure-verification-client/service/bin; \
     mkdir -p /opt/palantir/services/conjure-verification-client/var/conf
@@ -15,7 +15,7 @@ RUN chmod +x /opt/palantir/services/conjure-verification-client/service/bin/conj
 
 EXPOSE 8000
 
-ENV RUST_LOG conjure_verification_client=info,conjure_verification_http=info
+ENV RUST_LOG=conjure_verification_client=info,conjure_verification_http=info
 
 WORKDIR /opt/palantir/services/conjure-verification-client
 
