@@ -22,12 +22,9 @@ extern crate conjure_verification_http;
 extern crate conjure_verification_http_client;
 extern crate conjure_verification_http_server;
 extern crate core;
-#[macro_use]
 extern crate derive_more;
 extern crate either;
 extern crate http;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate mime;
@@ -37,7 +34,6 @@ extern crate serde_conjure;
 extern crate serde_conjure_derive;
 #[macro_use]
 extern crate serde_derive;
-#[cfg_attr(test, macro_use)]
 #[cfg(test)]
 extern crate derive_new;
 #[cfg_attr(test, macro_use)]

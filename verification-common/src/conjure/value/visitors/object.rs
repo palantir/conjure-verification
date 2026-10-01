@@ -34,7 +34,7 @@ pub struct ConjureObjectVisitor<'a> {
 }
 
 impl<'a> ConjureObjectVisitor<'a> {
-    pub fn new(fields: &'a [FieldDefinition], skip_unknown: bool) -> ConjureObjectVisitor {
+    pub fn new(fields: &'a [FieldDefinition], skip_unknown: bool) -> ConjureObjectVisitor<'a> {
         ConjureObjectVisitor {
             remaining_fields: fields
                 .iter()

@@ -22,7 +22,6 @@ use hyper::header::{
 use hyper::{self, HeaderMap, Method, StatusCode};
 use std::collections::HashMap;
 use std::error::Error as _;
-use std::io;
 use std::result;
 use std::thread;
 use std::time::{Duration, SystemTime};
@@ -35,11 +34,8 @@ use crate::r#async::custom_error::ConnectError;
 use crate::{Body, Client, ClientState, IntoBody, ProxyState, Response, RUNTIME};
 use hyper_util::client::legacy::Error as LegacyClientError;
 
-lazy_static! {
-    static ref DEFAULT_ACCEPT: HeaderValue =
-        HeaderValue::from_static("*/*; q=0.5, application/cbor");
-    static ref DEFAULT_ACCEPT_ENCODING: HeaderValue = HeaderValue::from_static("gzip, deflate");
-}
+static DEFAULT_ACCEPT: HeaderValue = HeaderValue::from_static("*/*; q=0.5, application/cbor");
+static DEFAULT_ACCEPT_ENCODING: HeaderValue = HeaderValue::from_static("gzip, deflate");
 
 pub struct RequestBuilder<'a> {
     pub(crate) client: &'a Client,

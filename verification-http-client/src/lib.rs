@@ -13,13 +13,12 @@
 // limitations under the License.
 
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate log;
 
 use crate::config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
 use crate::errors::{Error, Result, SerializableError};
 use arc_swap::ArcSwap;
+use std::sync::LazyLock;
 use hyper::header::HeaderValue;
 use hyper::{Method, StatusCode};
 use hyper_openssl::client::legacy::HttpsConnector;
@@ -67,10 +66,9 @@ pub mod user_agent;
 #[cfg(test)]
 mod test;
 
-lazy_static! {
-    static ref RUNTIME: Runtime = Runtime::new().unwrap();
-    static ref APPLICATION_CBOR: Mime = "application/cbor".parse().unwrap();
-}
+static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| Runtime::new().unwrap());
+static APPLICATION_CBOR: LazyLock<Mime> =
+    LazyLock::new(|| "application/cbor".parse().unwrap());
 
 #[derive(Debug)]
 pub struct RemoteError {

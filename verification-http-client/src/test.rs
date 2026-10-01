@@ -27,7 +27,6 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
-use tokio::net::TcpStream;
 use tokio::runtime::Runtime;
 
 use tokio_openssl::SslStream;

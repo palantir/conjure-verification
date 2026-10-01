@@ -33,7 +33,7 @@ use conjure_verification_error::Result;
 use conjure_verification_http_server::router::Router;
 pub use conjure_verification_http_server::*;
 use handler::HttpService;
-use hyper_util::rt::{TokioExecutor, TokioIo};
+use hyper_util::rt::TokioIo;
 use std::env;
 use std::env::VarError;
 use std::fs::File;

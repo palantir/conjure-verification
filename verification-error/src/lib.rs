@@ -18,8 +18,6 @@ extern crate serde;
 extern crate uuid;
 
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_plain;
@@ -36,11 +34,11 @@ use std::error;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::result;
+use std::sync::LazyLock;
 use uuid::Uuid;
 
-lazy_static! {
-    static ref UPPER_CAMEL: Regex = Regex::new("^([A-Z][a-z0-9]+)+$").unwrap();
-}
+static UPPER_CAMEL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new("^([A-Z][a-z0-9]+)+$").unwrap());
 
 /// A convenience type definition for `Results` with `Error` as the error type.
 pub type Result<T> = result::Result<T, Error>;

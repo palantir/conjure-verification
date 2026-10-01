@@ -51,11 +51,10 @@ use conjure_verification_http_server::RouteWithOptions;
 use self::client_config::ServiceConfig;
 use self::client_config::ServiceDiscoveryConfig;
 use derive_more::From;
+use std::sync::LazyLock;
 
-lazy_static! {
-    static ref USER_AGENT: UserAgent =
-        UserAgent::new(Agent::new("conjure-verification-client", "0.0.0"));
-}
+static USER_AGENT: LazyLock<UserAgent> =
+    LazyLock::new(|| UserAgent::new(Agent::new("conjure-verification-client", "0.0.0")));
 
 pub struct VerificationClientResource {
     test_cases: Box<ServerTestCases>,

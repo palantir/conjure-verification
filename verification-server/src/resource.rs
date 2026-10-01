@@ -437,7 +437,6 @@ mod test {
     use conjure_verification_http::headers;
 
     use crate::register_resource;
-    use crate::resolved_test_cases;
     use crate::test_spec::ClientTestCases;
     use crate::test_spec::{EndpointName, PositiveAndNegativeTestCases};
     use conjure_verification_common::conjure::ir;
