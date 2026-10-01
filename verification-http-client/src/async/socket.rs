@@ -15,9 +15,16 @@
 use std::error::Error;
 use std::io;
 use std::net::ToSocketAddrs;
+use std::pin::Pin;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
+use tokio_io_timeout::TimeoutStream;
+
+#[cfg(test)]
+mod test;
+
+pub type SocketStream = Pin<Box<TimeoutStream<TcpStream>>>;
 
 #[derive(Copy, Clone)]
 pub struct Timeouts {
@@ -34,7 +41,7 @@ impl SocketConnector {
         &self,
         host: &str,
         port: u16,
-    ) -> Result<tokio::net::TcpStream, Box<dyn Error + Sync + Send>> {
+    ) -> Result<SocketStream, Box<dyn Error + Sync + Send>> {
         let host = host.to_string();
         let timeouts = self.0;
 
@@ -57,7 +64,10 @@ impl SocketConnector {
                     ka = ka.with_time(keepalive);
                     let _ = sock_ref.set_tcp_keepalive(&ka);
                     debug!("connected to server, addr: {}", addr);
-                    return Ok(stream);
+                    let mut stream = TimeoutStream::new(stream);
+                    stream.set_read_timeout(Some(timeouts.read));
+                    stream.set_write_timeout(Some(timeouts.write));
+                    return Ok(Box::pin(stream));
                 }
                 Ok(Err(e)) => {
                     debug!("error connecting to server, addr: {}, error: {}", addr, e);

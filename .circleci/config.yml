@@ -82,6 +82,7 @@ jobs:
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
+      CARGO_TARGET_DIR: target/osx
     steps:
     - checkout
     - run:
@@ -106,12 +107,12 @@ jobs:
     - persist_to_workspace:
         root: .
         paths:
-          - ./target/release/conjure-verification-server
-          - ./target/release/conjure-verification-client
+          - ./target/osx/release/conjure-verification-server
+          - ./target/osx/release/conjure-verification-client
     - store_artifacts:
-        path: ./target/release/conjure-verification-server
+        path: ./target/osx/release/conjure-verification-server
     - store_artifacts:
-        path: ./target/release/conjure-verification-client
+        path: ./target/osx/release/conjure-verification-client
 
   publish:
     docker:
@@ -197,7 +198,10 @@ workflows:
               only: /.*/
       - publish:
           name: publish
-          requires: []
+          requires:
+            - cargo-build-linux
+            - cargo-build-osx
+            - gradle-build
           filters:
             branches:
               ignore: /.*/

@@ -214,6 +214,36 @@ fn client(config: &str) -> Client {
 }
 
 #[test]
+fn read_timeout_is_applied_to_http_requests() {
+    use std::io::Write;
+    use std::time::Duration;
+
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = thread::spawn(move || {
+        let mut stream = listener.accept().unwrap().0;
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        assert!(stream.read(&mut [0; 4096]).unwrap() > 0);
+        thread::sleep(Duration::from_millis(500));
+        // The client should have timed out and closed the socket already.
+        let _ =
+            stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+    });
+    let config = format!(
+        r#"{{"services": {{"service": {{
+            "uris": ["http://127.0.0.1:{port}"],
+            "read-timeout": "50ms",
+            "max-num-retries": 0
+        }}}}}}"#,
+    );
+    let response = client(&config).get("/").send();
+    server.join().unwrap();
+    assert!(response.is_err(), "request ignored the read timeout");
+}
+
+#[test]
 fn google() {
     let discovery = ServiceDiscoveryConfig::builder()
         .service(

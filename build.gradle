@@ -67,7 +67,7 @@ allprojects {
     }
 
     task "${variant}DistTarOsx"(type: Tar) {
-        from "target/x86_64-apple-darwin/release/conjure-verification-${variant}"
+        from "target/osx/release/conjure-verification-${variant}"
         archiveBaseName = "verification-${variant}-osx"
         compression = Compression.GZIP
     }
@@ -78,7 +78,7 @@ allprojects {
     ['Linux', 'Osx'].each { String platform ->
         def binary = file(platform == 'Linux'
                 ? "target/release/conjure-verification-${variant}"
-                : "target/x86_64-apple-darwin/release/conjure-verification-${variant}")
+                : "target/osx/release/conjure-verification-${variant}")
         tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenLocal)
                 .matching { it.name == "publish${variant.capitalize()}DistTar${platform}PublicationToMavenLocal" }
                 .configureEach { onlyIf { binary.isFile() } }

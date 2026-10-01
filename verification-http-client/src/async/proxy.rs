@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::config::HostAndPort;
-use crate::r#async::socket::SocketConnector;
+use crate::r#async::socket::{SocketConnector, SocketStream};
 use crate::ProxyAuthorization;
 use conjure_verification_http::headers;
 use http_body_util::Empty;
@@ -23,17 +23,19 @@ use hyper::{Method, Request, Uri, Version};
 use hyper_util::client::legacy::connect::{Connected, Connection};
 use hyper_util::rt::TokioIo;
 use std::error::Error;
-use std::future::Future;
+use std::future::{poll_fn, Future};
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use tokio::net::TcpStream;
 use tower_service::Service;
 
-/// A TCP stream that carries hyper-util `Connection` metadata (e.g. whether
-/// it went through a proxy). It implements tokio's `AsyncRead`/`AsyncWrite`
-/// directly and is wrapped in `TokioIo` by hyper-openssl/hyper-util.
+#[cfg(test)]
+mod test;
+
+/// A timeout-wrapped TCP stream with hyper-util `Connection` metadata.
+/// Any bytes buffered during a CONNECT handshake are read before the socket.
 pub struct ConnStream {
-    stream: TcpStream,
+    stream: SocketStream,
+    read_buf: Bytes,
     proxied: bool,
 }
 
@@ -47,8 +49,13 @@ impl hyper::rt::Read for ConnStream {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: hyper::rt::ReadBufCursor<'_>,
+        mut buf: hyper::rt::ReadBufCursor<'_>,
     ) -> Poll<std::io::Result<()>> {
+        if !self.read_buf.is_empty() {
+            let len = buf.remaining().min(self.read_buf.len());
+            buf.put_slice(&self.read_buf.split_to(len));
+            return Poll::Ready(Ok(()));
+        }
         Pin::new(&mut TokioIo::new(&mut self.stream)).poll_read(cx, buf)
     }
 }
@@ -66,10 +73,7 @@ impl hyper::rt::Write for ConnStream {
         Pin::new(&mut TokioIo::new(&mut self.stream)).poll_flush(cx)
     }
 
-    fn poll_shutdown(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<std::io::Result<()>> {
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
         Pin::new(&mut TokioIo::new(&mut self.stream)).poll_shutdown(cx)
     }
 }
@@ -118,7 +122,7 @@ impl Service<Uri> for ProxyConnector {
                     let stream = connector.connect(p.addr.host(), p.addr.port()).await?;
                     let io = TokioIo::new(stream);
 
-                    let (mut sender, conn) = client_conn::handshake(io).await?;
+                    let (mut sender, mut conn) = client_conn::handshake(io).await?;
 
                     let connect_uri = format!("{}:{}", host, port).parse::<Uri>().unwrap();
                     let mut request = Request::new(Empty::<Bytes>::new());
@@ -134,7 +138,14 @@ impl Service<Uri> for ProxyConnector {
                         );
                     }
 
-                    let resp = sender.send_request(request).await?;
+                    // Sending the request only queues it; the connection must
+                    // be polled concurrently to write it and read the response.
+                    let mut response = Box::pin(sender.send_request(request));
+                    let resp = poll_fn(|cx| {
+                        let _ = conn.poll_without_shutdown(cx)?;
+                        response.as_mut().poll(cx)
+                    })
+                    .await?;
                     if !resp.status().is_success() {
                         return Err(format!("got status {} from HTTPS proxy", resp.status()).into());
                     }
@@ -145,6 +156,7 @@ impl Service<Uri> for ProxyConnector {
                     let stream = parts.io.into_inner();
                     Ok(ConnStream {
                         stream,
+                        read_buf: parts.read_buf,
                         proxied: false,
                     })
                 }
@@ -152,6 +164,7 @@ impl Service<Uri> for ProxyConnector {
                     let stream = connector.connect(p.addr.host(), p.addr.port()).await?;
                     Ok(ConnStream {
                         stream,
+                        read_buf: Bytes::new(),
                         proxied: true,
                     })
                 }
@@ -159,6 +172,7 @@ impl Service<Uri> for ProxyConnector {
                     let stream = connector.connect(host, port).await?;
                     Ok(ConnStream {
                         stream,
+                        read_buf: Bytes::new(),
                         proxied: false,
                     })
                 }
