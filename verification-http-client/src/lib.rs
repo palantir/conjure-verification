@@ -18,17 +18,18 @@ extern crate log;
 use crate::config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
 use crate::errors::{Error, Result, SerializableError};
 use arc_swap::ArcSwap;
-use std::sync::LazyLock;
 use hyper::header::HeaderValue;
 use hyper::{Method, StatusCode};
 use hyper_openssl::client::legacy::HttpsConnector;
-use hyper_util::rt::TokioExecutor;
+use hyper_util::rt::{TokioExecutor, TokioTimer};
 use mime::Mime;
 use openssl::error::ErrorStack;
-use openssl::ssl::{SslConnector, SslMethod};
+use openssl::ssl::{SslConnector, SslConnectorBuilder, SslMethod};
 use std::error;
 use std::fmt;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::runtime::Runtime;
 
@@ -67,8 +68,7 @@ pub mod user_agent;
 mod test;
 
 static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| Runtime::new().unwrap());
-static APPLICATION_CBOR: LazyLock<Mime> =
-    LazyLock::new(|| "application/cbor".parse().unwrap());
+static APPLICATION_CBOR: LazyLock<Mime> = LazyLock::new(|| "application/cbor".parse().unwrap());
 
 #[derive(Debug)]
 pub struct RemoteError {
@@ -118,7 +118,7 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
 
     let nodes = NodeSelector::new(service_config.uris());
 
-    let mut ssl = SslConnector::builder(SslMethod::tls()).map_err(Error::internal_safe)?;
+    let mut ssl = ssl_connector()?;
 
     if let Some(ref ca_file) = service_config.security().ca_file() {
         ssl.set_ca_file(ca_file).map_err(Error::internal_safe)?;
@@ -164,19 +164,18 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
     };
     let connector = SocketConnector(timeouts);
     let connector = ProxyConnector::new(connector, proxy);
-    let connector =
-        HttpsConnector::with_connector(connector, ssl).map_err(Error::internal_safe)?;
+    let connector = HttpsConnector::with_connector(connector, ssl).map_err(Error::internal_safe)?;
     let connector = AlpnConnector::new(connector, service_config.experimental_assume_http2());
     let connector = CustomErrorConnector(connector);
 
     let mut builder = hyper_util::client::legacy::Builder::new(TokioExecutor::new());
     builder
-        .pool_idle_timeout(if service_config.keep_alive() {
-            Some(Duration::from_secs(90))
-        } else {
-            None
-        })
+        .pool_timer(TokioTimer::new())
+        .pool_idle_timeout(Duration::from_secs(90))
         .http2_only(service_config.experimental_assume_http2());
+    if !service_config.keep_alive() {
+        builder.pool_max_idle_per_host(0);
+    }
     let client = builder.build(connector);
 
     Ok(ClientState {
@@ -186,6 +185,35 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
         backoff_slot_size: service_config.backoff_slot_size(),
         proxy: proxy_state,
     })
+}
+
+fn ssl_connector() -> Result<SslConnectorBuilder> {
+    let mut ssl = SslConnector::builder(SslMethod::tls()).map_err(Error::internal_safe)?;
+
+    // OpenSSL is statically linked, so its default certificate locations aren't the OS's.
+    let probe = openssl_probe::probe();
+    if let Some(ref cert_file) = probe.cert_file.or_else(macos_cert_file) {
+        ssl.load_verify_locations(Some(cert_file), None)
+            .map_err(Error::internal_safe)?;
+    }
+    for cert_dir in &probe.cert_dir {
+        ssl.load_verify_locations(None, Some(cert_dir))
+            .map_err(Error::internal_safe)?;
+    }
+    // https://github.com/openssl/openssl/issues/6851
+    ErrorStack::get();
+
+    Ok(ssl)
+}
+
+/// The certificate bundle shipped with macOS, which `openssl_probe` doesn't look for.
+fn macos_cert_file() -> Option<PathBuf> {
+    let path = Path::new("/etc/ssl/cert.pem");
+    if cfg!(target_os = "macos") && path.exists() {
+        Some(path.to_path_buf())
+    } else {
+        None
+    }
 }
 
 struct ClientState {

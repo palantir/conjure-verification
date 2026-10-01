@@ -13,8 +13,8 @@
 // limitations under the License.
 
 pub use conjure_verification_common::test_spec::EndpointName;
-use std::collections::HashMap;
 use derive_more::From;
+use std::collections::HashMap;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

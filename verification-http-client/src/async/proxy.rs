@@ -108,8 +108,12 @@ impl Service<Uri> for ProxyConnector {
         let connector = self.connector;
         let proxy = self.proxy.clone();
         Box::pin(async move {
-            let scheme = dst.scheme_str().unwrap_or("http");
-            let default_port = if scheme == "https" { 443 } else { 80 };
+            let scheme = dst.scheme_str().unwrap_or("");
+            let default_port = match scheme {
+                "http" => 80,
+                "https" => 443,
+                _ => return Err("invalid URI scheme".into()),
+            };
             let host = dst.host().ok_or("missing host in URI")?;
             let port = dst.port_u16().unwrap_or(default_port);
 

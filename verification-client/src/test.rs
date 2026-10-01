@@ -25,6 +25,7 @@ use conjure_verification_common::conjure::resolved_type::ResolvedType;
 use conjure_verification_common::conjure::value::Binary;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::{Error, Result};
+use conjure_verification_http::headers;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
@@ -35,6 +36,7 @@ use conjure_verification_http::response::{Body, WriteBody};
 use conjure_verification_http_server::router;
 use conjure_verification_http_server::router::RouteResult;
 use conjure_verification_http_server::router::Router;
+use derive_new::new;
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
 use hyper::Method;
@@ -45,9 +47,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
-use conjure_verification_http::headers;
 use url::Url;
-use derive_new::new;
 
 #[test]
 fn test_content_type_error() {
@@ -270,8 +270,8 @@ mod setup {
     use conjure_verification_common::type_mapping::builder::ParamTypesBuilder;
     use conjure_verification_common::type_mapping::ParamTypes;
     use conjure_verification_common::type_mapping::TestType;
-    use conjure_verification_http_server::router::Binder;
     use conjure_verification_http::headers;
+    use conjure_verification_http_server::router::Binder;
 
     /// Simulate asking the VerificationClientService to run a test case against a server-under-test.
     pub(crate) fn run_test_case<F>(router: &Router, req: &ClientRequest, response_assertion: F)

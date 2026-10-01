@@ -14,10 +14,10 @@
 
 use bytes::Bytes;
 use conjure_verification_error::Error;
+use conjure_verification_http::headers;
 use conjure_verification_http::response::{Body, Response};
 use hyper::StatusCode;
 use mime::APPLICATION_JSON;
-use conjure_verification_http::headers;
 use serde_json;
 
 pub fn response(error: &Error) -> Response {

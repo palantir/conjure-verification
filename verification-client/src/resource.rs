@@ -15,16 +15,16 @@
 use std::collections::HashMap;
 use std::string::ToString;
 
+use conjure_verification_http::headers;
 use either::{Either, Left, Right};
 use hyper::header::HeaderValue;
 use hyper::header::ACCEPT;
 use hyper::Method;
 use hyper::StatusCode;
+use mime::Mime;
 use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
 use serde_json;
-use conjure_verification_http::headers;
-use mime::Mime;
 
 use crate::errors::*;
 use crate::test_spec::*;
@@ -134,7 +134,10 @@ impl VerificationClientResource {
     ) -> Result<()> {
         let test_body_str = positive.0;
         let response = builder
-            .body(BytesBody::new(test_body_str.clone().into_bytes(), APPLICATION_JSON))
+            .body(BytesBody::new(
+                test_body_str.clone().into_bytes(),
+                APPLICATION_JSON,
+            ))
             .send()
             .map_err(|e| {
                 // Unpack error cause to expose it to user.
@@ -157,8 +160,8 @@ impl VerificationClientResource {
         }
 
         // Have to save this before the response is consumed by `Response::body`
-        let content_type: Option<Mime> = headers::get_content_type(response.headers())
-            .map_err(Error::internal_safe)?;
+        let content_type: Option<Mime> =
+            headers::get_content_type(response.headers()).map_err(Error::internal_safe)?;
 
         let conjure_type = get_endpoint(&self.param_types[&TestType::Body], &endpoint)?;
         let expected_body = deserialize_expected_value(

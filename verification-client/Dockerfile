@@ -2,7 +2,7 @@ FROM debian:bookworm-slim
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends dumb-init libssl3 ca-certificates; \
+    apt-get install -y --no-install-recommends dumb-init ca-certificates; \
     rm -rf /var/lib/apt/lists/*; \
     mkdir -p /opt/palantir/services/conjure-verification-client/service/bin; \
     mkdir -p /opt/palantir/services/conjure-verification-client/var/conf

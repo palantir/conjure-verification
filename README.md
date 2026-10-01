@@ -27,7 +27,7 @@ rust tests. Gradle needs a minimum of Java 17 to build.
     ```
   If any errors occur, try running `./gradlew build` first — the server tests read the generated test cases from `verification-server-api/build`.
 
-  A few `conjure-verification-http-client` tests need external setup: `google` requires internet access, and `google_http_proxy`, `google_https_proxy`, and `assume_http2_tls` are `#[ignore]`d because they require a local TLS proxy (run them with `cargo test -- --ignored`).
+  A few `conjure-verification-http-client` tests need external setup: `google` requires internet access, and `google_http_proxy` and `google_https_proxy` are `#[ignore]`d because they require a local TLS proxy (run them with `cargo test -- --ignored`).
 - If inspecting/editing code, install the rust plugin for the IDE of your choice.
   - IntelliJ has superior code completion and can get the type of arbitrary expressions (using the Rust plugin), but make sure to tick "Use cargo check to analyze code" - slower, but otherwise IntelliJ won't show most errors inline
   - for VSCode, install the [`rust-analyzer`](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer) extension and [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) for debuggingA

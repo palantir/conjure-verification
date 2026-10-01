@@ -37,6 +37,7 @@ use conjure_verification_common::conjure::value::*;
 use conjure_verification_error::Result;
 use conjure_verification_error::{Code, Error};
 use conjure_verification_http::error::ConjureVerificationError;
+use conjure_verification_http::headers;
 use conjure_verification_http::request::Format;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
@@ -45,7 +46,6 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http::SerializableFormat;
-use conjure_verification_http::headers;
 use conjure_verification_http_server::RouteWithOptions;
 use derive_more::From;
 
@@ -226,24 +226,22 @@ impl SpecTestResource {
         // raw_body() and when to deserialize it to JSON.
 
         // Special handling for when body is empty - allow no content type (or otherwise expect JSON).
-        let request_body_value: serde_json::Value = if headers::get_content_length(
-            request.headers(),
-        )
-        .map_err(Error::internal_safe)?
-            == Some(0)
-        {
-            let mime_opt = headers::get_content_type(request.headers())
-                .map_err(|e| Error::new_safe(e, Code::InvalidArgument))?;
-            if mime_opt.map(|mime| SerializableFormat::Json.matches(&mime)) == Some(false) {
-                return Err(Error::new_safe(
-                    "unsupported content type",
-                    ConjureVerificationError::UnsupportedContentType,
-                ));
+        let request_body_value: serde_json::Value =
+            if headers::get_content_length(request.headers()).map_err(Error::internal_safe)?
+                == Some(0)
+            {
+                let mime_opt = headers::get_content_type(request.headers())
+                    .map_err(|e| Error::new_safe(e, Code::InvalidArgument))?;
+                if mime_opt.map(|mime| SerializableFormat::Json.matches(&mime)) == Some(false) {
+                    return Err(Error::new_safe(
+                        "unsupported content type",
+                        ConjureVerificationError::UnsupportedContentType,
+                    ));
+                };
+                serde_json::Value::Null
+            } else {
+                request.body()?
             };
-            serde_json::Value::Null
-        } else {
-            request.body()?
-        };
         let request_body = conjure_type.deserialize(&request_body_value).map_err(|e| {
             let error_message = format!("{}", e);
             Error::new_safe(
@@ -430,11 +428,11 @@ mod test {
     use std::collections::HashMap;
     use std::sync::Arc;
 
+    use conjure_verification_http::headers;
     use hyper::header::HeaderValue;
     use hyper::HeaderMap;
     use hyper::Method;
     use mime::APPLICATION_JSON;
-    use conjure_verification_http::headers;
 
     use crate::register_resource;
     use crate::test_spec::ClientTestCases;

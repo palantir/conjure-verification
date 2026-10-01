@@ -30,14 +30,10 @@ use conjure_verification_common::type_mapping::type_of_non_index_arg;
 use conjure_verification_common::type_mapping::ServiceTypeMapping;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Result;
-use conjure_verification_http_server::router::Router;
 pub use conjure_verification_http_server::*;
-use handler::HttpService;
-use hyper_util::rt::TokioIo;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
-use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
@@ -90,7 +86,7 @@ fn main() {
     );
     let router = builder.build();
 
-    start_server(router, port);
+    server::start_server(router, port);
 }
 
 fn print_usage(arg0: &str) {
@@ -126,40 +122,4 @@ pub fn resolve_test_cases(
     let type_mapping = type_mapping::resolve_types(ir, &services_mapping);
 
     resolved_test_cases::resolve_test_cases(&type_mapping, client_test_cases)
-}
-
-fn start_server(router: Router, port: u16) {
-    // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
-    let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);
-
-    let router = Arc::new(router);
-
-    let runtime = tokio::runtime::Runtime::new().unwrap();
-    runtime.block_on(async move {
-        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-        println!("Listening on http://{}", addr);
-
-        loop {
-            let (stream, _) = match listener.accept().await {
-                Ok(s) => s,
-                Err(e) => {
-                    eprintln!("accept error: {}", e);
-                    continue;
-                }
-            };
-            let io = TokioIo::new(stream);
-            let service = HttpService::new(router.clone());
-            let svc = hyper::service::service_fn(move |req: hyper::Request<hyper::body::Incoming>| {
-                let service = service.clone();
-                async move { service.call(req).await }
-            });
-            tokio::spawn(async move {
-                let conn = hyper::server::conn::http1::Builder::new()
-                    .serve_connection(io, svc);
-                if let Err(e) = conn.await {
-                    eprintln!("connection error: {}", e);
-                }
-            });
-        }
-    });
 }

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use hyper::header::{HOST, RETRY_AFTER};
-use hyper::{Request, Response, StatusCode, Version};
 use http_body_util::Full;
 use hyper::body::{Bytes, Incoming};
+use hyper::header::{HOST, RETRY_AFTER};
+use hyper::{Request, Response, StatusCode, Version};
 use hyper_util::rt::TokioIo;
 use openssl::ssl::{self, AlpnError, SslAcceptor, SslAcceptorBuilder, SslFiletype, SslMethod};
 use parking_lot::Mutex;
@@ -90,19 +90,25 @@ where
                 let ssl_config = openssl::ssl::Ssl::new(acceptor.context()).unwrap();
                 let mut ssl = SslStream::new(ssl_config, stream).unwrap();
                 std::pin::Pin::new(&mut ssl).accept().await.unwrap();
+                let h2 = ssl.ssl().selected_alpn_protocol() == Some(b"h2");
                 let svc = TestService(callback.clone());
-                let mut builder = hyper::server::conn::http1::Builder::new();
-                builder.keep_alive(false);
-                builder
-                    .serve_connection(
-                        TokioIo::new(ssl),
-                        hyper::service::service_fn(move |req| {
-                            let svc = TestService(svc.0.clone());
-                            async move { Ok::<_, Infallible>(svc.call(req)) }
-                        }),
-                    )
-                    .await
-                    .unwrap();
+                let svc = hyper::service::service_fn(move |req| {
+                    let svc = TestService(svc.0.clone());
+                    async move { Ok::<_, Infallible>(svc.call(req)) }
+                });
+                if h2 {
+                    hyper::server::conn::http2::Builder::new(hyper_util::rt::TokioExecutor::new())
+                        .serve_connection(TokioIo::new(ssl), svc)
+                        .await
+                        .unwrap();
+                } else {
+                    let mut builder = hyper::server::conn::http1::Builder::new();
+                    builder.keep_alive(false);
+                    builder
+                        .serve_connection(TokioIo::new(ssl), svc)
+                        .await
+                        .unwrap();
+                }
             }
         });
     });
@@ -456,7 +462,6 @@ fn assume_http2() {
 }
 
 #[test]
-#[ignore]
 fn assume_http2_tls() {
     let server = test_tls_server(
         1,
@@ -492,4 +497,213 @@ fn assume_http2_tls() {
 
     let response = client.get("/").send().unwrap();
     assert_eq!(response.status(), StatusCode::OK);
+}
+
+/// Starts a server which keeps connections alive and counts the connections it accepts.
+fn counting_server() -> (SocketAddr, Arc<std::sync::atomic::AtomicUsize>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let connections = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
+    let counter = connections.clone();
+    thread::spawn(move || {
+        let runtime = Runtime::new().unwrap();
+        listener.set_nonblocking(true).unwrap();
+        runtime.block_on(async move {
+            let listener = tokio::net::TcpListener::from_std(listener).unwrap();
+            loop {
+                let (stream, _) = listener.accept().await.unwrap();
+                counter.fetch_add(1, Ordering::SeqCst);
+                tokio::spawn(hyper::server::conn::http1::Builder::new().serve_connection(
+                    TokioIo::new(stream),
+                    hyper::service::service_fn(|_| async {
+                        Ok::<_, Infallible>(Response::new(empty_body()))
+                    }),
+                ));
+            }
+        });
+    });
+
+    (addr, connections)
+}
+
+fn connections_for_three_requests(keep_alive: bool) -> usize {
+    let (addr, connections) = counting_server();
+    let config = format!(
+        r#"{{"services": {{"service": {{
+            "uris": ["http://127.0.0.1:{}"],
+            "keep-alive": {}
+        }}}}}}"#,
+        addr.port(),
+        keep_alive
+    );
+    let client = client(&config);
+    for _ in 0..3 {
+        client.get("/").send().unwrap();
+    }
+    connections.load(Ordering::SeqCst)
+}
+
+#[test]
+fn keep_alive_reuses_connections() {
+    assert_eq!(connections_for_three_requests(true), 1);
+}
+
+#[test]
+fn disabling_keep_alive_opens_a_connection_per_request() {
+    assert_eq!(connections_for_three_requests(false), 3);
+}
+
+#[test]
+fn truncated_response_body_is_an_error() {
+    use std::io::Write;
+
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = thread::spawn(move || {
+        let mut stream = listener.accept().unwrap().0;
+        assert!(stream.read(&mut [0; 4096]).unwrap() > 0);
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nonly 11 bytes")
+            .unwrap();
+    });
+    let config =
+        format!(r#"{{"services": {{"service": {{"uris": ["http://127.0.0.1:{port}"]}}}}}}"#);
+
+    let response = client(&config).get("/").send().unwrap();
+    server.join().unwrap();
+    let mut body = vec![];
+    let result = response.raw_body().unwrap().read_to_end(&mut body);
+
+    assert!(result.is_err(), "read {:?}", String::from_utf8_lossy(&body));
+}
+
+fn connect_error(uri: &str) -> String {
+    let config =
+        format!(r#"{{"services": {{"service": {{"uris": ["{uri}"], "max-num-retries": 0}}}}}}"#);
+    match client(&config).get("/").send() {
+        Ok(response) => panic!("expected an error, got {}", response.status()),
+        Err(e) => e.cause().to_string(),
+    }
+}
+
+#[test]
+fn connect_error_includes_cause() {
+    let port = TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+
+    let error = connect_error(&format!("http://127.0.0.1:{}", port));
+
+    assert!(
+        error.to_lowercase().contains("connection refused"),
+        "{}",
+        error
+    );
+}
+
+#[test]
+fn unknown_uri_scheme_is_rejected() {
+    let (addr, connections) = counting_server();
+
+    let error = connect_error(&format!("ftp://127.0.0.1:{}", addr.port()));
+
+    assert!(error.contains("invalid URI scheme"), "{}", error);
+    assert_eq!(connections.load(Ordering::SeqCst), 0);
+}
+
+/// A proxy which accepts one CONNECT request, sends its request head to the returned receiver, and then tunnels the
+/// connection to `target`.
+fn connect_proxy(target: SocketAddr) -> (SocketAddr, std::sync::mpsc::Receiver<String>) {
+    use std::io::Write;
+    use std::net::{Shutdown, TcpStream};
+
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (tx, rx) = std::sync::mpsc::channel();
+    thread::spawn(move || {
+        let mut client = listener.accept().unwrap().0;
+        // read a byte at a time so we don't consume anything after the request head
+        let mut head = vec![];
+        while !head.ends_with(b"\r\n\r\n") {
+            let mut byte = [0];
+            client.read_exact(&mut byte).unwrap();
+            head.push(byte[0]);
+        }
+        tx.send(String::from_utf8(head).unwrap()).unwrap();
+
+        let mut server = TcpStream::connect(target).unwrap();
+        client
+            .write_all(b"HTTP/1.1 200 Connection established\r\n\r\n")
+            .unwrap();
+        let mut client_read = client.try_clone().unwrap();
+        let mut server_write = server.try_clone().unwrap();
+        thread::spawn(move || {
+            let _ = std::io::copy(&mut client_read, &mut server_write);
+            let _ = server_write.shutdown(Shutdown::Write);
+        });
+        let _ = std::io::copy(&mut server, &mut client);
+        let _ = client.shutdown(Shutdown::Write);
+    });
+    (addr, rx)
+}
+
+#[test]
+fn https_proxy_tunnels_with_connect() {
+    let server = test_tls_server(
+        1,
+        |_| {},
+        |request| {
+            assert_eq!(request.uri(), "/foo");
+            Response::new(empty_body())
+        },
+    );
+    let (proxy_addr, proxy_requests) = connect_proxy(server.addr);
+
+    let config = format!(
+        r#"{{"services": {{"service": {{
+            "uris": ["https://localhost:{}"],
+            "security": {{"ca-file": "{}"}},
+            "proxy": {{
+                "type": "http",
+                "host-and-port": "127.0.0.1:{}",
+                "credentials": {{"username": "admin", "password": "palantir"}}
+            }},
+            "max-num-retries": 0
+        }}}}}}"#,
+        server.addr.port(),
+        server.cert_file.display(),
+        proxy_addr.port()
+    );
+    let response = client(&config).get("/foo").send().unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let head = proxy_requests.recv().unwrap().to_lowercase();
+    let connect = format!("localhost:{}", server.addr.port());
+    assert!(
+        head.starts_with(&format!("connect {} http/1.1\r\n", connect)),
+        "{}",
+        head
+    );
+    assert!(
+        head.contains(&format!("\r\nhost: {}\r\n", connect)),
+        "{}",
+        head
+    );
+    assert!(
+        head.contains("\r\nproxy-authorization: basic ywrtaw46cgfsyw50axi=\r\n"),
+        "{}",
+        head
+    );
+}
+
+#[test]
+fn trusts_os_root_certificates() {
+    // OpenSSL is statically linked, so it has to be pointed at the OS's root certificates. Run this test with
+    // SSL_CERT_FILE and SSL_CERT_DIR unset to check that.
+    let connector = crate::ssl_connector().unwrap().build();
+    let certificates = connector.context().cert_store().all_certificates();
+    assert!(!certificates.is_empty());
 }

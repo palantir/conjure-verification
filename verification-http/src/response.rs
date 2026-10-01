@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use crate::error::ConjureVerificationError;
+use crate::headers;
+use crate::request::{Format, Request};
+use crate::SerializableFormat;
 use bytes::Bytes;
 use conjure_verification_error::{Error, Result};
 use http::header::{HeaderMap, HeaderValue};
@@ -19,9 +22,6 @@ use http::StatusCode;
 use serde::Serialize;
 use serde_json;
 use std::io::Write;
-use crate::headers;
-use crate::request::{Format, Request};
-use crate::SerializableFormat;
 
 pub struct Response {
     pub status: StatusCode,

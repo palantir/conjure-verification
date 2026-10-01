@@ -37,8 +37,7 @@ use std::result;
 use std::sync::LazyLock;
 use uuid::Uuid;
 
-static UPPER_CAMEL: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new("^([A-Z][a-z0-9]+)+$").unwrap());
+static UPPER_CAMEL: LazyLock<Regex> = LazyLock::new(|| Regex::new("^([A-Z][a-z0-9]+)+$").unwrap());
 
 /// A convenience type definition for `Results` with `Error` as the error type.
 pub type Result<T> = result::Result<T, Error>;
@@ -110,7 +109,7 @@ pub trait ErrorType {
 }
 
 macro_rules! make_code {
-    ($($v:ident => $http:expr_2021,)*) => {
+    ($($v:ident => $http:expr,)*) => {
         /// A high-level category of an Conjure error.
         ///
         /// `Code` also implements `ErrorType`, and can be used to create generic errors that don't need

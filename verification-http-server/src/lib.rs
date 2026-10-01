@@ -32,6 +32,10 @@ use std::sync::Arc;
 pub mod error_handling;
 pub mod handler;
 pub mod router;
+pub mod server;
+
+#[cfg(test)]
+mod test;
 
 pub fn register_resource<T>(builder: &mut router::Builder, resource: &Arc<T>)
 where

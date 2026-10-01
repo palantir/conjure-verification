@@ -13,6 +13,8 @@
 // limitations under the License.
 use crate::auth::AuthToken;
 use crate::error::ConjureVerificationError;
+use crate::headers;
+use crate::SerializableFormat;
 use conjure_verification_error::{Code, Error, Result};
 use http::header::HeaderMap;
 use mime::{Mime, STAR};
@@ -23,8 +25,6 @@ use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::io::Read;
 use std::str::FromStr;
-use crate::headers;
-use crate::SerializableFormat;
 
 const BODY_SIZE_LIMIT_BYTES: u64 = 1024 * 1024;
 

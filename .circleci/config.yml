@@ -41,6 +41,7 @@ jobs:
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
+    - run: cargo fmt --all -- --check
     - attach_workspace: { at: . } # need the compiled conjure IR from `gradle-build`
     - run: cargo test && cargo build --release
     - *SAVE_DEPS
@@ -97,11 +98,22 @@ jobs:
           fi
     # rust-toolchain.toml pins the toolchain; `rustup show` installs it (incl. rustfmt/clippy)
     - run: rustup show
+    # The executor is Apple Silicon; also build for Intel so we can publish a universal binary.
+    - run: rustup target add x86_64-apple-darwin
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
-    - run: cargo build --release
+    - run:
+        name: Build universal binaries
+        command: |
+          cargo build --release --target aarch64-apple-darwin --target x86_64-apple-darwin
+          mkdir -p target/osx/release
+          for bin in conjure-verification-server conjure-verification-client; do
+            lipo -create -output target/osx/release/$bin \
+              target/osx/aarch64-apple-darwin/release/$bin \
+              target/osx/x86_64-apple-darwin/release/$bin
+          done
     - *SAVE_DEPS
     - *SAVE_REGISTRY
     - persist_to_workspace:

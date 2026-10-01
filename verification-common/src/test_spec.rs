@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use core::result::Result as StdResult;
-use std::str::FromStr;
 use derive_more::From;
+use std::str::FromStr;
 
 #[derive(Deserialize, Serialize, Debug, Eq, PartialEq, Hash, Clone, From, derive_more::Display)]
 pub struct EndpointName(pub String);

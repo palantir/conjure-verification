@@ -13,16 +13,19 @@
 // limitations under the License.
 
 use crate::errors::{Error, Result};
+use bytes::Bytes;
+use conjure_verification_http::headers::{self, Encoding};
 use flate2::bufread::{GzDecoder, ZlibDecoder};
+use http_body_util::BodyExt;
+use hyper::body::Incoming;
 use hyper::{self, HeaderMap, StatusCode};
 use mime;
+use mime::Mime;
 use serde::de::DeserializeOwned;
 use serde_cbor;
 use serde_json;
 use serde_urlencoded;
 use std::io::{self, BufRead, BufReader, Cursor, Read};
-use conjure_verification_http::headers::{self, Encoding};
-use mime::Mime;
 
 use crate::{RemoteError, APPLICATION_CBOR, RUNTIME};
 
@@ -34,18 +37,14 @@ pub struct Response {
 }
 
 impl Response {
-    pub(crate) fn new(response: hyper::Response<hyper::body::Incoming>) -> Response {
+    pub(crate) fn new(response: hyper::Response<Incoming>) -> Response {
         let (parts, body) = response.into_parts();
-        // Buffer the whole body since the client API is synchronous.
-        let bytes = RUNTIME
-            .block_on(http_body_util::BodyExt::collect(body))
-            .map(|c| c.to_bytes())
-            .unwrap_or_default();
         Response {
             status: parts.status,
             headers: parts.headers,
             body: IdentityBody {
-                cur: Cursor::new(bytes),
+                body,
+                cur: Cursor::new(Bytes::new()),
             },
         }
     }
@@ -177,17 +176,38 @@ impl Read for ResponseBody {
 }
 
 struct IdentityBody {
-    cur: Cursor<bytes::Bytes>,
+    body: Incoming,
+    cur: Cursor<Bytes>,
 }
 
 impl Read for IdentityBody {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.cur.read(buf)
+        let nread = {
+            let read_buf = self.fill_buf()?;
+            let nread = usize::min(buf.len(), read_buf.len());
+            buf[..nread].copy_from_slice(&read_buf[..nread]);
+            nread
+        };
+        self.consume(nread);
+        Ok(nread)
     }
 }
 
 impl BufRead for IdentityBody {
     fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        // Read the body a frame at a time so that errors (e.g. a truncated body) are reported to the reader.
+        while self.cur.position() == self.cur.get_ref().len() as u64 {
+            match RUNTIME.block_on(self.body.frame()) {
+                Some(Ok(frame)) => {
+                    if let Ok(data) = frame.into_data() {
+                        self.cur = Cursor::new(data);
+                    }
+                }
+                Some(Err(e)) => return Err(io::Error::new(io::ErrorKind::Other, e)),
+                None => break,
+            }
+        }
+
         self.cur.fill_buf()
     }
 

@@ -16,10 +16,10 @@ http-body-util = "0.1"
 hyper = { version = "1", features = ["client", "server", "http1", "http2"] }
 hyper-openssl = { version = "0.10", features = ["client-legacy"] }
 hyper-util = { version = "0.1", features = ["client-legacy", "tokio", "http1", "http2"] }
-lazy_static = "1.0"
 log = "0.4"
 mime = "0.3"
-openssl = "0.10"
+openssl = { version = "0.10", features = ["vendored"] }
+openssl-probe = "0.2"
 parking_lot = "0.12"
 pin-project-lite = "0.2"
 rand = "0.9"

@@ -13,13 +13,13 @@
 // limitations under the License.
 use bytes::Bytes;
 use conjure_verification_error::Result;
+use conjure_verification_http::headers;
 use conjure_verification_http::request::{Format, Request};
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::{Body, Response};
 use conjure_verification_http::SerializableFormat;
 use http::header::HeaderValue;
 use http::StatusCode;
-use conjure_verification_http::headers;
 
 pub struct RawJson {
     pub data: Bytes,

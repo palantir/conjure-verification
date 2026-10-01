@@ -14,6 +14,7 @@
 
 use crate::errors::{Error, Result};
 use bytes::Bytes;
+use conjure_verification_http::headers::{self, RetryAfter};
 use http_body_util::Full;
 use hyper::header::{
     HeaderValue, ACCEPT, ACCEPT_ENCODING, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE, HOST,
@@ -22,10 +23,10 @@ use hyper::header::{
 use hyper::{self, HeaderMap, Method, StatusCode};
 use std::collections::HashMap;
 use std::error::Error as _;
+use std::fmt;
 use std::result;
 use std::thread;
 use std::time::{Duration, SystemTime};
-use conjure_verification_http::headers::{self, RetryAfter};
 use url::Url;
 
 use crate::backoff::BackoffIterator;
@@ -84,11 +85,6 @@ impl<'a> RequestBuilder<'a> {
     /// * `Content-Type`
     /// * `Host`
     /// * `Proxy-Authorization`
-    /// * `X-B3-Flags`
-    /// * `X-B3-ParentSpanId`
-    /// * `X-B3-Sampled`
-    /// * `X-B3-SpanId`
-    /// * `X-B3-TraceId`
     pub fn headers_mut(&mut self) -> &mut HeaderMap {
         &mut self.headers
     }
@@ -244,9 +240,9 @@ impl<'a> RequestBuilder<'a> {
                 } else if status == StatusCode::TOO_MANY_REQUESTS {
                     let backoff = match headers::get_retry_after(response.headers()) {
                         Ok(Some(RetryAfter::DelaySeconds(s))) => Some(Duration::from_secs(s)),
-                        Ok(Some(RetryAfter::HttpDate(date))) => date
-                            .duration_since(SystemTime::now())
-                            .ok(),
+                        Ok(Some(RetryAfter::HttpDate(date))) => {
+                            date.duration_since(SystemTime::now()).ok()
+                        }
                         _ => None,
                     };
                     Err(SendError::Throttle { backoff })
@@ -331,9 +327,9 @@ impl<'a> RequestBuilder<'a> {
             Ok(response) => Ok(Response::new(response)),
             Err(e) => {
                 if is_connect_error(&e) {
-                    Err(RawError::Connect(Error::internal_safe(e)))
+                    Err(RawError::Connect(Error::internal_safe(ClientError(e))))
                 } else {
-                    Err(RawError::Other(Error::internal_safe(e)))
+                    Err(RawError::Other(Error::internal_safe(ClientError(e))))
                 }
             }
         }
@@ -396,6 +392,28 @@ fn is_connect_error(e: &LegacyClientError) -> bool {
         source = err.source();
     }
     false
+}
+
+/// A client error whose message includes its causes, which hyper's error message omits.
+#[derive(Debug)]
+struct ClientError(LegacyClientError);
+
+impl fmt::Display for ClientError {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, fmt)?;
+        let mut source = self.0.source();
+        while let Some(err) = source {
+            write!(fmt, ": {}", err)?;
+            source = err.source();
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for ClientError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.0)
+    }
 }
 
 enum RawError {

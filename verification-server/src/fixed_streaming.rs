@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use conjure_verification_error::{Error, Result};
+use conjure_verification_http::headers;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::WriteBody;
@@ -24,7 +25,6 @@ use mime::APPLICATION_OCTET_STREAM;
 use std::io::Write;
 use std::thread;
 use std::time;
-use conjure_verification_http::headers;
 
 pub struct StreamingResponse {
     pub data: Vec<u8>,
