@@ -21,9 +21,6 @@ use tokio::net::TcpStream;
 use tokio::time::timeout;
 use tokio_io_timeout::TimeoutStream;
 
-#[cfg(test)]
-mod test;
-
 pub type SocketStream = Pin<Box<TimeoutStream<TcpStream>>>;
 
 #[derive(Copy, Clone)]

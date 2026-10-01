@@ -28,9 +28,6 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use tower_service::Service;
 
-#[cfg(test)]
-mod test;
-
 /// A timeout-wrapped TCP stream with hyper-util `Connection` metadata.
 /// Any bytes buffered during a CONNECT handshake are read before the socket.
 pub struct ConnStream {
