@@ -12,25 +12,26 @@ This project has two main components:
 
 ## Development
 
-Use JDK 17 to run the Gradle build. Run
-`./gradlew build` to generate the Conjure definitions and Java test cases. Rust
-binaries are built separately; Gradle skips packaging them during `build` if
-those binaries are not present.
+The gradle build (java) and cargo build (rust) are indepndent of one another. Gradle is responsible
+for generating the Conjure definitions and Java test cases, and cargo is responsible for running the
+rust tests. Gradle needs a minimum of Java 17 to build.
 
-- Install rustup using instructions on https://rustup.rs
-- The Rust toolchain is pinned in [`rust-toolchain.toml`](rust-toolchain.toml); rustup will automatically download and use it for any cargo command run in this repo.
-- Create an ssh key if you don't have one, and add it to [github](https://github.com/settings/keys)
-- make sure the key is added to the ssh-agent, so that cargo can login to github, in order to access the palantir repository index
+- Run `./gradlew build` to generate the Conjure definitions and Java test cases.
+- Install rustup using instructions on https://rustup.rs . Choose any modern version of rust when
+    prompted.
+- The Rust toolchain is pinned in [`rust-toolchain.toml`](rust-toolchain.toml); rustup will automatically download and use it (including the `rustfmt` and `clippy` components) for any cargo command run in this repo. Note that you must be using a rustup supplied version of `cargo` to use this bootstrapping feature. If `cargo` was installed using something like brew, or is very old, then this bootstrapping will be ignored.
+- Build the Rust workspace and run the test suite:
     ```
-    ssh-add ~/.ssh/id_rsa
+    cargo build --workspace
+    cargo test --workspace
     ```
-- Install the rust plugin for the IDE of your choice
+  If any errors occur, try running `./gradlew build` first — the server tests read the generated test cases from `verification-server-api/build`.
+
+  A few `conjure-verification-http-client` tests need external setup: `google` requires internet access, and `google_http_proxy`, `google_https_proxy`, and `assume_http2_tls` are `#[ignore]`d because they require a local TLS proxy (run them with `cargo test -- --ignored`).
+- If inspecting/editing code, install the rust plugin for the IDE of your choice.
   - IntelliJ has superior code completion and can get the type of arbitrary expressions (using the Rust plugin), but make sure to tick "Use cargo check to analyze code" - slower, but otherwise IntelliJ won't show most errors inline
-  - for VSCode, install [`RLS`](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust) and [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) extension
-- To support formatting via rustfmt, [install the component](https://github.com/rust-lang-nursery/rustfmt#installation)
-    ```
-    rustup component add rustfmt-preview
-    ```
+  - for VSCode, install the [`rust-analyzer`](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer) extension and [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) for debuggingA
+- For vibecoding, direct the agent to read this README in lieu of an AGENTS.md file.
 
 ## License
 
