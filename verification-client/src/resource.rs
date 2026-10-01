@@ -135,7 +135,7 @@ impl VerificationClientResource {
     ) -> Result<()> {
         let test_body_str = positive.0;
         let response = builder
-            .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
+            .body(BytesBody::new(test_body_str.clone().into_bytes(), APPLICATION_JSON))
             .send()
             .map_err(|e| {
                 // Unpack error cause to expose it to user.

@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use futures::future::{self, Future};
 use hyper::header::{HOST, RETRY_AFTER};
-use hyper::server::conn::Http;
-use hyper::service::Service;
-use hyper::{self, Body, Request, Response, StatusCode, Version};
+use hyper::{Request, Response, StatusCode, Version};
+use http_body_util::Full;
+use hyper::body::{Bytes, Incoming};
+use hyper_util::rt::TokioIo;
 use openssl::ssl::{self, AlpnError, SslAcceptor, SslAcceptorBuilder, SslFiletype, SslMethod};
 use parking_lot::Mutex;
 use serde_json;
+use std::convert::Infallible;
 use std::io::Read;
 use std::net::{SocketAddr, TcpListener};
 use std::path::{Path, PathBuf};
@@ -27,9 +28,17 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use tokio::net::TcpStream;
-use tokio::reactor::Handle;
-use tokio::runtime::current_thread::Runtime;
-use tokio_openssl::SslAcceptorExt;
+use tokio::runtime::Runtime;
+
+use tokio_openssl::SslStream;
+
+type TestBody = Full<Bytes>;
+type TestRequest = Request<Incoming>;
+type TestResponse = Response<TestBody>;
+
+fn empty_body() -> TestBody {
+    Full::new(Bytes::new())
+}
 
 use crate::config::{
     BasicCredentials, HostAndPort, HttpProxyConfig, ProxyConfig, SecurityConfig, ServiceConfig,
@@ -39,26 +48,21 @@ use crate::{Agent, Client, UserAgent};
 
 struct TestService<F>(Arc<Mutex<F>>);
 
-impl<F> Service for TestService<F>
+impl<F> TestService<F>
 where
-    F: FnMut(Request<Body>) -> Response<Body>,
+    F: FnMut(TestRequest) -> TestResponse,
 {
-    type ReqBody = Body;
-    type ResBody = Body;
-    type Error = hyper::Error;
-    type Future = Box<dyn Future<Item = Response<Body>, Error = hyper::Error> + Send>;
-
-    fn call(&mut self, req: Request<Body>) -> Self::Future {
+    fn call(&self, req: TestRequest) -> TestResponse {
         let mut f = self.0.lock();
         let f = &mut *f;
-        Box::new(future::ok(f(req)))
+        f(req)
     }
 }
 
 fn test_tls_server<F, G>(requests: usize, acceptor_callback: F, callback: G) -> TestTlsServer
 where
     F: FnOnce(&mut SslAcceptorBuilder),
-    G: FnMut(Request<Body>) -> Response<Body> + 'static + Send,
+    G: FnMut(TestRequest) -> TestResponse + 'static + Send,
 {
     let test_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("test");
     let key_file = test_dir.join("key.pem");
@@ -76,22 +80,32 @@ where
     let addr = listener.local_addr().unwrap();
 
     let handle = thread::spawn(move || {
-        let mut runtime = Runtime::new().unwrap();
+        let runtime = Runtime::new().unwrap();
         let callback = Arc::new(Mutex::new(callback));
 
-        for _ in 0..requests {
-            let socket = listener.accept().unwrap().0;
-            let f = future::lazy(|| TcpStream::from_std(socket, &Handle::current()))
-                .map_err(|e| panic!("{}", e))
-                .and_then(|s| acceptor.accept_async(s))
-                .map_err(|e| panic!("{}", e))
-                .and_then(|s| {
-                    Http::new()
-                        .keep_alive(false)
-                        .serve_connection(s, TestService(callback.clone()))
-                });
-            runtime.block_on(f).unwrap();
-        }
+        listener.set_nonblocking(true).unwrap();
+        runtime.block_on(async move {
+            let listener = tokio::net::TcpListener::from_std(listener).unwrap();
+            for _ in 0..requests {
+                let (stream, _) = listener.accept().await.unwrap();
+                let ssl_config = openssl::ssl::Ssl::new(acceptor.context()).unwrap();
+                let mut ssl = SslStream::new(ssl_config, stream).unwrap();
+                std::pin::Pin::new(&mut ssl).accept().await.unwrap();
+                let svc = TestService(callback.clone());
+                let mut builder = hyper::server::conn::http1::Builder::new();
+                builder.keep_alive(false);
+                builder
+                    .serve_connection(
+                        TokioIo::new(ssl),
+                        hyper::service::service_fn(move |req| {
+                            let svc = TestService(svc.0.clone());
+                            async move { Ok::<_, Infallible>(svc.call(req)) }
+                        }),
+                    )
+                    .await
+                    .unwrap();
+            }
+        });
     });
 
     TestTlsServer {
@@ -103,25 +117,62 @@ where
 
 fn test_server<F>(requests: usize, callback: F) -> TestServer
 where
-    F: FnMut(Request<Body>) -> Response<Body> + 'static + Send,
+    F: FnMut(TestRequest) -> TestResponse + 'static + Send,
+{
+    test_server_impl(requests, false, callback)
+}
+
+fn test_server_h2<F>(requests: usize, callback: F) -> TestServer
+where
+    F: FnMut(TestRequest) -> TestResponse + 'static + Send,
+{
+    test_server_impl(requests, true, callback)
+}
+
+fn test_server_impl<F>(requests: usize, h2: bool, callback: F) -> TestServer
+where
+    F: FnMut(TestRequest) -> TestResponse + 'static + Send,
 {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = listener.local_addr().unwrap();
 
     let handle = thread::spawn(move || {
-        let mut runtime = Runtime::new().unwrap();
+        let runtime = Runtime::new().unwrap();
         let callback = Arc::new(Mutex::new(callback));
 
-        for _ in 0..requests {
-            let socket = listener.accept().unwrap().0;
-            let f = future::lazy(|| Ok(TcpStream::from_std(socket, &Handle::current()).unwrap()))
-                .and_then(|socket| {
-                    Http::new()
-                        .keep_alive(false)
-                        .serve_connection(socket, TestService(callback.clone()))
-                });
-            runtime.block_on(f).unwrap();
-        }
+        listener.set_nonblocking(true).unwrap();
+        runtime.block_on(async move {
+            let listener = tokio::net::TcpListener::from_std(listener).unwrap();
+            for _ in 0..requests {
+                let (stream, _) = listener.accept().await.unwrap();
+                let svc = TestService(callback.clone());
+                if h2 {
+                    hyper::server::conn::http2::Builder::new(hyper_util::rt::TokioExecutor::new())
+                        .serve_connection(
+                            TokioIo::new(stream),
+                            hyper::service::service_fn(move |req| {
+                                let svc = TestService(svc.0.clone());
+                                async move { Ok::<_, Infallible>(svc.call(req)) }
+                            }),
+                        )
+                        .await
+                        .unwrap();
+                } else {
+                    let mut builder = hyper::server::conn::http1::Builder::new();
+                    builder.keep_alive(false);
+                    builder
+                        .serve_connection(
+                            TokioIo::new(stream),
+                            hyper::service::service_fn(move |req| {
+                                let svc = TestService(svc.0.clone());
+                                async move { Ok::<_, Infallible>(svc.call(req)) }
+                            }),
+                        )
+                        .await
+                        .unwrap();
+                }
+            }
+        });
     });
 
     TestServer {
@@ -251,7 +302,7 @@ fn mesh_proxy() {
         assert_eq!(host, "www.google.com:1234");
         assert_eq!(req.uri(), &"/foo/bar?fizz=buzz");
 
-        Response::new(Body::empty())
+        Response::new(empty_body())
     });
 
     let config = format!(
@@ -285,10 +336,10 @@ fn failover_after_503() {
         SERVER1_HIT.store(true, Ordering::SeqCst);
         Response::builder()
             .status(StatusCode::SERVICE_UNAVAILABLE)
-            .body(Body::empty())
+            .body(empty_body())
             .unwrap()
     });
-    let server2 = test_server(1, |_| Response::new(Body::empty()));
+    let server2 = test_server(1, |_| Response::new(empty_body()));
 
     let config = format!(
         r#"
@@ -322,10 +373,10 @@ fn retry_after_overrides() {
             Response::builder()
                 .status(StatusCode::TOO_MANY_REQUESTS)
                 .header(RETRY_AFTER, "1")
-                .body(Body::empty())
+                .body(empty_body())
                 .unwrap()
         } else {
-            Response::new(Body::empty())
+            Response::new(empty_body())
         }
     });
 
@@ -345,16 +396,15 @@ fn retry_after_overrides() {
         server.addr.port(),
     );
     let client = client(&config);
-
     let response = client.get("/").send().unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 }
 
 #[test]
 fn assume_http2() {
-    let server = test_server(1, |request| {
+    let server = test_server_h2(1, |request| {
         assert_eq!(request.version(), Version::HTTP_2);
-        Response::new(Body::empty())
+        Response::new(empty_body())
     });
 
     let config = format!(
@@ -388,7 +438,7 @@ fn assume_http2_tls() {
         },
         |request| {
             assert_eq!(request.version(), Version::HTTP_2);
-            Response::new(Body::empty())
+            Response::new(empty_body())
         },
     );
 

@@ -12,46 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate base64;
-extern crate bytes;
-extern crate conjure_verification_error;
-extern crate conjure_verification_http_client_config;
-extern crate flate2;
-extern crate hyper;
-extern crate hyper_openssl;
-extern crate mime;
-extern crate openssl;
-extern crate parking_lot;
-extern crate rand;
-extern crate regex;
-extern crate serde;
-extern crate serde_cbor;
-extern crate serde_json;
-extern crate serde_urlencoded;
-extern crate tokio;
-extern crate tokio_io;
-extern crate tokio_io_timeout;
-extern crate tokio_threadpool;
-extern crate url;
-
-#[macro_use]
-extern crate futures;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
-extern crate state_machine_future;
-#[macro_use]
 extern crate log;
-
-#[cfg(test)]
-extern crate tokio_openssl;
 
 use crate::config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
 use crate::errors::{Error, Result, SerializableError};
 use arc_swap::ArcSwap;
 use hyper::header::HeaderValue;
 use hyper::{Method, StatusCode};
-use hyper_openssl::HttpsConnector;
+use hyper_openssl::client::legacy::HttpsConnector;
+use hyper_util::rt::TokioExecutor;
 use mime::Mime;
 use openssl::error::ErrorStack;
 use openssl::ssl::{SslConnector, SslMethod};
@@ -59,7 +31,7 @@ use std::error;
 use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::runtime::{self, Runtime};
+use tokio::runtime::Runtime;
 
 pub use crate::body::*;
 use crate::node_selector::NodeSelector;
@@ -96,19 +68,7 @@ pub mod user_agent;
 mod test;
 
 lazy_static! {
-    static ref RUNTIME: Runtime = {
-        let mut pool = tokio_threadpool::Builder::new();
-        // we use blocking for DNS lookup so we don't need/want a ton of parallelism available
-        pool.max_blocking(2)
-            .keep_alive(Some(Duration::from_secs(30)))
-            .name_prefix("chatter-");
-
-        #[allow(deprecated)]
-        runtime::Builder::new()
-            .threadpool_builder(pool)
-            .build()
-            .unwrap()
-    };
+    static ref RUNTIME: Runtime = Runtime::new().unwrap();
     static ref APPLICATION_CBOR: Mime = "application/cbor".parse().unwrap();
 }
 
@@ -206,16 +166,20 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
     };
     let connector = SocketConnector(timeouts);
     let connector = ProxyConnector::new(connector, proxy);
-    let connector = HttpsConnector::with_connector(connector, ssl).map_err(Error::internal_safe)?;
+    let connector =
+        HttpsConnector::with_connector(connector, ssl).map_err(Error::internal_safe)?;
     let connector = AlpnConnector::new(connector, service_config.experimental_assume_http2());
     let connector = CustomErrorConnector(connector);
 
-    let client = hyper::Client::builder()
-        .keep_alive(service_config.keep_alive())
-        .http2_only(service_config.experimental_assume_http2())
-        .http1_writev(false)
-        .executor(RUNTIME.executor())
-        .build(connector);
+    let mut builder = hyper_util::client::legacy::Builder::new(TokioExecutor::new());
+    builder
+        .pool_idle_timeout(if service_config.keep_alive() {
+            Some(Duration::from_secs(90))
+        } else {
+            None
+        })
+        .http2_only(service_config.experimental_assume_http2());
+    let client = builder.build(connector);
 
     Ok(ClientState {
         client,
@@ -227,7 +191,10 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
 }
 
 struct ClientState {
-    client: hyper::Client<CustomErrorConnector>,
+    client: hyper_util::client::legacy::Client<
+        CustomErrorConnector,
+        http_body_util::Full<bytes::Bytes>,
+    >,
     nodes: NodeSelector,
     max_num_retries: u32,
     backoff_slot_size: Duration,

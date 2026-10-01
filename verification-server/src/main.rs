@@ -12,29 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate bytes;
 #[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
-extern crate conjure_verification_error;
 #[macro_use]
 extern crate conjure_verification_error_derive;
-extern crate conjure_verification_http;
-extern crate conjure_verification_http_server;
-extern crate core;
-#[macro_use]
-extern crate derive_more;
-extern crate either;
-extern crate futures;
-extern crate http;
-extern crate hyper;
-extern crate mime;
-extern crate pretty_env_logger;
-extern crate serde_conjure;
-extern crate serde_json;
-extern crate serde_plain;
 #[macro_use]
 extern crate serde_conjure_derive;
-extern crate itertools;
 
 use crate::resolved_test_cases::ResolvedClientTestCases;
 use crate::resource::SpecTestResource;
@@ -49,9 +32,8 @@ use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Result;
 use conjure_verification_http_server::router::Router;
 pub use conjure_verification_http_server::*;
-use futures::{future, Future};
 use handler::HttpService;
-use hyper::Server;
+use hyper_util::rt::{TokioExecutor, TokioIo};
 use std::env;
 use std::env::VarError;
 use std::fs::File;
@@ -152,15 +134,32 @@ fn start_server(router: Router, port: u16) {
 
     let router = Arc::new(router);
 
-    hyper::rt::run(future::lazy(move || {
-        let new_service = move || future::ok::<_, hyper::Error>(HttpService::new(router.clone()));
-
-        let server = Server::bind(&addr)
-            .serve(new_service)
-            .map_err(|e| eprintln!("server error: {}", e));
-
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    runtime.block_on(async move {
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
         println!("Listening on http://{}", addr);
 
-        server
-    }));
+        loop {
+            let (stream, _) = match listener.accept().await {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("accept error: {}", e);
+                    continue;
+                }
+            };
+            let io = TokioIo::new(stream);
+            let service = HttpService::new(router.clone());
+            let svc = hyper::service::service_fn(move |req: hyper::Request<hyper::body::Incoming>| {
+                let service = service.clone();
+                async move { service.call(req).await }
+            });
+            tokio::spawn(async move {
+                let conn = hyper::server::conn::http1::Builder::new()
+                    .serve_connection(io, svc);
+                if let Err(e) = conn.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
+        }
+    });
 }

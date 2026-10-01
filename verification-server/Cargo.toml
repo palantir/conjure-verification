@@ -14,12 +14,12 @@ conjure-verification-error-derive = { path = "../verification-error-derive" }
 serde-conjure = { path = "../serde-conjure" }
 serde-conjure-derive = { path = "../serde-conjure-derive" }
 
-bytes = "0.4"
+bytes = "1"
 derive_more = { version = "1", features = ["from", "display"] }
 either = "1.5"
-futures = "0.1.21"
-http = "0.1"
-hyper = "0.12"
+http = "1"
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["server", "tokio"] }
 itertools = "0.14"
 lazy_static = "1.0"
 log = "0.4"
@@ -30,3 +30,4 @@ serde_derive = "1.0"
 serde_json = "1.0"
 serde_plain = "0.3"
 serde_yaml_ng = "0.10"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }

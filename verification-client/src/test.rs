@@ -43,8 +43,8 @@ use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
 use serde_json;
 use std::collections::HashMap;
+use std::io::Write;
 use std::sync::Arc;
-use tokio::prelude::Write;
 use conjure_verification_http::headers;
 use url::Url;
 use derive_new::new;
@@ -391,11 +391,10 @@ mod server_under_test {
         F: FnOnce(Url),
         RM: IntoIterator<Item = ResponseMapping>,
     {
-        use futures::{future, Future};
-        use hyper;
+        use hyper_util::rt::TokioIo;
         use tokio::runtime::Runtime;
 
-        let addr = "127.0.0.1:0".parse().unwrap();
+        let addr: std::net::SocketAddr = "127.0.0.1:0".parse().unwrap();
         let prefix = "server-under-test";
 
         let resource = Arc::new(ServerUnderTest::new(
@@ -409,15 +408,30 @@ mod server_under_test {
 
         let router = Arc::new(builder.build());
 
-        let new_service = move || future::ok::<_, hyper::Error>(HttpService::new(router.clone()));
-        let server0 = hyper::Server::bind(&addr);
-        let server = server0.serve(new_service);
-        let bound_addr = server.local_addr();
-
-        let future = future::lazy(move || server.map_err(|e| eprintln!("server error: {}", e)));
-
-        let mut runtime = Runtime::new().unwrap();
-        runtime.spawn(future);
+        let runtime = Runtime::new().unwrap();
+        let bound_addr = runtime.block_on(async {
+            let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+            let bound_addr = listener.local_addr().unwrap();
+            tokio::spawn(async move {
+                loop {
+                    let (stream, _) = listener.accept().await.unwrap();
+                    let io = TokioIo::new(stream);
+                    let service = HttpService::new(router.clone());
+                    let svc = hyper::service::service_fn(
+                        move |req: hyper::Request<hyper::body::Incoming>| {
+                            let service = service.clone();
+                            async move { service.call(req).await }
+                        },
+                    );
+                    tokio::spawn(async move {
+                        let _ = hyper::server::conn::http1::Builder::new()
+                            .serve_connection(io, svc)
+                            .await;
+                    });
+                }
+            });
+            bound_addr
+        });
         println!("Started server under test at {}", bound_addr);
 
         let url: Url = format!(
@@ -430,7 +444,7 @@ mod server_under_test {
         .unwrap();
         f(url);
 
-        runtime.shutdown_now().wait().unwrap();
+        drop(runtime);
     }
 
     #[derive(new)]

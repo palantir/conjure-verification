@@ -13,23 +13,7 @@
 // limitations under the License.
 
 #[macro_use]
-extern crate futures;
-#[macro_use]
 extern crate log;
-
-extern crate bytes;
-extern crate conjure_verification_error;
-extern crate conjure_verification_http;
-extern crate core;
-extern crate flate2;
-extern crate http;
-extern crate hyper;
-extern crate itertools;
-extern crate mime;
-extern crate route_recognizer;
-extern crate serde_json;
-extern crate tokio;
-extern crate url;
 
 use conjure_verification_http::{request, resource, response};
 

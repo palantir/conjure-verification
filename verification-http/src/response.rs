@@ -42,10 +42,10 @@ impl Response {
 pub enum Body {
     Empty,
     Fixed(Bytes),
-    Streaming(Box<dyn WriteBody>),
+    Streaming(Box<dyn WriteBody + Send>),
 }
 
-pub trait WriteBody {
+pub trait WriteBody: Send {
     fn write_body(&mut self, w: &mut dyn Write) -> Result<()>;
 }
 
@@ -85,7 +85,7 @@ pub struct StreamedSerializable<T>(pub T);
 
 impl<T> IntoResponse for StreamedSerializable<T>
 where
-    T: 'static + Serialize,
+    T: 'static + Serialize + Send,
 {
     fn into_response(self, request: &Request) -> Result<Response> {
         let format = *request.response_format(&[SerializableFormat::Json])?;
@@ -110,7 +110,7 @@ struct SerializableBody<T> {
 
 impl<T> WriteBody for SerializableBody<T>
 where
-    T: Serialize,
+    T: Serialize + Send,
 {
     fn write_body(&mut self, res: &mut dyn Write) -> Result<()> {
         match self.format {

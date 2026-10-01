@@ -13,17 +13,16 @@
 // limitations under the License.
 
 use crate::errors::{Error, Result};
-use bytes::BytesMut;
-use futures::sync::oneshot;
-use futures::{Async, Future, Poll};
-use hyper::body::{Chunk, Sender};
+use bytes::Bytes;
+use http_body_util::Full;
 use hyper::header::{
     HeaderValue, ACCEPT, ACCEPT_ENCODING, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE, HOST,
     PROXY_AUTHORIZATION, USER_AGENT,
 };
 use hyper::{self, HeaderMap, Method, StatusCode};
 use std::collections::HashMap;
-use std::io::{self, Write};
+use std::error::Error as _;
+use std::io;
 use std::result;
 use std::thread;
 use std::time::{Duration, SystemTime};
@@ -34,6 +33,7 @@ use crate::backoff::BackoffIterator;
 use crate::node_selector::Node;
 use crate::r#async::custom_error::ConnectError;
 use crate::{Body, Client, ClientState, IntoBody, ProxyState, Response, RUNTIME};
+use hyper_util::client::legacy::Error as LegacyClientError;
 
 lazy_static! {
     static ref DEFAULT_ACCEPT: HeaderValue =
@@ -228,7 +228,6 @@ impl<'a> RequestBuilder<'a> {
                     }
                 }
             }
-
             info!("retrying call after backoff {}ms", micros(backoff));
             thread::sleep(backoff);
         }
@@ -305,7 +304,7 @@ impl<'a> RequestBuilder<'a> {
             None => {}
         }
 
-        let (body, hyper_body) = match body {
+        let hyper_body = match body {
             Some(body) => {
                 if let Some(length) = body.content_length() {
                     headers::set_content_length(&mut headers, length);
@@ -313,36 +312,29 @@ impl<'a> RequestBuilder<'a> {
                 headers::set_content_type(&mut headers, &body.content_type());
 
                 match body.full_body() {
-                    Some(body) => (None, hyper::Body::from(body)),
+                    Some(body) => Full::new(body),
                     None => {
-                        let (sender, hyper_body) = hyper::Body::channel();
-                        (Some((body, sender)), hyper_body)
+                        // Non-buffered body: serialize to bytes now so the sync
+                        // client can hand a complete buffer to hyper.
+                        let mut buf = vec![];
+                        body.write(&mut buf).map_err(RawError::Other)?;
+                        Full::new(Bytes::from(buf))
                     }
                 }
             }
-            None => (None, hyper::Body::empty()),
+            None => Full::new(Bytes::new()),
         };
 
         let mut request = hyper::Request::new(hyper_body);
         *request.method_mut() = self.method.clone();
         *request.uri_mut() = url.as_str().parse().unwrap();
         *request.headers_mut() = headers;
+        let response = RUNTIME.block_on(state.client.request(request));
 
-        let response = oneshot::spawn(state.client.request(request), &RUNTIME.executor());
-
-        if let Some((body, sender)) = body {
-            let mut writer = BodyWriter {
-                sender: Some(sender),
-                buf: BytesMut::new(),
-            };
-            body.write(&mut writer).map_err(RawError::Other)?;
-            writer.finish();
-        }
-
-        match response.wait() {
+        match response {
             Ok(response) => Ok(Response::new(response)),
             Err(e) => {
-                if e.cause2().map_or(false, |e| e.is::<ConnectError>()) {
+                if is_connect_error(&e) {
                     Err(RawError::Connect(Error::internal_safe(e)))
                 } else {
                     Err(RawError::Other(Error::internal_safe(e)))
@@ -399,94 +391,15 @@ impl<'a> RequestBuilder<'a> {
     }
 }
 
-struct BodyWriter {
-    sender: Option<Sender>,
-    buf: BytesMut,
-}
-
-impl Drop for BodyWriter {
-    fn drop(&mut self) {
-        if let Some(sender) = self.sender.take() {
-            sender.abort();
+fn is_connect_error(e: &LegacyClientError) -> bool {
+    let mut source: Option<&(dyn std::error::Error + 'static)> = e.source();
+    while let Some(err) = source {
+        if err.is::<ConnectError>() {
+            return true;
         }
+        source = err.source();
     }
-}
-
-impl BodyWriter {
-    fn finish(&mut self) {
-        self.flush_inner();
-        self.sender = None;
-    }
-
-    fn flush_inner(&mut self) {
-        if self.buf.len() == 0 {
-            return;
-        }
-
-        let hup = match self.sender {
-            Some(ref mut sender) => {
-                let future = SendFuture {
-                    sender,
-                    data: Some(Chunk::from(self.buf.take().freeze())),
-                };
-                match future.wait() {
-                    Ok(()) => false,
-                    Err(_) => {
-                        // we'll get an error/whatever when reading the response, so silence this error
-                        info!("server hung up while streaming body");
-                        true
-                    }
-                }
-            }
-            None => false,
-        };
-
-        if hup {
-            self.sender = None;
-        }
-    }
-}
-
-impl Write for BodyWriter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if self.sender.is_none() {
-            return Ok(buf.len());
-        }
-
-        self.buf.extend_from_slice(buf);
-        if self.buf.len() > 4096 {
-            self.flush_inner();
-        }
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.flush_inner();
-
-        Ok(())
-    }
-}
-
-struct SendFuture<'a> {
-    sender: &'a mut Sender,
-    data: Option<Chunk>,
-}
-
-impl<'a> Future for SendFuture<'a> {
-    type Item = ();
-    type Error = hyper::Error;
-
-    fn poll(&mut self) -> Poll<(), hyper::Error> {
-        loop {
-            try_ready!(self.sender.poll_ready());
-
-            let data = self.data.take().expect("future polled after completion");
-            match self.sender.send_data(data) {
-                Ok(()) => return Ok(Async::Ready(())),
-                Err(data) => self.data = Some(data),
-            }
-        }
-    }
+    false
 }
 
 enum RawError {

@@ -13,7 +13,6 @@
 // limitations under the License.
 extern crate bytes;
 extern crate conjure_verification_error;
-extern crate http;
 extern crate mime;
 extern crate serde;
 extern crate serde_json;

@@ -25,9 +25,7 @@ extern crate core;
 #[macro_use]
 extern crate derive_more;
 extern crate either;
-extern crate futures;
 extern crate http;
-extern crate hyper;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -48,7 +46,6 @@ extern crate serde_plain;
 extern crate serde_value;
 
 #[cfg(test)]
-extern crate tokio;
 #[cfg(test)]
 extern crate url;
 #[cfg(test)]
@@ -66,9 +63,8 @@ use conjure_verification_http::resource::Resource;
 use conjure_verification_http_server::router::Binder;
 use conjure_verification_http_server::router::Router;
 pub use conjure_verification_http_server::*;
-use futures::{future, Future};
 use handler::HttpService;
-use hyper::Server;
+use hyper_util::rt::TokioIo;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
@@ -147,15 +143,32 @@ fn start_server(router: Router, port: u16) {
 
     let router = Arc::new(router);
 
-    hyper::rt::run(future::lazy(move || {
-        let new_service = move || future::ok::<_, hyper::Error>(HttpService::new(router.clone()));
-
-        let server = Server::bind(&addr)
-            .serve(new_service)
-            .map_err(|e| eprintln!("server error: {}", e));
-
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    runtime.block_on(async move {
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
         println!("Listening on http://{}", addr);
 
-        server
-    }));
+        loop {
+            let (stream, _) = match listener.accept().await {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("accept error: {}", e);
+                    continue;
+                }
+            };
+            let io = TokioIo::new(stream);
+            let service = HttpService::new(router.clone());
+            let svc = hyper::service::service_fn(move |req: hyper::Request<hyper::body::Incoming>| {
+                let service = service.clone();
+                async move { service.call(req).await }
+            });
+            tokio::spawn(async move {
+                let conn = hyper::server::conn::http1::Builder::new()
+                    .serve_connection(io, svc);
+                if let Err(e) = conn.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
+        }
+    });
 }

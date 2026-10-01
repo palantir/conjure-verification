@@ -153,10 +153,13 @@ impl SpecTestResource {
     }
 
     fn response_non_streaming(reply: &str, request: &Request) -> Result<Response> {
-        if reply == Bytes::from("null") {
+        if reply == "null" {
             return NoContent.into_response(request);
         } else {
-            return RawJson { data: reply.into() }.into_response(request);
+            return RawJson {
+                data: Bytes::copy_from_slice(reply.as_bytes()),
+            }
+            .into_response(request);
         };
     }
 
