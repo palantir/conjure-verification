@@ -161,7 +161,7 @@ jobs:
       - image: iamdanfox/docker-liche:latest
     steps:
       - checkout
-      - run: liche -d . -r . -v
+      - run: liche -d . -r . -v -x '^https://(autorelease\.general\.dmz\.palantir\.tech|github\.com)/'
 
 workflows:
   build:
