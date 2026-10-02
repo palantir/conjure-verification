@@ -13,13 +13,12 @@
 // limitations under the License.
 
 use serde::de::{Deserialize, Deserializer, Error, SeqAccess, Unexpected, Visitor};
-use serde_humantime;
+
 use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 use std::time::Duration;
 use url::Url;
-use url_serde;
 
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "kebab-case", default)]
@@ -134,8 +133,8 @@ where
             A: SeqAccess<'de2>,
         {
             let mut vs = vec![];
-            while let Some(url) = seq.next_element::<url_serde::De<Url>>()? {
-                vs.push(url.into_inner());
+            while let Some(url) = seq.next_element::<Url>()? {
+                vs.push(url);
             }
             Ok(vs)
         }
@@ -148,5 +147,7 @@ fn de_opt_duration<'de, D>(d: D) -> Result<Option<Duration>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    serde_humantime::De::deserialize(d).map(|d| d.into_inner())
+    // deserialize Option<Duration> from a humantime string (e.g. "5s")
+    let opt: Option<humantime_serde::Serde<Duration>> = Deserialize::deserialize(d)?;
+    Ok(opt.map(humantime_serde::Serde::into_inner))
 }

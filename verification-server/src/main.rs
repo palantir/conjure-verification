@@ -12,34 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate bytes;
 #[cfg_attr(test, macro_use)]
 extern crate conjure_verification_common;
-extern crate conjure_verification_error;
 #[macro_use]
 extern crate conjure_verification_error_derive;
-extern crate conjure_verification_http;
-extern crate conjure_verification_http_server;
-extern crate core;
-#[macro_use]
-extern crate derive_more;
-extern crate either;
-extern crate futures;
-extern crate http;
-extern crate hyper;
-extern crate mime;
-extern crate pretty_env_logger;
-extern crate serde_conjure;
-extern crate serde_json;
-extern crate serde_plain;
-extern crate serde_yaml;
-extern crate typed_headers;
 #[macro_use]
 extern crate serde_conjure_derive;
-extern crate itertools;
 
-use conjure::ir::Conjure;
-use conjure_verification_common::conjure;
+use crate::resolved_test_cases::ResolvedClientTestCases;
+use crate::resource::SpecTestResource;
+use crate::test_spec::ClientTestCases;
+use crate::test_spec::TestCases;
+use conjure_verification_common::conjure::ir::Conjure;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::type_of_non_index_arg;
@@ -47,21 +31,12 @@ use conjure_verification_common::type_mapping::ServiceTypeMapping;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Result;
 pub use conjure_verification_http_server::*;
-use futures::{future, Future};
-use handler::HttpService;
-use hyper::Server;
-use resolved_test_cases::ResolvedClientTestCases;
-use resource::SpecTestResource;
-use router::Router;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
-use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
-use test_spec::ClientTestCases;
-use test_spec::TestCases;
 
 pub mod errors;
 pub mod fixed_streaming;
@@ -111,7 +86,7 @@ fn main() {
     );
     let router = builder.build();
 
-    start_server(router, port);
+    server::start_server(router, port);
 }
 
 fn print_usage(arg0: &str) {
@@ -147,23 +122,4 @@ pub fn resolve_test_cases(
     let type_mapping = type_mapping::resolve_types(ir, &services_mapping);
 
     resolved_test_cases::resolve_test_cases(&type_mapping, client_test_cases)
-}
-
-fn start_server(router: Router, port: u16) {
-    // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
-    let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);
-
-    let router = Arc::new(router);
-
-    hyper::rt::run(future::lazy(move || {
-        let new_service = move || future::ok::<_, hyper::Error>(HttpService::new(router.clone()));
-
-        let server = Server::bind(&addr)
-            .serve(new_service)
-            .map_err(|e| eprintln!("server error: {}", e));
-
-        println!("Listening on http://{}", addr);
-
-        server
-    }));
 }

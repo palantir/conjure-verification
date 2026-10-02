@@ -18,10 +18,6 @@ extern crate serde_conjure_derive;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate derive_more;
-#[macro_use]
-extern crate derive_new;
 
 extern crate base64;
 extern crate chrono;
@@ -34,7 +30,6 @@ extern crate serde_conjure;
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
-extern crate serde_yaml;
 extern crate uuid;
 
 #[macro_use]

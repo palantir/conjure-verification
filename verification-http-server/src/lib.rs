@@ -13,27 +13,11 @@
 // limitations under the License.
 
 #[macro_use]
-extern crate futures;
-#[macro_use]
 extern crate log;
-
-extern crate bytes;
-extern crate conjure_verification_error;
-extern crate conjure_verification_http;
-extern crate core;
-extern crate flate2;
-extern crate http;
-extern crate hyper;
-extern crate itertools;
-extern crate mime;
-extern crate route_recognizer;
-extern crate serde_json;
-extern crate tokio;
-extern crate typed_headers;
-extern crate url;
 
 use conjure_verification_http::{request, resource, response};
 
+use crate::router::Binder;
 use conjure_verification_error::Result;
 use http::status::StatusCode;
 use hyper::header::HeaderValue;
@@ -43,12 +27,15 @@ use resource::Resource;
 use resource::Route;
 use response::IntoResponse;
 use response::Response;
-use router::Binder;
 use std::sync::Arc;
 
 pub mod error_handling;
 pub mod handler;
 pub mod router;
+pub mod server;
+
+#[cfg(test)]
+mod test;
 
 pub fn register_resource<T>(builder: &mut router::Builder, resource: &Arc<T>)
 where

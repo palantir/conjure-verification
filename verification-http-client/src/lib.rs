@@ -12,71 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate base64;
-extern crate bytes;
-extern crate conjure_verification_error;
-extern crate conjure_verification_http_client_config;
-extern crate crossbeam;
-extern crate flate2;
-extern crate http_zipkin;
-extern crate hyper;
-extern crate hyper_openssl;
-extern crate mime;
-extern crate openssl;
-extern crate parking_lot;
-extern crate rand;
-extern crate regex;
-extern crate serde;
-extern crate serde_cbor;
-extern crate serde_json;
-extern crate serde_urlencoded;
-extern crate tokio;
-extern crate tokio_io;
-extern crate tokio_io_timeout;
-extern crate tokio_threadpool;
-extern crate typed_headers;
-extern crate url;
-extern crate zipkin;
-
-#[macro_use]
-extern crate futures;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate state_machine_future;
 #[macro_use]
 extern crate log;
 
-#[cfg(test)]
-extern crate tokio_openssl;
-
-use config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
-use crossbeam::sync::ArcCell;
-use errors::{Error, Result, SerializableError};
+use crate::config::{HostAndPort, ProxyConfig, ServiceDiscoveryConfig};
+use crate::errors::{Error, Result, SerializableError};
+use arc_swap::ArcSwap;
 use hyper::header::HeaderValue;
 use hyper::{Method, StatusCode};
-use hyper_openssl::HttpsConnector;
+use hyper_openssl::client::legacy::HttpsConnector;
+use hyper_util::rt::{TokioExecutor, TokioTimer};
 use mime::Mime;
 use openssl::error::ErrorStack;
-use openssl::ssl::{SslConnector, SslMethod};
+use openssl::ssl::{SslConnector, SslConnectorBuilder, SslMethod};
 use std::error;
 use std::fmt;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::LazyLock;
 use std::time::Duration;
-use tokio::runtime::{self, Runtime};
-use typed_headers::{Credentials, ProxyAuthorization};
-use zipkin::Tracer;
+use tokio::runtime::Runtime;
 
-use async::alpn::AlpnConnector;
-use async::custom_error::CustomErrorConnector;
-use async::proxy::{ProxyConnector, ProxyConnectorConfig};
-use async::socket::{SocketConnector, Timeouts};
-pub use body::*;
-use node_selector::NodeSelector;
-pub use reloadable::*;
-pub use request::*;
-pub use response::*;
-pub use user_agent::*;
+pub use crate::body::*;
+use crate::node_selector::NodeSelector;
+use crate::r#async::alpn::AlpnConnector;
+use crate::r#async::custom_error::CustomErrorConnector;
+use crate::r#async::proxy::{ProxyConnector, ProxyConnectorConfig};
+use crate::r#async::socket::{SocketConnector, Timeouts};
+pub use crate::reloadable::*;
+pub use crate::request::*;
+pub use crate::response::*;
+pub use crate::user_agent::*;
 
 #[doc(inline)]
 pub use hyper::header;
@@ -89,7 +55,7 @@ mod errors {
     pub use conjure_verification_error::*;
 }
 
-pub mod async;
+pub mod r#async;
 pub mod backoff;
 pub mod body;
 pub mod node_selector;
@@ -101,22 +67,8 @@ pub mod user_agent;
 #[cfg(test)]
 mod test;
 
-lazy_static! {
-    static ref RUNTIME: Runtime = {
-        let mut pool = tokio_threadpool::Builder::new();
-        // we use blocking for DNS lookup so we don't need/want a ton of parallelism available
-        pool.max_blocking(2)
-            .keep_alive(Some(Duration::from_secs(30)))
-            .name_prefix("chatter-");
-
-        #[allow(deprecated)]
-        runtime::Builder::new()
-            .threadpool_builder(pool)
-            .build()
-            .unwrap()
-    };
-    static ref APPLICATION_CBOR: Mime = "application/cbor".parse().unwrap();
-}
+static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| Runtime::new().unwrap());
+static APPLICATION_CBOR: LazyLock<Mime> = LazyLock::new(|| "application/cbor".parse().unwrap());
 
 #[derive(Debug)]
 pub struct RemoteError {
@@ -166,7 +118,7 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
 
     let nodes = NodeSelector::new(service_config.uris());
 
-    let mut ssl = SslConnector::builder(SslMethod::tls()).map_err(Error::internal_safe)?;
+    let mut ssl = ssl_connector()?;
 
     if let Some(ref ca_file) = service_config.security().ca_file() {
         ssl.set_ca_file(ca_file).map_err(Error::internal_safe)?;
@@ -181,14 +133,9 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
 
     let (proxy_state, proxy) = match *service_config.proxy() {
         ProxyConfig::Http(ref config) => {
-            let credentials = match config.credentials() {
-                Some(credentials) => {
-                    let creds = Credentials::basic(credentials.username(), credentials.password())
-                        .map_err(Error::internal_safe)?;
-                    Some(ProxyAuthorization(creds))
-                }
-                None => None,
-            };
+            let credentials = config
+                .credentials()
+                .map(|c| (c.username().to_string(), c.password().to_string()));
 
             (
                 Some(ProxyState::Http {
@@ -221,12 +168,15 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
     let connector = AlpnConnector::new(connector, service_config.experimental_assume_http2());
     let connector = CustomErrorConnector(connector);
 
-    let client = hyper::Client::builder()
-        .keep_alive(service_config.keep_alive())
-        .http2_only(service_config.experimental_assume_http2())
-        .http1_writev(false)
-        .executor(RUNTIME.executor())
-        .build(connector);
+    let mut builder = hyper_util::client::legacy::Builder::new(TokioExecutor::new());
+    builder
+        .pool_timer(TokioTimer::new())
+        .pool_idle_timeout(Duration::from_secs(90))
+        .http2_only(service_config.experimental_assume_http2());
+    if !service_config.keep_alive() {
+        builder.pool_max_idle_per_host(0);
+    }
+    let client = builder.build(connector);
 
     Ok(ClientState {
         client,
@@ -237,17 +187,51 @@ fn extract_config(service: &str, discovery_config: &ServiceDiscoveryConfig) -> R
     })
 }
 
+fn ssl_connector() -> Result<SslConnectorBuilder> {
+    let mut ssl = SslConnector::builder(SslMethod::tls()).map_err(Error::internal_safe)?;
+
+    // OpenSSL is statically linked, so its default certificate locations aren't the OS's.
+    let probe = openssl_probe::probe();
+    if let Some(ref cert_file) = probe.cert_file.or_else(macos_cert_file) {
+        ssl.load_verify_locations(Some(cert_file), None)
+            .map_err(Error::internal_safe)?;
+    }
+    for cert_dir in &probe.cert_dir {
+        ssl.load_verify_locations(None, Some(cert_dir))
+            .map_err(Error::internal_safe)?;
+    }
+    // https://github.com/openssl/openssl/issues/6851
+    ErrorStack::get();
+
+    Ok(ssl)
+}
+
+/// The certificate bundle shipped with macOS, which `openssl_probe` doesn't look for.
+fn macos_cert_file() -> Option<PathBuf> {
+    let path = Path::new("/etc/ssl/cert.pem");
+    if cfg!(target_os = "macos") && path.exists() {
+        Some(path.to_path_buf())
+    } else {
+        None
+    }
+}
+
 struct ClientState {
-    client: hyper::Client<CustomErrorConnector>,
+    client: hyper_util::client::legacy::Client<
+        CustomErrorConnector,
+        http_body_util::Full<bytes::Bytes>,
+    >,
     nodes: NodeSelector,
     max_num_retries: u32,
     backoff_slot_size: Duration,
     proxy: Option<ProxyState>,
 }
 
+pub(crate) type ProxyAuthorization = (String, String);
+
 enum ProxyState {
     Http {
-        credentials: Option<ProxyAuthorization>,
+        credentials: Option<(String, String)>,
     },
     Mesh {
         host: HostAndPort,
@@ -258,22 +242,20 @@ enum ProxyState {
 pub struct Client {
     service: String,
     user_agent: HeaderValue,
-    tracer: Tracer,
     reload: Option<Reloadable<ServiceDiscoveryConfig>>,
-    state: ArcCell<ClientState>,
+    state: ArcSwap<ClientState>,
 }
 
 impl Client {
     pub fn new(
         service: &str,
         user_agent: UserAgent,
-        tracer: &Tracer,
         config: Reloadable<ServiceDiscoveryConfig>,
     ) -> Result<Client> {
         let cur_config = config
             .take()
             .expect("config must be present during client construction");
-        let mut client = Client::new_static(service, user_agent, tracer, &cur_config)?;
+        let mut client = Client::new_static(service, user_agent, &cur_config)?;
         client.reload = Some(config);
 
         Ok(client)
@@ -282,7 +264,6 @@ impl Client {
     pub fn new_static(
         service: &str,
         mut user_agent: UserAgent,
-        tracer: &Tracer,
         config: &ServiceDiscoveryConfig,
     ) -> Result<Client> {
         user_agent.push_agent(Agent::new("chatter", env!("CARGO_PKG_VERSION")));
@@ -292,9 +273,8 @@ impl Client {
         Ok(Client {
             service: service.to_string(),
             user_agent: HeaderValue::from_str(&user_agent.to_string()).unwrap(),
-            tracer: tracer.clone(),
             reload: None,
-            state: ArcCell::new(Arc::new(state)),
+            state: ArcSwap::new(Arc::new(state)),
         })
     }
 
@@ -304,7 +284,7 @@ impl Client {
                 Ok(state) => {
                     info!("reloaded client for service: {}", self.service);
                     let state = Arc::new(state);
-                    self.state.set(state.clone());
+                    self.state.store(state.clone());
                     state
                 }
                 Err(e) => {
@@ -312,10 +292,10 @@ impl Client {
                         "error reloading client, service: {}, error: {}",
                         self.service, e
                     );
-                    self.state.get()
+                    self.state.load_full()
                 }
             },
-            None => self.state.get(),
+            None => self.state.load_full(),
         }
     }
 

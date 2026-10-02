@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::resolved_type::ResolvedType;
-use conjure::value::de_plain::deserialize_plain;
-use conjure::value::*;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::value::de_plain::deserialize_plain;
+use crate::conjure::value::*;
 use core::fmt;
 use serde;
 use serde::de::Error;

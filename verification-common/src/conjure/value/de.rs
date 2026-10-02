@@ -23,16 +23,19 @@
 pub use serde::de::DeserializeSeed;
 
 use super::*;
-use conjure::ir::EnumDefinition;
-use conjure::ir::PrimitiveType;
-use conjure::resolved_type::ResolvedType::*;
-use conjure::resolved_type::*;
-use conjure::value::visitors::map::ConjureMapVisitor;
-use conjure::value::visitors::object::ConjureObjectVisitor;
-use conjure::value::visitors::option::ConjureOptionVisitor;
-use conjure::value::visitors::seq::ConjureSeqVisitor;
-use conjure::value::visitors::set::ConjureSetVisitor;
-use conjure::value::visitors::union::ConjureUnionVisitor;
+use crate::conjure::ir::EnumDefinition;
+use crate::conjure::ir::PrimitiveType;
+use crate::conjure::resolved_type::ResolvedType::*;
+use crate::conjure::resolved_type::*;
+use crate::conjure::value::visitors::map::ConjureMapVisitor;
+use crate::conjure::value::visitors::object::ConjureObjectVisitor;
+use crate::conjure::value::visitors::option::ConjureOptionVisitor;
+use crate::conjure::value::visitors::seq::ConjureSeqVisitor;
+use crate::conjure::value::visitors::set::ConjureSetVisitor;
+use crate::conjure::value::visitors::union::ConjureUnionVisitor;
+use ::base64::alphabet;
+use ::base64::engine::{DecodePaddingMode, GeneralPurpose, GeneralPurposeConfig};
+use ::base64::Engine;
 use core::fmt;
 use serde::de::Error;
 use serde::de::Visitor;
@@ -113,7 +116,7 @@ impl<'de: 'a, 'a> DeserializeSeed<'de> for &'a PrimitiveType {
             PrimitiveType::String => ConjurePrimitiveValue::String(de.deser()?),
             PrimitiveType::Binary => ConjurePrimitiveValue::Binary(de.deser()?),
             PrimitiveType::Boolean => ConjurePrimitiveValue::Boolean(de.deser()?),
-            PrimitiveType::Uuid => ConjurePrimitiveValue::Uuid(de.deser()?),
+            PrimitiveType::Uuid => ConjurePrimitiveValue::Uuid(de.deser::<ConjureUuid>()?.0),
             PrimitiveType::Rid => ConjurePrimitiveValue::Rid(de.deser()?),
             PrimitiveType::Bearertoken => ConjurePrimitiveValue::Bearertoken(de.deser()?),
             PrimitiveType::Datetime => ConjurePrimitiveValue::Datetime(de.deser()?),
@@ -152,6 +155,15 @@ where
     }
 }
 
+/// Standard base64 which, like the base64 0.9 crate we used to depend on, accepts missing padding and non-zero
+/// trailing bits.
+const BASE64: GeneralPurpose = GeneralPurpose::new(
+    &alphabet::STANDARD,
+    GeneralPurposeConfig::new()
+        .with_decode_padding_mode(DecodePaddingMode::Indifferent)
+        .with_decode_allow_trailing_bits(true),
+);
+
 /// We don't need DeserializeSeed for Binary because it is a primitive conjure type.
 impl<'de> Deserialize<'de> for Binary {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -171,7 +183,8 @@ impl<'de> Deserialize<'de> for Binary {
             where
                 E: Error,
             {
-                let decoded = ::base64::decode(v)
+                let decoded = BASE64
+                    .decode(v)
                     .map_err(|e| Error::custom(format_args!("Couldn't decode base64: {}", e)))?;
                 Ok(Binary(decoded))
             }
@@ -181,11 +194,46 @@ impl<'de> Deserialize<'de> for Binary {
     }
 }
 
+/// A `Uuid` which, like the uuid 0.6 crate we used to depend on, can't be parsed from the braced format
+/// (`{d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b}`).
+struct ConjureUuid(Uuid);
+
+impl<'de> Deserialize<'de> for ConjureUuid {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct UuidVisitor;
+
+        impl<'de> Visitor<'de> for UuidVisitor {
+            type Value = ConjureUuid;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a UUID string")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                if v.starts_with('{') {
+                    return Err(Error::custom(
+                        "invalid UUID: braced UUIDs are not supported",
+                    ));
+                }
+                Uuid::parse_str(v).map(ConjureUuid).map_err(Error::custom)
+            }
+        }
+
+        deserializer.deserialize_str(UuidVisitor)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
-    use conjure::ir::TypeName;
-    use more_serde_json::from_str;
+    use crate::conjure::ir::TypeName;
+    use crate::more_serde_json::from_str;
 
     #[test]
     fn test_double() {
@@ -196,6 +244,29 @@ mod test {
         );
         assert!(from_str(&type_, "").is_err());
         assert!(from_str(&type_, "null").is_err());
+    }
+
+    #[test]
+    fn test_binary_accepts_unpadded_and_non_canonical_base64() {
+        let type_ = ResolvedType::Primitive(PrimitiveType::Binary);
+        let binary = |s: &str| match from_str(&type_, s).unwrap() {
+            ConjureValue::Primitive(ConjurePrimitiveValue::Binary(Binary(bytes))) => bytes,
+            v => panic!("unexpected value {:?}", v),
+        };
+        assert_eq!(binary(r#""Zm9v""#), b"foo");
+        assert_eq!(binary(r#""Zg==""#), b"f");
+        assert_eq!(binary(r#""Zg=""#), b"f");
+        assert_eq!(binary(r#""Zg""#), b"f");
+        assert_eq!(binary(r#""Zh==""#), b"f");
+        assert!(from_str(&type_, r#""Zm9v YmFy""#).is_err());
+        assert!(from_str(&type_, r#""Zm-_""#).is_err());
+    }
+
+    #[test]
+    fn test_uuid_rejects_braces() {
+        let type_ = ResolvedType::Primitive(PrimitiveType::Uuid);
+        assert!(from_str(&type_, r#""d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b""#).is_ok());
+        assert!(from_str(&type_, r#""{d6ddc1ac-3c1b-11e8-b467-0ed5f89f718b}""#).is_err());
     }
 
     #[test]

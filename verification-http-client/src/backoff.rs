@@ -43,6 +43,6 @@ impl Iterator for BackoffIterator {
         let scale = 1 << self.retries;
         let max = self.backoff_slot_size * scale;
 
-        Some(rand::thread_rng().gen_range(Duration::from_secs(0), max))
+        Some(rand::rng().random_range(Duration::from_secs(0)..max))
     }
 }

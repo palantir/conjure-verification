@@ -37,7 +37,7 @@ impl<T> Reloadable<T> {
             let value = Box::into_raw(Box::new(value));
             let old_value = self.0.swap(value, Ordering::SeqCst);
             if !old_value.is_null() {
-                Box::from_raw(old_value);
+                drop(Box::from_raw(old_value));
             }
         }
     }

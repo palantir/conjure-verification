@@ -16,11 +16,11 @@
 //!
 //! [PLAIN format]: https://github.com/palantir/conjure/blob/develop/docs/spec/wire.md#plain-format
 
-use conjure::ir::PrimitiveType;
-use conjure::resolved_type::ResolvedType;
-use conjure::value::double::ConjureDouble;
-use conjure::value::ConjurePrimitiveValue;
-use conjure::value::ConjureValue;
+use crate::conjure::ir::PrimitiveType;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::value::double::ConjureDouble;
+use crate::conjure::value::ConjurePrimitiveValue;
+use crate::conjure::value::ConjureValue;
 use serde::de::DeserializeSeed;
 use serde_plain;
 
@@ -30,7 +30,7 @@ use serde_plain;
 pub fn deserialize_plain(
     conjure_type: &ResolvedType,
     str: &str,
-) -> Result<ConjureValue, Box<::std::error::Error + Send + Sync>> {
+) -> Result<ConjureValue, Box<dyn ::std::error::Error + Send + Sync>> {
     match *conjure_type {
         ResolvedType::Primitive(ref primitive_type) if *primitive_type != PrimitiveType::Any => Ok(
             ConjureValue::Primitive(deserialize_plain_primitive(primitive_type, str)?),
@@ -57,7 +57,7 @@ pub fn deserialize_plain(
 pub fn deserialize_plain_primitive(
     conjure_type: &PrimitiveType,
     str: &str,
-) -> Result<ConjurePrimitiveValue, Box<::std::error::Error + Send + Sync>> {
+) -> Result<ConjurePrimitiveValue, Box<dyn ::std::error::Error + Send + Sync>> {
     // Hack: serde_plain can't accept deserialize_any which is what ConjureDouble's
     // deserializer uses, so we special case that type, knowing that this case only
     // supports primitive types anyway.
@@ -72,8 +72,8 @@ pub fn deserialize_plain_primitive(
 #[cfg(test)]
 mod test {
     use super::*;
-    use conjure::resolved_type::builders::*;
-    use conjure::value::EnumValue;
+    use crate::conjure::resolved_type::builders::*;
+    use crate::conjure::value::EnumValue;
 
     #[test]
     fn test_deserialize_enum() {
@@ -97,7 +97,8 @@ mod test {
         let value = deserialize_plain(
             &optional_type(primitive_type(PrimitiveType::Integer)),
             "123",
-        ).expect("Should parse optional<integer>");
+        )
+        .expect("Should parse optional<integer>");
         assert_eq!(
             value,
             ConjureValue::Optional(Some(

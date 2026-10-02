@@ -15,13 +15,17 @@
 #[allow(unused_imports)]
 use conjure_verification_common::conjure;
 
+use crate::resource::*;
+use crate::test_spec::ServerTestCases;
+use crate::test_spec::{EndpointName, PositiveAndNegativeTestCases};
 use bytes::Bytes;
-use conjure::ir;
-use conjure::resolved_type::builders::*;
-use conjure::resolved_type::ResolvedType;
+use conjure_verification_common::conjure::ir;
+use conjure_verification_common::conjure::resolved_type::builders::*;
+use conjure_verification_common::conjure::resolved_type::ResolvedType;
 use conjure_verification_common::conjure::value::Binary;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::{Error, Result};
+use conjure_verification_http::headers;
 use conjure_verification_http::request::Request;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http::resource::Route;
@@ -29,23 +33,20 @@ use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::NoContent;
 use conjure_verification_http::response::Response;
 use conjure_verification_http::response::{Body, WriteBody};
+use conjure_verification_http_server::router;
+use conjure_verification_http_server::router::RouteResult;
+use conjure_verification_http_server::router::Router;
+use derive_new::new;
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
 use hyper::Method;
 use hyper::StatusCode;
 use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
-use resource::*;
-use router;
-use router::RouteResult;
-use router::Router;
 use serde_json;
 use std::collections::HashMap;
+use std::io::Write;
 use std::sync::Arc;
-use test_spec::ServerTestCases;
-use test_spec::{EndpointName, PositiveAndNegativeTestCases};
-use tokio::prelude::Write;
-use typed_headers::{ContentType, HeaderMapExt};
 use url::Url;
 
 #[test]
@@ -211,7 +212,7 @@ fn test_octet_stream() {
 pub struct StreamingResponse(Vec<u8>);
 
 impl WriteBody for StreamingResponse {
-    fn write_body(&mut self, w: &mut Write) -> Result<()> {
+    fn write_body(&mut self, w: &mut dyn Write) -> Result<()> {
         return w.write_all(self.0.as_ref()).map_err(Error::internal);
     }
 }
@@ -219,9 +220,7 @@ impl WriteBody for StreamingResponse {
 impl IntoResponse for StreamingResponse {
     fn into_response(self, _request: &Request) -> Result<Response> {
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(APPLICATION_OCTET_STREAM));
+        headers::set_content_type(&mut response.headers, &APPLICATION_OCTET_STREAM);
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
@@ -271,8 +270,8 @@ mod setup {
     use conjure_verification_common::type_mapping::builder::ParamTypesBuilder;
     use conjure_verification_common::type_mapping::ParamTypes;
     use conjure_verification_common::type_mapping::TestType;
+    use conjure_verification_http::headers;
     use conjure_verification_http_server::router::Binder;
-    use typed_headers::{ContentType, HeaderMapExt};
 
     /// Simulate asking the VerificationClientService to run a test case against a server-under-test.
     pub(crate) fn run_test_case<F>(router: &Router, req: &ClientRequest, response_assertion: F)
@@ -281,7 +280,7 @@ mod setup {
     {
         if let RouteResult::Matched { endpoint, .. } = router.route(&Method::POST, "/runTestCase") {
             let mut builder = RequestBuilder::default();
-            builder.headers.typed_insert(&ContentType(APPLICATION_JSON));
+            headers::set_content_type(&mut builder.headers, &APPLICATION_JSON);
             builder.body = serde_json::to_vec(req).unwrap();
             let result: Result<Response> = builder.with_request(|req| endpoint.handler.handle(req));
             println!(
@@ -304,11 +303,11 @@ mod setup {
     ) -> Router {
         setup_routes(|test_cases, param_types| {
             test_cases.auto_deserialize = hashmap!(
-                    EndpointName::new(endpoint_name) => PositiveAndNegativeTestCases {
-                        positive: vec![test_body.to_string()],
-                        negative: vec![],
-                    }
-                );
+                EndpointName::new(endpoint_name) => PositiveAndNegativeTestCases {
+                    positive: vec![test_body.to_string()],
+                    negative: vec![],
+                }
+            );
             param_types.add(
                 TestType::Body,
                 EndpointName::new(endpoint_name),
@@ -376,7 +375,7 @@ mod server_under_test {
     use conjure_verification_http_server::router::Binder;
     use conjure_verification_http_server::DynamicResource;
 
-    pub type ResponseFunction = Fn(&mut Request) -> Result<Response> + Send + Sync + 'static;
+    pub type ResponseFunction = dyn Fn(&mut Request) -> Result<Response> + Send + Sync + 'static;
 
     #[derive(new)]
     pub struct ResponseMapping {
@@ -392,11 +391,10 @@ mod server_under_test {
         F: FnOnce(Url),
         RM: IntoIterator<Item = ResponseMapping>,
     {
-        use futures::{future, Future};
-        use hyper;
+        use hyper_util::rt::TokioIo;
         use tokio::runtime::Runtime;
 
-        let addr = "127.0.0.1:0".parse().unwrap();
+        let addr: std::net::SocketAddr = "127.0.0.1:0".parse().unwrap();
         let prefix = "server-under-test";
 
         let resource = Arc::new(ServerUnderTest::new(
@@ -410,15 +408,30 @@ mod server_under_test {
 
         let router = Arc::new(builder.build());
 
-        let new_service = move || future::ok::<_, hyper::Error>(HttpService::new(router.clone()));
-        let server0 = hyper::Server::bind(&addr);
-        let server = server0.serve(new_service);
-        let bound_addr = server.local_addr();
-
-        let future = future::lazy(move || server.map_err(|e| eprintln!("server error: {}", e)));
-
-        let mut runtime = Runtime::new().unwrap();
-        runtime.spawn(future);
+        let runtime = Runtime::new().unwrap();
+        let bound_addr = runtime.block_on(async {
+            let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+            let bound_addr = listener.local_addr().unwrap();
+            tokio::spawn(async move {
+                loop {
+                    let (stream, _) = listener.accept().await.unwrap();
+                    let io = TokioIo::new(stream);
+                    let service = HttpService::new(router.clone());
+                    let svc = hyper::service::service_fn(
+                        move |req: hyper::Request<hyper::body::Incoming>| {
+                            let service = service.clone();
+                            async move { service.call(req).await }
+                        },
+                    );
+                    tokio::spawn(async move {
+                        let _ = hyper::server::conn::http1::Builder::new()
+                            .serve_connection(io, svc)
+                            .await;
+                    });
+                }
+            });
+            bound_addr
+        });
         println!("Started server under test at {}", bound_addr);
 
         let url: Url = format!(
@@ -426,11 +439,12 @@ mod server_under_test {
             bound_addr.ip(),
             bound_addr.port(),
             prefix
-        ).parse()
+        )
+        .parse()
         .unwrap();
         f(url);
 
-        runtime.shutdown_now().wait().unwrap();
+        drop(runtime);
     }
 
     #[derive(new)]

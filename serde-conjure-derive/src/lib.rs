@@ -15,11 +15,6 @@
 #![recursion_limit = "256"]
 
 extern crate proc_macro;
-extern crate proc_macro2;
-#[macro_use]
-extern crate quote;
-#[macro_use]
-extern crate syn;
 
 use proc_macro::TokenStream;
 use syn::{DataEnum, Fields};
@@ -33,7 +28,7 @@ pub fn derive_serialize(input: TokenStream) -> TokenStream {
     let input = syn::parse(input).unwrap();
     match ser::expand_derive_serialize(&input) {
         Ok(expanded) => expanded.into(),
-        Err(msg) => panic!(msg),
+        Err(msg) => panic!("{}", msg),
     }
 }
 
@@ -42,7 +37,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let input = syn::parse(input).unwrap();
     match de::expand_derive_deserialize(&input) {
         Ok(expanded) => expanded.into(),
-        Err(msg) => panic!(msg),
+        Err(msg) => panic!("{}", msg),
     }
 }
 
@@ -100,15 +95,13 @@ enum EnumKind {
 
 impl EnumKind {
     fn of(e: &DataEnum) -> EnumKind {
-        if e.variants.iter().all(|v| match v.fields {
-            Fields::Unit => true,
-            _ => false,
-        }) {
+        if e.variants.iter().all(|v| matches!(v.fields, Fields::Unit)) {
             EnumKind::CLike
-        } else if e.variants.iter().all(|v| match v.fields {
-            Fields::Unnamed(ref u) if u.unnamed.len() == 1 => true,
-            _ => false,
-        }) {
+        } else if e
+            .variants
+            .iter()
+            .all(|v| matches!(v.fields, Fields::Unnamed(ref u) if u.unnamed.len() == 1))
+        {
             EnumKind::Union
         } else {
             panic!(

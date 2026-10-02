@@ -12,31 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use bytes::BytesMut;
+use crate::error_handling;
+use crate::router::Endpoint;
+use crate::router::RouteResult;
+use crate::router::Router;
+use bytes::{Bytes, BytesMut};
 use conjure_verification_error::Code;
 use conjure_verification_error::Error;
 use conjure_verification_error::Result;
 use conjure_verification_http::error::ConjureVerificationError;
+use conjure_verification_http::headers::{self, Encoding};
 use conjure_verification_http::request::Request;
 use conjure_verification_http::response::*;
-use core::mem;
-use error_handling;
 use flate2::bufread::{GzDecoder, ZlibDecoder};
-use futures::future;
-use futures::stream;
-use futures::sync::oneshot;
-use futures::Async;
-use futures::Future;
-use futures::Poll;
-use futures::Stream;
-use hyper::body;
-use hyper::service::Service;
-use hyper::{self, Chunk, HeaderMap, StatusCode, Uri};
+use http_body_util::{BodyExt, Full, StreamBody};
+use hyper::body::Frame;
+use hyper::{HeaderMap, StatusCode, Uri};
 use itertools::Itertools;
 use log::Level;
-use router::Endpoint;
-use router::RouteResult;
-use router::Router;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::io;
@@ -45,28 +38,44 @@ use std::io::BufReader;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Write;
+use std::mem;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use tokio::executor::thread_pool::ThreadPool;
-use typed_headers::{Allow, ContentCoding, ContentEncoding, HeaderMapExt};
-use url::{form_urlencoded, percent_encoding};
+use tokio::sync::{mpsc, oneshot};
+use tokio_stream::wrappers::ReceiverStream;
+use url::form_urlencoded;
 
+type BoxError = Box<dyn StdError + Sync + Send>;
+
+type IncomingBody = hyper::body::Incoming;
+
+/// Error type returned by the HTTP service.
+#[derive(Debug)]
+pub struct HttpServiceError(BoxError);
+
+impl std::fmt::Display for HttpServiceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl StdError for HttpServiceError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(&*self.0)
+    }
+}
+
+#[derive(Clone)]
 pub struct HttpService {
     router: Arc<Router>,
-    sync: Arc<SyncHandler>,
-    pool: Arc<ThreadPool>,
 }
 
 impl HttpService {
     pub fn new(router: Arc<Router>) -> HttpService {
-        HttpService {
-            router,
-            sync: Arc::new(SyncHandler),
-            pool: Arc::new(ThreadPool::new()),
-        }
+        HttpService { router }
     }
 
-    fn route(&self, request: &hyper::Request<hyper::Body>) -> RouteResult {
+    fn route(&self, request: &hyper::Request<IncomingBody>) -> RouteResult {
         let path = &request.uri().path();
         self.router.route(request.method(), path)
     }
@@ -88,7 +97,7 @@ impl HttpService {
         let mut map = HashMap::new();
         if let RouteResult::Matched { ref params, .. } = *route {
             for (k, v) in params {
-                let value = percent_encoding::percent_decode(v.as_bytes())
+                let value = percent_encoding::percent_decode_str(v)
                     .decode_utf8()
                     .map_err(|e| Error::new_safe(e, ConjureVerificationError::InvalidUrl))?;
 
@@ -98,23 +107,43 @@ impl HttpService {
         Ok(map)
     }
 
-    fn response(
+    pub fn call<'a>(
+        &'a self,
+        request: hyper::Request<IncomingBody>,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<
+                    Output = std::result::Result<hyper::Response<ResponseBody>, HttpServiceError>,
+                > + Send
+                + 'a,
+        >,
+    > {
+        Box::pin(async move {
+            let route = self.route(&request);
+            let query_params = self.query_params(request.uri());
+            let maybe_path_params = self.path_params(&route);
+
+            let response = self
+                .response(request, route, maybe_path_params, query_params)
+                .await
+                .map_err(HttpServiceError)?;
+            Ok(response)
+        })
+    }
+
+    async fn response(
         &self,
-        request: hyper::Request<hyper::Body>,
+        request: hyper::Request<IncomingBody>,
         route: RouteResult,
         path_params: Result<HashMap<String, String>>,
         query_params: HashMap<String, Vec<String>>,
-        response_size: Arc<AtomicUsize>,
-    ) -> Box<
-        Future<Item = (hyper::Response<hyper::Body>, u64), Error = Box<StdError + Sync + Send>>
-            + Send,
-    > {
+    ) -> std::result::Result<hyper::Response<ResponseBody>, BoxError> {
         match (route, path_params) {
             (RouteResult::NotFound, _) => {
                 info!("unrouted request: {}", request.uri());
-                let mut response = hyper::Response::new(hyper::Body::empty());
+                let mut response = hyper::Response::new(ResponseBody::empty());
                 *response.status_mut() = StatusCode::NOT_FOUND;
-                Box::new(future::ok((response, 0)))
+                Ok(response)
             }
             (RouteResult::MethodNotAllowed(methods), _) => {
                 let display_methods = methods.iter().join(", ");
@@ -123,50 +152,117 @@ impl HttpService {
                     request.method(),
                     display_methods
                 );
-                let mut response = hyper::Response::new(hyper::Body::empty());
+                let mut response = hyper::Response::new(ResponseBody::empty());
                 *response.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
-                response.headers_mut().typed_insert(&Allow(methods));
-                Box::new(future::ok((response, 0)))
+                headers::set_allow(response.headers_mut(), &methods);
+                Ok(response)
             }
             (_, Err(e)) => {
                 info!("Improperly formatted URL. Error: {}", e);
-                let mut response = hyper::Response::new(hyper::Body::empty());
+                let mut response = hyper::Response::new(ResponseBody::empty());
                 *response.status_mut() = StatusCode::NOT_FOUND;
-                Box::new(future::ok((response, 0)))
+                Ok(response)
             }
             (RouteResult::Matched { endpoint, .. }, Ok(path_params)) => {
+                // Buffer the incoming request body so the sync handler can
+                // read it via the blocking thread pool.
+                let (parts, body) = request.into_parts();
+                let body_bytes = body.collect().await?.to_bytes();
+
+                let response_size = Arc::new(AtomicUsize::new(0));
                 let (sender, receiver) = oneshot::channel();
 
-                let sync = self.sync.clone();
-                let r = self.pool.sender().spawn(future::lazy(move || {
+                // The handler sends the response head through `sender`, then keeps running to stream the body.
+                let sync = SyncHandler;
+                tokio::task::spawn_blocking(move || {
                     sync.response(
-                        request,
+                        parts.headers,
+                        body_bytes,
                         endpoint,
                         path_params,
                         query_params,
                         sender,
                         &response_size,
-                    );
-                    Ok(())
-                }));
+                    )
+                });
 
-                match r {
-                    Ok(()) => {
-                        let f = receiver.or_else(|_| {
-                            error!("handler thread hung up");
-                            let mut response = hyper::Response::new(hyper::Body::empty());
-                            *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
-                            Box::new(future::ok((response, 0)))
-                        });
-                        Box::new(f)
-                    }
+                match receiver.await {
+                    Ok((response, _request_size)) => Ok(response),
                     Err(_) => {
-                        let mut response = hyper::Response::new(hyper::Body::empty());
-                        *response.status_mut() = StatusCode::SERVICE_UNAVAILABLE;
-                        Box::new(future::ok((response, 0)))
+                        error!("handler thread hung up");
+                        let mut response = hyper::Response::new(ResponseBody::empty());
+                        *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                        Ok(response)
                     }
                 }
             }
+        }
+    }
+}
+
+/// The response body type used by the HTTP service. Streaming bodies are
+/// supported through a channel.
+pub enum ResponseBody {
+    Full(Full<Bytes>),
+    Stream(StreamBody<ReceiverStream<io::Result<Frame<Bytes>>>>),
+}
+
+impl ResponseBody {
+    fn empty() -> ResponseBody {
+        ResponseBody::Full(Full::new(Bytes::new()))
+    }
+}
+
+impl hyper::body::Body for ResponseBody {
+    type Data = Bytes;
+    type Error = BoxError;
+
+    fn poll_frame(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<std::result::Result<hyper::body::Frame<Self::Data>, Self::Error>>>
+    {
+        match self.get_mut() {
+            ResponseBody::Full(b) => {
+                let p = std::pin::Pin::new(b);
+                match p.poll_frame(cx) {
+                    std::task::Poll::Ready(Some(Ok(frame))) => {
+                        std::task::Poll::Ready(Some(Ok(frame)))
+                    }
+                    std::task::Poll::Ready(Some(Err(e))) => {
+                        std::task::Poll::Ready(Some(Err(Box::new(e))))
+                    }
+                    std::task::Poll::Ready(None) => std::task::Poll::Ready(None),
+                    std::task::Poll::Pending => std::task::Poll::Pending,
+                }
+            }
+            ResponseBody::Stream(b) => {
+                let p = std::pin::Pin::new(b);
+                match p.poll_frame(cx) {
+                    std::task::Poll::Ready(Some(Ok(frame))) => {
+                        std::task::Poll::Ready(Some(Ok(frame)))
+                    }
+                    std::task::Poll::Ready(Some(Err(e))) => std::task::Poll::Ready(Some(Err(
+                        Box::new(io::Error::new(io::ErrorKind::Other, e)) as BoxError,
+                    ))),
+                    std::task::Poll::Ready(None) => std::task::Poll::Ready(None),
+                    std::task::Poll::Pending => std::task::Poll::Pending,
+                }
+            }
+        }
+    }
+
+    fn is_end_stream(&self) -> bool {
+        match self {
+            ResponseBody::Full(b) => b.is_end_stream(),
+            ResponseBody::Stream(b) => b.is_end_stream(),
+        }
+    }
+
+    fn size_hint(&self) -> hyper::body::SizeHint {
+        match self {
+            ResponseBody::Full(b) => b.size_hint(),
+            ResponseBody::Stream(b) => b.size_hint(),
         }
     }
 }
@@ -176,34 +272,25 @@ struct SyncHandler;
 impl SyncHandler {
     fn response(
         &self,
-        request: hyper::Request<hyper::Body>,
+        headers: HeaderMap,
+        body_bytes: Bytes,
         endpoint: Arc<Endpoint>,
         path_params: HashMap<String, String>,
         query_params: HashMap<String, Vec<String>>,
-        sender: oneshot::Sender<(hyper::Response<hyper::Body>, u64)>,
+        sender: ResponseSender,
         response_size: &Arc<AtomicUsize>,
     ) {
-        let (parts, body) = request.into_parts();
-
-        let body = BodyReader {
-            it: body.wait(),
-            cur: Cursor::new(Chunk::from("")),
-        };
+        let body = Cursor::new(body_bytes);
         let mut body = SizeTrackingReader {
             reader: body,
             size: 0,
         };
 
         let response = self
-            .response_inner(
-                &parts.headers,
-                &mut body,
-                &endpoint,
-                &path_params,
-                &query_params,
-            ).unwrap_or_else(|e| self.handler_error(&e));
+            .response_inner(&headers, &mut body, &endpoint, &path_params, &query_params)
+            .unwrap_or_else(|e| self.handler_error(&e));
 
-        self.write_response(&parts.headers, response, body.size, sender, &response_size);
+        self.write_response(&headers, response, body.size, sender, response_size);
     }
 
     fn handler_error(&self, e: &Error) -> Response {
@@ -219,7 +306,7 @@ impl SyncHandler {
     fn response_inner(
         &self,
         headers: &HeaderMap,
-        body: &mut SizeTrackingReader<BodyReader>,
+        body: &mut SizeTrackingReader<Cursor<Bytes>>,
         endpoint: &Arc<Endpoint>,
         path_params: &HashMap<String, String>,
         query_params: &HashMap<String, Vec<String>>,
@@ -233,25 +320,20 @@ impl SyncHandler {
     fn decode_body<'a>(
         &self,
         headers: &HeaderMap,
-        body: &'a mut SizeTrackingReader<BodyReader>,
-    ) -> Result<Box<Read + 'a>> {
-        match headers.typed_get::<ContentEncoding>() {
-            Ok(Some(encoding)) => {
-                match &**encoding {
-                    [] | [ContentCoding::IDENTITY] => Ok(Box::new(body)),
-                    [ContentCoding::GZIP] => Ok(Box::new(BufReader::new(GzDecoder::new(body)))),
-                    [ContentCoding::DEFLATE] => {
-                        Ok(Box::new(BufReader::new(ZlibDecoder::new(body))))
-                    }
-                    // this forbids encodings we "could" support like `gzip, deflate, identity, gzip`, but that's a
-                    // dumb thing to try to use
-                    _ => Err(Error::new_safe(
-                        "unsupported Content-Encoding",
-                        Code::CustomClient,
-                    )),
-                }
-            }
-            Ok(None) => Ok(Box::new(body)),
+        body: &'a mut SizeTrackingReader<Cursor<Bytes>>,
+    ) -> Result<Box<dyn Read + 'a>> {
+        match headers::get_content_encoding(headers) {
+            Ok(encoding) => match encoding.as_slice() {
+                [] | [Encoding::Identity] => Ok(Box::new(body)),
+                [Encoding::Gzip] => Ok(Box::new(BufReader::new(GzDecoder::new(body)))),
+                [Encoding::Deflate] => Ok(Box::new(BufReader::new(ZlibDecoder::new(body)))),
+                // this forbids encodings we "could" support like `gzip, deflate, identity, gzip`, but that's a
+                // dumb thing to try to use
+                _ => Err(Error::new_safe(
+                    "unsupported Content-Encoding",
+                    Code::CustomClient,
+                )),
+            },
             Err(e) => Err(Error::new_safe(e, Code::CustomClient)),
         }
     }
@@ -261,23 +343,22 @@ impl SyncHandler {
         headers: &HeaderMap,
         raw_response: Response,
         request_size: u64,
-        sender: oneshot::Sender<(hyper::Response<hyper::Body>, u64)>,
+        sender: ResponseSender,
         response_size: &Arc<AtomicUsize>,
     ) {
         let raw_response = self.handle_response_size(response_size, raw_response);
-        // TODO(dsanduleac): don't wanna encode
-        //        let raw_response = encode::encode(headers, raw_response);
 
         let mut body = match raw_response.body {
             Body::Empty => {
-                let mut response = hyper::Response::new(hyper::Body::empty());
+                let mut response = hyper::Response::new(ResponseBody::empty());
                 *response.status_mut() = raw_response.status;
                 *response.headers_mut() = raw_response.headers;
                 let _ = sender.send((response, request_size));
                 return;
             }
             Body::Fixed(bytes) => {
-                let mut response = hyper::Response::new(hyper::Body::from(bytes));
+                let mut response =
+                    hyper::Response::new(ResponseBody::Full(Full::new(bytes.into())));
                 *response.status_mut() = raw_response.status;
                 *response.headers_mut() = raw_response.headers;
                 let _ = sender.send((response, request_size));
@@ -296,36 +377,24 @@ impl SyncHandler {
             buf: BytesMut::new(),
         };
 
-        let r = match body.write_body(&mut body_writer) {
-            Ok(()) => Ok(()),
-            Err(e) => {
-                if let BodyWriterState::Buffering {
+        match body.write_body(&mut body_writer) {
+            Ok(()) => body_writer.finish(),
+            Err(e) => match mem::replace(&mut body_writer.state, BodyWriterState::Done) {
+                // Nothing has been sent yet, so we can still respond with the error.
+                BodyWriterState::Buffering {
                     request_size,
                     sender,
                     ..
-                } = mem::replace(&mut body_writer.state, BodyWriterState::Done)
-                {
+                } => {
                     let raw_response = self.handler_error(&e);
-                    return self.write_response(
-                        headers,
-                        raw_response,
-                        request_size,
-                        sender,
-                        response_size,
-                    );
+                    self.write_response(headers, raw_response, request_size, sender, response_size);
                 }
-
-                Err(e)
-            }
-        };
-
-        match r {
-            Ok(()) => {
-                body_writer.finish();
-            }
-            Err(e) => {
-                info!("error sending response. Error {}", e);
-            }
+                state => {
+                    // Dropping the writer aborts the partially sent response.
+                    body_writer.state = state;
+                    info!("error sending response. Error {}", e);
+                }
+            },
         }
     }
 
@@ -343,78 +412,10 @@ impl SyncHandler {
                 response_size.store(bytes.len(), Ordering::SeqCst);
                 Body::Fixed(bytes)
             }
-            // handle tracking response_size for streaming body
             Body::Streaming(write_body) => Body::Streaming(write_body),
         };
 
         response
-    }
-}
-
-impl Service for HttpService {
-    type ReqBody = hyper::Body;
-    type ResBody = hyper::Body;
-    type Error = Box<StdError + Sync + Send>;
-    type Future = Box<
-        Future<Item = hyper::Response<hyper::Body>, Error = Box<StdError + Sync + Send>> + Send,
-    >;
-
-    fn call(
-        &mut self,
-        request: hyper::Request<<Self as Service>::ReqBody>,
-    ) -> Box<Future<Item = hyper::Response<hyper::Body>, Error = Box<StdError + Sync + Send>> + Send>
-    {
-        let route = self.route(&request);
-        let query_params = self.query_params(request.uri());
-        let maybe_path_params = self.path_params(&route);
-        let response_size = Arc::new(AtomicUsize::new(0));
-
-        let f = self
-            .response(
-                request,
-                route,
-                maybe_path_params,
-                query_params,
-                response_size,
-            ).map({ move |(response, _request_size)| response });
-
-        Box::new(f)
-    }
-}
-
-struct BodyReader {
-    it: stream::Wait<hyper::Body>,
-    cur: Cursor<hyper::Chunk>,
-}
-
-impl Read for BodyReader {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let nread = {
-            let read_buf = self.fill_buf()?;
-            let nread = usize::min(buf.len(), read_buf.len());
-            buf[..nread].copy_from_slice(&read_buf[..nread]);
-            nread
-        };
-        self.consume(nread);
-        Ok(nread)
-    }
-}
-
-impl BufRead for BodyReader {
-    fn fill_buf(&mut self) -> io::Result<&[u8]> {
-        while self.cur.position() == self.cur.get_ref().len() as u64 {
-            match self.it.next() {
-                Some(Ok(chunk)) => self.cur = Cursor::new(chunk),
-                Some(Err(e)) => return Err(io::Error::new(io::ErrorKind::Other, e)),
-                None => break,
-            }
-        }
-
-        self.cur.fill_buf()
-    }
-
-    fn consume(&mut self, amt: usize) {
-        self.cur.consume(amt)
     }
 }
 
@@ -449,19 +450,25 @@ where
     }
 }
 
+type ResponseSender = oneshot::Sender<(hyper::Response<ResponseBody>, u64)>;
+type BodySender = mpsc::Sender<io::Result<Frame<Bytes>>>;
+
 enum BodyWriterState {
     Buffering {
         request_size: u64,
         status: StatusCode,
         headers: HeaderMap,
-        sender: oneshot::Sender<(hyper::Response<hyper::Body>, u64)>,
+        sender: ResponseSender,
     },
     Writing {
-        sender: body::Sender,
+        sender: BodySender,
     },
     Done,
 }
 
+/// Buffers the start of a streaming body, so that short bodies are sent with a `Content-Length` and errors raised
+/// before anything has been sent can still produce an error response. Once more than 4KB has been written or the
+/// body is flushed, the response head is sent and the rest of the body is streamed.
 struct BodyWriter {
     state: BodyWriterState,
     buf: BytesMut,
@@ -469,10 +476,14 @@ struct BodyWriter {
 
 impl Drop for BodyWriter {
     fn drop(&mut self) {
+        // Abort a partially sent body rather than letting it end as if it were complete.
         if let BodyWriterState::Writing { sender } =
             mem::replace(&mut self.state, BodyWriterState::Done)
         {
-            sender.abort();
+            let _ = sender.blocking_send(Err(io::Error::new(
+                io::ErrorKind::Other,
+                "response body aborted",
+            )));
         }
     }
 }
@@ -486,12 +497,12 @@ impl BodyWriter {
                 headers,
                 sender,
             } => {
-                let buf = self.buf.take().freeze();
+                let buf = self.buf.split().freeze();
 
                 let body = if buf.is_empty() {
-                    hyper::Body::empty()
+                    ResponseBody::empty()
                 } else {
-                    hyper::Body::from(buf)
+                    ResponseBody::Full(Full::new(buf))
                 };
 
                 let mut response = hyper::Response::new(body);
@@ -499,25 +510,23 @@ impl BodyWriter {
                 *response.headers_mut() = headers;
                 let _ = sender.send((response, request_size));
             }
-            BodyWriterState::Writing { mut sender } => {
-                let _ = self.send_chunk(&mut sender);
+            BodyWriterState::Writing { sender } => {
+                let _ = self.send_chunk(&sender);
             }
             BodyWriterState::Done => {}
         }
     }
 
-    fn send_chunk(&mut self, sender: &mut body::Sender) -> io::Result<()> {
-        let buf = self.buf.take().freeze();
+    fn send_chunk(&mut self, sender: &BodySender) -> io::Result<()> {
+        let buf = self.buf.split().freeze();
         if buf.is_empty() {
             return Ok(());
         }
 
-        let f = BodySendFuture {
-            sender,
-            data: Some(Chunk::from(buf)),
-        };
-        f.wait()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        // blocking_send since we're on a blocking thread, not a tokio worker
+        sender
+            .blocking_send(Ok(Frame::data(buf)))
+            .map_err(|e| io::Error::new(io::ErrorKind::BrokenPipe, e))
     }
 }
 
@@ -531,14 +540,15 @@ impl Write for BodyWriter {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        let mut sender = match mem::replace(&mut self.state, BodyWriterState::Done) {
+        let sender = match mem::replace(&mut self.state, BodyWriterState::Done) {
             BodyWriterState::Buffering {
                 request_size,
                 status,
                 headers,
                 sender,
             } => {
-                let (body_sender, body) = hyper::Body::channel();
+                let (body_sender, receiver) = mpsc::channel(1);
+                let body = ResponseBody::Stream(StreamBody::new(ReceiverStream::new(receiver)));
 
                 let mut response = hyper::Response::new(body);
                 *response.status_mut() = status;
@@ -553,30 +563,8 @@ impl Write for BodyWriter {
             BodyWriterState::Done => return Ok(()),
         };
 
-        let r = self.send_chunk(&mut sender);
+        let r = self.send_chunk(&sender);
         self.state = BodyWriterState::Writing { sender };
         r
-    }
-}
-
-struct BodySendFuture<'a> {
-    sender: &'a mut body::Sender,
-    data: Option<Chunk>,
-}
-
-impl<'a> Future for BodySendFuture<'a> {
-    type Item = ();
-    type Error = hyper::Error;
-
-    fn poll(&mut self) -> Poll<(), hyper::Error> {
-        loop {
-            try_ready!(self.sender.poll_ready());
-
-            let data = self.data.take().expect("future polled after completion");
-            match self.sender.send_data(data) {
-                Ok(()) => return Ok(Async::Ready(())),
-                Err(data) => self.data = Some(data),
-            }
-        }
     }
 }

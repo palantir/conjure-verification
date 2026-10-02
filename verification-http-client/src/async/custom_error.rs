@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use futures::Future;
-use hyper::client::connect::{Connect, Connected, Destination};
+use hyper::Uri;
 use std::error::Error;
 use std::fmt;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use tower_service::Service;
 
-use async::alpn::AlpnConnector;
+use crate::r#async::alpn::AlpnConnector;
 
 #[derive(Debug)]
-pub struct ConnectError(pub Box<Error + Sync + Send>);
+pub struct ConnectError(pub Box<dyn Error + Sync + Send>);
 
 impl fmt::Display for ConnectError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -28,24 +31,26 @@ impl fmt::Display for ConnectError {
     }
 }
 
-impl Error for ConnectError {
-    fn description(&self) -> &str {
-        self.0.description()
-    }
-}
+impl Error for ConnectError {}
 
 /// A connector which wraps another and wraps errors in a ConnectError layer.
 ///
 /// This is done so we can determine if an IO error happened during socket
 /// connection, in which case we can unconditionally retry.
+#[derive(Clone)]
 pub struct CustomErrorConnector(pub AlpnConnector);
 
-impl Connect for CustomErrorConnector {
-    type Transport = <AlpnConnector as Connect>::Transport;
+impl Service<Uri> for CustomErrorConnector {
+    type Response = <AlpnConnector as Service<Uri>>::Response;
     type Error = ConnectError;
-    type Future = Box<Future<Item = (Self::Transport, Connected), Error = ConnectError> + Send>;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
-    fn connect(&self, dst: Destination) -> Self::Future {
-        Box::new(self.0.connect(dst).map_err(ConnectError))
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, dst: Uri) -> Self::Future {
+        let mut inner = self.0.clone();
+        Box::pin(async move { inner.call(dst).await.map_err(ConnectError) })
     }
 }

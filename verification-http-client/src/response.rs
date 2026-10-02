@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use errors::{Error, Result};
+use crate::errors::{Error, Result};
+use bytes::Bytes;
+use conjure_verification_http::headers::{self, Encoding};
 use flate2::bufread::{GzDecoder, ZlibDecoder};
-use futures::stream::{self, Stream};
-use hyper::{self, Body, HeaderMap, StatusCode};
+use http_body_util::BodyExt;
+use hyper::body::Incoming;
+use hyper::{self, HeaderMap, StatusCode};
 use mime;
+use mime::Mime;
 use serde::de::DeserializeOwned;
 use serde_cbor;
 use serde_json;
 use serde_urlencoded;
 use std::io::{self, BufRead, BufReader, Cursor, Read};
-use typed_headers::{ContentCoding, ContentEncoding, ContentType, HeaderMapExt};
 
-use {RemoteError, APPLICATION_CBOR};
+use crate::{RemoteError, APPLICATION_CBOR, RUNTIME};
 
 /// An HTTP response.
 pub struct Response {
@@ -34,14 +37,14 @@ pub struct Response {
 }
 
 impl Response {
-    pub(crate) fn new(response: hyper::Response<Body>) -> Response {
+    pub(crate) fn new(response: hyper::Response<Incoming>) -> Response {
         let (parts, body) = response.into_parts();
         Response {
             status: parts.status,
             headers: parts.headers,
             body: IdentityBody {
-                it: body.wait(),
-                cur: Cursor::new(hyper::Chunk::from("")),
+                body,
+                cur: Cursor::new(Bytes::new()),
             },
         }
     }
@@ -57,10 +60,8 @@ impl Response {
     }
 
     fn format(&self) -> Result<Format> {
-        let content_type = self
-            .headers
-            .typed_get::<ContentType>()
-            .map_err(Error::internal_safe)?;
+        let content_type =
+            headers::get_content_type(&self.headers).map_err(Error::internal_safe)?;
         Format::new(content_type)
     }
 
@@ -116,16 +117,14 @@ impl Response {
 
     /// Returns a reader of the raw response body.
     pub fn raw_body(self) -> Result<ResponseBody> {
-        let encoding = self
-            .headers
-            .typed_get::<ContentEncoding>()
-            .map_err(Error::internal_safe)?;
+        let encoding =
+            headers::get_content_encoding(&self.headers).map_err(Error::internal_safe)?;
 
-        let body: Box<BufRead> = match encoding.as_ref().map(|c| &***c) {
-            None | Some([ContentCoding::IDENTITY]) => Box::new(self.body),
-            Some([ContentCoding::GZIP]) => Box::new(BufReader::new(GzDecoder::new(self.body))),
-            Some([ContentCoding::DEFLATE]) => Box::new(BufReader::new(ZlibDecoder::new(self.body))),
-            Some(v) => {
+        let body: Box<dyn BufRead> = match encoding.as_slice() {
+            [] | [Encoding::Identity] => Box::new(self.body),
+            [Encoding::Gzip] => Box::new(BufReader::new(GzDecoder::new(self.body))),
+            [Encoding::Deflate] => Box::new(BufReader::new(ZlibDecoder::new(self.body))),
+            v => {
                 return Err(Error::internal_safe("unsupported Content-Encoding")
                     .with_safe_param("encoding", format!("{:?}", v)))
             }
@@ -143,19 +142,19 @@ enum Format {
 }
 
 impl Format {
-    fn new(content_type: Option<ContentType>) -> Result<Format> {
+    fn new(content_type: Option<Mime>) -> Result<Format> {
         match content_type {
-            Some(ref v) if v.0 == mime::APPLICATION_JSON => Ok(Format::Json),
-            Some(ref v) if v.0 == *APPLICATION_CBOR => Ok(Format::Cbor),
-            Some(ref v) if v.0 == mime::APPLICATION_WWW_FORM_URLENCODED => Ok(Format::Urlencoded),
-            Some(ref v) if v.0 == mime::APPLICATION_OCTET_STREAM => Ok(Format::OctetStream),
+            Some(ref v) if *v == mime::APPLICATION_JSON => Ok(Format::Json),
+            Some(ref v) if *v == *APPLICATION_CBOR => Ok(Format::Cbor),
+            Some(ref v) if *v == mime::APPLICATION_WWW_FORM_URLENCODED => Ok(Format::Urlencoded),
+            Some(ref v) if *v == mime::APPLICATION_OCTET_STREAM => Ok(Format::OctetStream),
             Some(v) => Err(Error::internal_safe("unsupported Content-Type")
                 .with_safe_param("type", format!("{:?}", v))),
             None => Err(Error::internal_safe("Content-Type header missing")),
         }
     }
 
-    fn deserialize<T>(&self, r: &mut Read) -> Result<T>
+    fn deserialize<T>(&self, r: &mut dyn Read) -> Result<T>
     where
         T: DeserializeOwned,
     {
@@ -168,7 +167,7 @@ impl Format {
     }
 }
 
-pub struct ResponseBody(pub Box<BufRead>);
+pub struct ResponseBody(pub Box<dyn BufRead>);
 
 impl Read for ResponseBody {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
@@ -177,8 +176,8 @@ impl Read for ResponseBody {
 }
 
 struct IdentityBody {
-    it: stream::Wait<hyper::Body>,
-    cur: Cursor<hyper::Chunk>,
+    body: Incoming,
+    cur: Cursor<Bytes>,
 }
 
 impl Read for IdentityBody {
@@ -196,9 +195,14 @@ impl Read for IdentityBody {
 
 impl BufRead for IdentityBody {
     fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        // Read the body a frame at a time so that errors (e.g. a truncated body) are reported to the reader.
         while self.cur.position() == self.cur.get_ref().len() as u64 {
-            match self.it.next() {
-                Some(Ok(chunk)) => self.cur = Cursor::new(chunk),
+            match RUNTIME.block_on(self.body.frame()) {
+                Some(Ok(frame)) => {
+                    if let Ok(data) = frame.into_data() {
+                        self.cur = Cursor::new(data);
+                    }
+                }
                 Some(Err(e)) => return Err(io::Error::new(io::ErrorKind::Other, e)),
                 None => break,
             }

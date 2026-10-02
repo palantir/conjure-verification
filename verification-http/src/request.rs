@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use auth::AuthToken;
+use crate::auth::AuthToken;
+use crate::error::ConjureVerificationError;
+use crate::headers;
+use crate::SerializableFormat;
 use conjure_verification_error::{Code, Error, Result};
-use error::ConjureVerificationError;
 use http::header::HeaderMap;
 use mime::{Mime, STAR};
 use serde::de::DeserializeOwned;
@@ -23,9 +25,6 @@ use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::io::Read;
 use std::str::FromStr;
-use typed_headers::{Accept, Authorization, ContentType, HeaderMapExt, QualityItem};
-
-use SerializableFormat;
 
 const BODY_SIZE_LIMIT_BYTES: u64 = 1024 * 1024;
 
@@ -33,7 +32,7 @@ pub struct Request<'a> {
     path_params: &'a HashMap<String, String>,
     query_params: &'a HashMap<String, Vec<String>>,
     headers: &'a HeaderMap,
-    body: &'a mut Read,
+    body: &'a mut dyn Read,
     body_size_limit: u64,
 }
 
@@ -42,7 +41,7 @@ impl<'a> Request<'a> {
         path_params: &'a HashMap<String, String>,
         query_params: &'a HashMap<String, Vec<String>>,
         headers: &'a HeaderMap,
-        body: &'a mut Read,
+        body: &'a mut dyn Read,
     ) -> Request<'a> {
         Request {
             path_params,
@@ -75,7 +74,8 @@ impl<'a> Request<'a> {
                         },
                     )
                 })
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn query_param<T>(&self, name: &str) -> Result<T>
@@ -132,8 +132,8 @@ impl<'a> Request<'a> {
     where
         T: DeserializeOwned,
     {
-        let mime = match self.headers.typed_get::<ContentType>() {
-            Ok(Some(content_type)) => content_type.0,
+        let mime = match headers::get_content_type(self.headers) {
+            Ok(Some(content_type)) => content_type,
             Ok(None) => {
                 return Err(Error::new_safe(
                     "missing content type",
@@ -154,7 +154,7 @@ impl<'a> Request<'a> {
 
         let mut reader = self.body.take(self.body_size_limit);
 
-        let (is_io, error): (bool, Box<StdError + Sync + Send>) = match format {
+        let (is_io, error): (bool, Box<dyn StdError + Sync + Send>) = match format {
             SerializableFormat::Json => match serde_json::from_reader(&mut reader) {
                 Ok(t) => return Ok(t),
                 Err(e) => (e.is_io(), Box::new(e)),
@@ -173,7 +173,7 @@ impl<'a> Request<'a> {
         Err(Error::new(error, code))
     }
 
-    pub fn raw_body(&mut self) -> &mut Read {
+    pub fn raw_body(&mut self) -> &mut dyn Read {
         &mut self.body
     }
 
@@ -185,7 +185,7 @@ impl<'a> Request<'a> {
     where
         T: Format,
     {
-        let accept = match self.headers.typed_get::<Accept>() {
+        let accept = match headers::get_accept(self.headers) {
             Ok(Some(accept)) => accept,
             Ok(None) => return Ok(&formats[0]),
             Err(e) => return Err(Error::new(e, Code::InvalidArgument)),
@@ -201,15 +201,8 @@ impl<'a> Request<'a> {
     }
 
     pub fn auth_token(&self) -> Result<AuthToken> {
-        let header = self.headers.typed_get::<Authorization>();
-
-        match header
-            .as_ref()
-            .ok()
-            .and_then(|h| h.as_ref())
-            .and_then(|h| h.as_bearer())
-        {
-            Some(token) => Ok(AuthToken::new(token.as_str())),
+        match headers::get_bearer_token(self.headers).ok().and_then(|t| t) {
+            Some(token) => Ok(AuthToken::new(&token)),
             None => Err(Error::new_safe(
                 "auth token not provided",
                 ConjureVerificationError::MissingAuthToken,
@@ -246,17 +239,17 @@ pub trait Format {
     }
 }
 
-fn content_type<'a, T>(accept: &Accept, types: &'a [T]) -> Option<&'a T>
+fn content_type<'a, T>(accept: &[headers::AcceptEntry], types: &'a [T]) -> Option<&'a T>
 where
     T: Format,
 {
-    let mut accept = accept.0.clone();
+    let mut accept = accept.to_vec();
     accept.sort_by(quality_order);
 
     for type_ in types.iter() {
         // we sorted ascending so iterate backwards
         for accept in accept.iter().rev() {
-            if type_.matches(&accept.item) {
+            if type_.matches(&accept.mime) {
                 return Some(type_);
             }
         }
@@ -266,20 +259,20 @@ where
 }
 
 // Order by quality and then "specificity"
-fn quality_order(a: &QualityItem<Mime>, b: &QualityItem<Mime>) -> Ordering {
+fn quality_order(a: &headers::AcceptEntry, b: &headers::AcceptEntry) -> Ordering {
     match a.quality.cmp(&b.quality) {
         Ordering::Equal => {}
         o => return o,
     }
 
-    match (a.item.type_(), b.item.type_()) {
+    match (a.mime.type_(), b.mime.type_()) {
         (STAR, STAR) => {}
         (STAR, _) => return Ordering::Less,
         (_, STAR) => return Ordering::Greater,
         _ => {}
     }
 
-    match (a.item.subtype(), b.item.subtype()) {
+    match (a.mime.subtype(), b.mime.subtype()) {
         (STAR, STAR) => {}
         (STAR, _) => return Ordering::Less,
         (_, STAR) => return Ordering::Greater,
@@ -287,7 +280,7 @@ fn quality_order(a: &QualityItem<Mime>, b: &QualityItem<Mime>) -> Ordering {
     }
 
     // This is weird and bad
-    a.item.params().count().cmp(&b.item.params().count())
+    a.mime.params().count().cmp(&b.mime.params().count())
 }
 
 #[cfg(test)]
@@ -303,7 +296,7 @@ mod test {
         let mut json = &json[..];
 
         let mut headers = HeaderMap::new();
-        headers.typed_insert(&ContentType(APPLICATION_JSON));
+        headers::set_content_type(&mut headers, &APPLICATION_JSON);
 
         let query_params = HashMap::new();
         let path_params = HashMap::new();
@@ -323,7 +316,7 @@ mod test {
         let mut json = &json[..];
 
         let mut headers = HeaderMap::new();
-        headers.typed_insert(&ContentType(APPLICATION_JSON));
+        headers::set_content_type(&mut headers, &APPLICATION_JSON);
 
         let query_params = HashMap::new();
         let path_params = HashMap::new();

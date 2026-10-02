@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::request::Request;
+use crate::resource::{NewRoute, Resource, Route};
+use crate::response::{IntoResponse, Response};
 use conjure_verification_error::Result;
 use hyper::Method;
-use request::Request;
-use resource::{NewRoute, Resource, Route};
-use response::{IntoResponse, Response};
 use route_recognizer::{self, Params};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -27,7 +27,7 @@ pub trait Handle {
 }
 
 pub struct Endpoint {
-    pub handler: Box<Handle + Sync + Send>,
+    pub handler: Box<dyn Handle + Sync + Send>,
 }
 
 impl NewRoute for Endpoint {
@@ -51,22 +51,21 @@ impl Router {
     }
 
     pub fn route(&self, method: &Method, path: &str) -> RouteResult {
-        let path = path.trim_right_matches('/');
+        let path = path.trim_end_matches('/');
 
         let matches = match self.router.recognize(path) {
             Ok(matches) => matches,
             Err(_) => return RouteResult::NotFound,
         };
 
-        match matches.handler.endpoints.get(&method) {
+        let handler = matches.handler();
+        match handler.endpoints.get(&method) {
             Some(endpoint) => RouteResult::Matched {
-                pattern: matches.handler.pattern.clone(),
-                params: matches.params,
+                pattern: handler.pattern.clone(),
+                params: matches.params().clone(),
                 endpoint: endpoint.clone(),
             },
-            None => {
-                RouteResult::MethodNotAllowed(matches.handler.endpoints.keys().cloned().collect())
-            }
+            None => RouteResult::MethodNotAllowed(handler.endpoints.keys().cloned().collect()),
         }
     }
 }
@@ -147,7 +146,7 @@ where
         method: Method,
         route: &str,
         name: &str,
-        handler: Box<Handle + Sync + Send>,
+        handler: Box<dyn Handle + Sync + Send>,
     ) -> &mut Endpoint {
         add_route(
             self.router,
@@ -187,7 +186,7 @@ fn add_route<'a>(
     method: Method,
     route: &str,
     _endpoint: &str,
-    handler: Box<Handle + Sync + Send>,
+    handler: Box<dyn Handle + Sync + Send>,
 ) -> &'a mut Endpoint {
     validate_path(route);
 

@@ -12,38 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use bytes::BytesMut;
-use errors::{Error, Result};
-use futures::sync::oneshot;
-use futures::{Async, Future, Poll};
-use http_zipkin;
-use hyper::body::{Chunk, Sender};
+use crate::errors::{Error, Result};
+use bytes::Bytes;
+use conjure_verification_http::headers::{self, RetryAfter};
+use http_body_util::Full;
 use hyper::header::{
     HeaderValue, ACCEPT, ACCEPT_ENCODING, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE, HOST,
     PROXY_AUTHORIZATION, USER_AGENT,
 };
 use hyper::{self, HeaderMap, Method, StatusCode};
 use std::collections::HashMap;
-use std::io::{self, Write};
+use std::error::Error as _;
+use std::fmt;
 use std::result;
 use std::thread;
 use std::time::{Duration, SystemTime};
-use typed_headers::{
-    Authorization, ContentLength, ContentType, Credentials, HeaderMapExt, Host, RetryAfter, Token68,
-};
 use url::Url;
-use zipkin::{Endpoint, Kind, TraceContext};
 
-use async::custom_error::ConnectError;
-use backoff::BackoffIterator;
-use node_selector::Node;
-use {Body, Client, ClientState, IntoBody, ProxyState, Response, RUNTIME};
+use crate::backoff::BackoffIterator;
+use crate::node_selector::Node;
+use crate::r#async::custom_error::ConnectError;
+use crate::{Body, Client, ClientState, IntoBody, ProxyState, Response, RUNTIME};
+use hyper_util::client::legacy::Error as LegacyClientError;
 
-lazy_static! {
-    static ref DEFAULT_ACCEPT: HeaderValue =
-        HeaderValue::from_static("*/*; q=0.5, application/cbor");
-    static ref DEFAULT_ACCEPT_ENCODING: HeaderValue = HeaderValue::from_static("gzip, deflate");
-}
+static DEFAULT_ACCEPT: HeaderValue = HeaderValue::from_static("*/*; q=0.5, application/cbor");
+static DEFAULT_ACCEPT_ENCODING: HeaderValue = HeaderValue::from_static("gzip, deflate");
 
 pub struct RequestBuilder<'a> {
     pub(crate) client: &'a Client,
@@ -51,7 +44,7 @@ pub struct RequestBuilder<'a> {
     pub(crate) pattern: &'static str,
     pub(crate) params: HashMap<String, Vec<String>>,
     pub(crate) headers: HeaderMap,
-    pub(crate) body: Option<Result<Box<Body + 'a>>>,
+    pub(crate) body: Option<Result<Box<dyn Body + 'a>>>,
     pub(crate) idempotent: bool,
 }
 
@@ -92,11 +85,6 @@ impl<'a> RequestBuilder<'a> {
     /// * `Content-Type`
     /// * `Host`
     /// * `Proxy-Authorization`
-    /// * `X-B3-Flags`
-    /// * `X-B3-ParentSpanId`
-    /// * `X-B3-Sampled`
-    /// * `X-B3-SpanId`
-    /// * `X-B3-TraceId`
     pub fn headers_mut(&mut self) -> &mut HeaderMap {
         &mut self.headers
     }
@@ -105,10 +93,7 @@ impl<'a> RequestBuilder<'a> {
     ///
     /// This is a simple convenience wrapper.
     pub fn bearer_token(&mut self, token: &str) -> &mut RequestBuilder<'a> {
-        let token = Token68::new(token).expect("invalid bearer token");
-        let credentials = Credentials::bearer(token);
-        let value = Authorization(credentials);
-        self.headers.typed_insert(&value);
+        headers::set_bearer_token(&mut self.headers, token);
         self
     }
 
@@ -146,7 +131,7 @@ impl<'a> RequestBuilder<'a> {
         T: IntoBody,
         T::Target: 'a,
     {
-        self.body = Some(body.into_body().map(|b| Box::new(b) as Box<Body>));
+        self.body = Some(body.into_body().map(|b| Box::new(b) as Box<dyn Body>));
         self
     }
 
@@ -235,7 +220,6 @@ impl<'a> RequestBuilder<'a> {
                     }
                 }
             }
-
             info!("retrying call after backoff {}ms", micros(backoff));
             thread::sleep(backoff);
         }
@@ -245,20 +229,20 @@ impl<'a> RequestBuilder<'a> {
         &mut self,
         node: &Node,
         state: &ClientState,
-        body: Option<&mut Box<Body + 'a>>,
+        body: Option<&mut Box<dyn Body + 'a>>,
     ) -> result::Result<Response, SendError> {
-        match self.send_traced(node, state, body) {
+        match self.send_raw(&node.url, state, body) {
             Ok(response) => {
                 let status = response.status();
 
                 if status.is_success() {
                     Ok(response)
                 } else if status == StatusCode::TOO_MANY_REQUESTS {
-                    let backoff = match response.headers().typed_get() {
+                    let backoff = match headers::get_retry_after(response.headers()) {
                         Ok(Some(RetryAfter::DelaySeconds(s))) => Some(Duration::from_secs(s)),
-                        Ok(Some(RetryAfter::HttpDate(date))) => SystemTime::from(date)
-                            .duration_since(SystemTime::now())
-                            .ok(),
+                        Ok(Some(RetryAfter::HttpDate(date))) => {
+                            date.duration_since(SystemTime::now()).ok()
+                        }
                         _ => None,
                     };
                     Err(SendError::Throttle { backoff })
@@ -281,46 +265,11 @@ impl<'a> RequestBuilder<'a> {
         }
     }
 
-    fn send_traced(
-        &mut self,
-        node: &Node,
-        state: &ClientState,
-        body: Option<&mut Box<Body + 'a>>,
-    ) -> result::Result<Response, RawError> {
-        let mut span = self.client.tracer.next_span();
-        span.name(&format!("{} {}", self.method, self.pattern));
-        span.tag("http.method", &self.method.to_string());
-        span.tag("http.path", self.pattern);
-        span.kind(Kind::Client);
-        // FIXME once we have more control over hyper we should attach the IP/port
-        span.remote_endpoint(
-            Endpoint::builder()
-                .service_name(&self.client.service)
-                .build(),
-        );
-
-        let r = self.send_raw(&node.url, &state, span.context(), body);
-
-        let status = match r {
-            Ok(ref response) => Some(response.status()),
-            Err(_) => None,
-        };
-
-        if let Some(status) = status {
-            if !status.is_success() {
-                span.tag("http.status_code", &status.to_string());
-            }
-        }
-
-        r
-    }
-
     fn send_raw(
         &mut self,
         url: &Url,
         state: &ClientState,
-        context: TraceContext,
-        body: Option<&mut Box<Body + 'a>>,
+        body: Option<&mut Box<dyn Body + 'a>>,
     ) -> result::Result<Response, RawError> {
         let mut url = self.build_url(url);
 
@@ -330,67 +279,57 @@ impl<'a> RequestBuilder<'a> {
         headers.remove(&PROXY_AUTHORIZATION);
         headers.remove(&CONTENT_LENGTH);
         headers.remove(&CONTENT_TYPE);
-        http_zipkin::set_trace_context(context, &mut headers);
 
         match state.proxy {
             Some(ProxyState::Http { ref credentials }) => {
                 if url.scheme() == "http" {
-                    if let Some(ref credentials) = *credentials {
-                        headers.typed_insert(credentials);
+                    if let Some((ref username, ref password)) = *credentials {
+                        headers::set_proxy_authorization_basic(&mut headers, username, password);
                     }
                 }
             }
             Some(ProxyState::Mesh { ref host }) => {
-                let header = Host::new(url.host_str().unwrap(), url.port())
-                    .expect("url host should be valid");
-                headers.typed_insert(&header);
+                headers::set_host(&mut headers, url.host_str().unwrap(), url.port());
                 url.set_host(Some(host.host())).unwrap();
                 url.set_port(Some(host.port())).unwrap();
             }
             None => {}
         }
 
-        let (body, hyper_body) = match body {
+        let hyper_body = match body {
             Some(body) => {
                 if let Some(length) = body.content_length() {
-                    headers.typed_insert(&ContentLength(length));
+                    headers::set_content_length(&mut headers, length);
                 }
-                headers.typed_insert(&ContentType(body.content_type()));
+                headers::set_content_type(&mut headers, &body.content_type());
 
                 match body.full_body() {
-                    Some(body) => (None, hyper::Body::from(body)),
+                    Some(body) => Full::new(body),
                     None => {
-                        let (sender, hyper_body) = hyper::Body::channel();
-                        (Some((body, sender)), hyper_body)
+                        // Non-buffered body: serialize to bytes now so the sync
+                        // client can hand a complete buffer to hyper.
+                        let mut buf = vec![];
+                        body.write(&mut buf).map_err(RawError::Other)?;
+                        Full::new(Bytes::from(buf))
                     }
                 }
             }
-            None => (None, hyper::Body::empty()),
+            None => Full::new(Bytes::new()),
         };
 
         let mut request = hyper::Request::new(hyper_body);
         *request.method_mut() = self.method.clone();
         *request.uri_mut() = url.as_str().parse().unwrap();
         *request.headers_mut() = headers;
+        let response = RUNTIME.block_on(state.client.request(request));
 
-        let response = oneshot::spawn(state.client.request(request), &RUNTIME.executor());
-
-        if let Some((body, sender)) = body {
-            let mut writer = BodyWriter {
-                sender: Some(sender),
-                buf: BytesMut::new(),
-            };
-            body.write(&mut writer).map_err(RawError::Other)?;
-            writer.finish();
-        }
-
-        match response.wait() {
+        match response {
             Ok(response) => Ok(Response::new(response)),
             Err(e) => {
-                if e.cause2().map_or(false, |e| e.is::<ConnectError>()) {
-                    Err(RawError::Connect(Error::internal_safe(e)))
+                if is_connect_error(&e) {
+                    Err(RawError::Connect(Error::internal_safe(ClientError(e))))
                 } else {
-                    Err(RawError::Other(Error::internal_safe(e)))
+                    Err(RawError::Other(Error::internal_safe(ClientError(e))))
                 }
             }
         }
@@ -444,93 +383,36 @@ impl<'a> RequestBuilder<'a> {
     }
 }
 
-struct BodyWriter {
-    sender: Option<Sender>,
-    buf: BytesMut,
+fn is_connect_error(e: &LegacyClientError) -> bool {
+    let mut source: Option<&(dyn std::error::Error + 'static)> = e.source();
+    while let Some(err) = source {
+        if err.is::<ConnectError>() {
+            return true;
+        }
+        source = err.source();
+    }
+    false
 }
 
-impl Drop for BodyWriter {
-    fn drop(&mut self) {
-        if let Some(sender) = self.sender.take() {
-            sender.abort();
+/// A client error whose message includes its causes, which hyper's error message omits.
+#[derive(Debug)]
+struct ClientError(LegacyClientError);
+
+impl fmt::Display for ClientError {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, fmt)?;
+        let mut source = self.0.source();
+        while let Some(err) = source {
+            write!(fmt, ": {}", err)?;
+            source = err.source();
         }
-    }
-}
-
-impl BodyWriter {
-    fn finish(&mut self) {
-        self.flush_inner();
-        self.sender = None;
-    }
-
-    fn flush_inner(&mut self) {
-        if self.buf.len() == 0 {
-            return;
-        }
-
-        let hup = match self.sender {
-            Some(ref mut sender) => {
-                let mut future = SendFuture {
-                    sender,
-                    data: Some(Chunk::from(self.buf.take().freeze())),
-                };
-                match future.wait() {
-                    Ok(()) => false,
-                    Err(_) => {
-                        // we'll get an error/whatever when reading the response, so silence this error
-                        info!("server hung up while streaming body");
-                        true
-                    }
-                }
-            }
-            None => false,
-        };
-
-        if hup {
-            self.sender = None;
-        }
-    }
-}
-
-impl Write for BodyWriter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if self.sender.is_none() {
-            return Ok(buf.len());
-        }
-
-        self.buf.extend_from_slice(buf);
-        if self.buf.len() > 4096 {
-            self.flush_inner();
-        }
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.flush_inner();
-
         Ok(())
     }
 }
 
-struct SendFuture<'a> {
-    sender: &'a mut Sender,
-    data: Option<Chunk>,
-}
-
-impl<'a> Future for SendFuture<'a> {
-    type Item = ();
-    type Error = hyper::Error;
-
-    fn poll(&mut self) -> Poll<(), hyper::Error> {
-        loop {
-            try_ready!(self.sender.poll_ready());
-
-            let data = self.data.take().expect("future polled after completion");
-            match self.sender.send_data(data) {
-                Ok(()) => return Ok(Async::Ready(())),
-                Err(data) => self.data = Some(data),
-            }
-        }
+impl std::error::Error for ClientError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.0)
     }
 }
 

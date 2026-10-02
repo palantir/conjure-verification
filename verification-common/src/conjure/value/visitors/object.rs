@@ -14,9 +14,9 @@
 
 pub use serde::de::DeserializeSeed;
 
-use conjure::resolved_type::FieldDefinition;
-use conjure::resolved_type::ResolvedType;
-use conjure::value::*;
+use crate::conjure::resolved_type::FieldDefinition;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::value::*;
 use core::fmt;
 use itertools::Itertools;
 use serde;
@@ -34,7 +34,7 @@ pub struct ConjureObjectVisitor<'a> {
 }
 
 impl<'a> ConjureObjectVisitor<'a> {
-    pub fn new(fields: &'a [FieldDefinition], skip_unknown: bool) -> ConjureObjectVisitor {
+    pub fn new(fields: &'a [FieldDefinition], skip_unknown: bool) -> ConjureObjectVisitor<'a> {
         ConjureObjectVisitor {
             remaining_fields: fields
                 .iter()

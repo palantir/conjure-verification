@@ -1,5 +1,6 @@
 [package]
 name = "conjure-verification-http-server"
+edition = "2021"
 version = "0.1.0"
 authors = ["Dan Sanduleac <dsanduleac@palantir.com>"]
 license-file = "../LICENSE"
@@ -9,18 +10,23 @@ conjure-verification-http = { path = "../verification-http" }
 conjure-verification-error = { path = "../verification-error" }
 conjure-verification-error-derive = { path = "../verification-error-derive" }
 
-bytes = "0.4"
+bytes = "1"
 flate2 = "1.0"
-futures = "0.1.21"
-http = "0.1"
-hyper = "0.12"
-itertools = "0.7.4"
-lazy_static = "1.0"
+http = "1"
+http-body-util = "0.1"
+hyper = { version = "1", features = ["server", "http1", "http2"] }
+hyper-util = { version = "0.1", features = ["server-auto", "http1", "http2", "tokio"] }
+itertools = "0.14"
 log = "0.4"
 mime = "0.3"
-route-recognizer = "0.1.12"
+percent-encoding = "2"
+route-recognizer = "0.3.1"
 serde = "1.0"
 serde_json = "1.0"
-tokio = "0.1"
-typed-headers = "0.1"
-url = "1.0"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "sync", "time"] }
+tokio-stream = "0.1"
+url = "2"
+
+[dev-dependencies]
+hyper = { version = "1", features = ["client", "http1", "http2"] }
+tokio = { version = "1", features = ["macros"] }

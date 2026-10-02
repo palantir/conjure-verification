@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use futures::Future;
-use hyper::client::connect::{Connect, Connected, Destination};
-use hyper_openssl::{HttpsConnector, MaybeHttpsStream};
+use hyper::Uri;
+use hyper_openssl::client::legacy::{HttpsConnector, MaybeHttpsStream};
 use std::error::Error;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use tower_service::Service;
 
-use async::proxy::ProxyConnector;
+use crate::r#async::proxy::{ConnStream, ProxyConnector};
 
+#[derive(Clone)]
 pub struct AlpnConnector {
     connector: HttpsConnector<ProxyConnector>,
     require_http2: bool,
@@ -33,29 +37,28 @@ impl AlpnConnector {
     }
 }
 
-impl Connect for AlpnConnector {
-    type Transport = <HttpsConnector<ProxyConnector> as Connect>::Transport;
-    type Error = Box<Error + Sync + Send>;
-    type Future =
-        Box<Future<Item = (Self::Transport, Connected), Error = Box<Error + Sync + Send>> + Send>;
+type BoxError = Box<dyn Error + Sync + Send>;
 
-    fn connect(&self, dst: Destination) -> Self::Future {
+impl Service<Uri> for AlpnConnector {
+    type Response = MaybeHttpsStream<ConnStream>;
+    type Error = BoxError;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, dst: Uri) -> Self::Future {
+        let mut connector = self.connector.clone();
         let require_http2 = self.require_http2;
-        let f = self
-            .connector
-            .connect(dst)
-            .and_then(move |(stream, connected)| {
-                if let MaybeHttpsStream::Https(ref stream) = stream {
-                    if require_http2
-                        && stream.get_ref().ssl().selected_alpn_protocol() != Some(b"h2")
-                    {
-                        return Err("failed to select h2 in ALPN".into());
-                    }
+        Box::pin(async move {
+            let stream = connector.call(dst).await?;
+            if let MaybeHttpsStream::Https(ref stream) = stream {
+                if require_http2 && stream.ssl().selected_alpn_protocol() != Some(b"h2") {
+                    return Err("failed to select h2 in ALPN".into());
                 }
-
-                Ok((stream, connected))
-            });
-
-        Box::new(f)
+            }
+            Ok(stream)
+        })
     }
 }

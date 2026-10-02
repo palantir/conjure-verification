@@ -1,5 +1,6 @@
 [package]
 name = "conjure-verification-server"
+edition = "2021"
 version = "0.1.0"
 authors = ["Dan Sanduleac <dsanduleac@palantir.com>"]
 license-file = "../LICENSE"
@@ -13,20 +14,16 @@ conjure-verification-error-derive = { path = "../verification-error-derive" }
 serde-conjure = { path = "../serde-conjure" }
 serde-conjure-derive = { path = "../serde-conjure-derive" }
 
-bytes = "0.4"
-derive_more = "0.11"
+bytes = "1"
+derive_more = { version = "1", features = ["from", "display"] }
 either = "1.5"
-futures = "0.1.21"
-http = "0.1"
-hyper = "0.12"
-itertools = "0.7.4"
-lazy_static = "1.0"
+http = "1"
+hyper = { version = "1", features = ["server", "http1"] }
+itertools = "0.14"
 log = "0.4"
 mime = "0.3"
-pretty_env_logger = "0.2"
+pretty_env_logger = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 serde_plain = "0.3"
-serde_yaml = "0.7"
-typed-headers = "0.1"

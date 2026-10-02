@@ -37,7 +37,7 @@ pub enum ConjureDouble {
 /// Represents a finite `f64` (which cannot be NaN / NegativeInfinity / PositiveInfinity).
 /// Field is private so users can't create a FiniteDouble that's not actually finite.
 /// To access the value, use `FiniteDouble::value`.
-#[derive(Serialize, Debug, PartialEq, PartialOrd, Display)]
+#[derive(Serialize, Debug, PartialEq, derive_more::Display)]
 pub struct FiniteDouble(f64);
 
 impl FiniteDouble {
@@ -79,9 +79,16 @@ impl Display for ConjureDouble {
 
 impl Eq for FiniteDouble {}
 
+impl PartialOrd for FiniteDouble {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl Ord for FiniteDouble {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        // never NaN, so always comparable
+        self.0.partial_cmp(&other.0).unwrap()
     }
 }
 

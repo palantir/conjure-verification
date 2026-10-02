@@ -22,14 +22,9 @@ extern crate conjure_verification_http;
 extern crate conjure_verification_http_client;
 extern crate conjure_verification_http_server;
 extern crate core;
-#[macro_use]
 extern crate derive_more;
 extern crate either;
-extern crate futures;
 extern crate http;
-extern crate hyper;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate mime;
@@ -39,28 +34,23 @@ extern crate serde_conjure;
 extern crate serde_conjure_derive;
 #[macro_use]
 extern crate serde_derive;
-#[cfg_attr(test, macro_use)]
 #[cfg(test)]
 extern crate derive_new;
 #[cfg_attr(test, macro_use)]
 extern crate serde_json;
 extern crate serde_plain;
 extern crate serde_value;
-extern crate serde_yaml;
-extern crate typed_headers;
-extern crate zipkin;
 
 #[cfg(test)]
-extern crate tokio;
 #[cfg(test)]
 extern crate url;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
 
-use conjure::ir::Conjure;
-use conjure_verification_common::conjure;
-use conjure_verification_common::more_serde_json;
+use crate::resource::VerificationClientResource;
+use crate::test_spec::TestCases;
+use conjure_verification_common::conjure::ir::Conjure;
 use conjure_verification_common::type_mapping;
 use conjure_verification_common::type_mapping::return_type;
 use conjure_verification_common::type_mapping::ServiceTypeMapping;
@@ -68,19 +58,12 @@ use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_http::resource::Resource;
 use conjure_verification_http_server::router::Binder;
 pub use conjure_verification_http_server::*;
-use futures::{future, Future};
-use handler::HttpService;
-use hyper::Server;
-use resource::VerificationClientResource;
-use router::Router;
 use std::env;
 use std::env::VarError;
 use std::fs::File;
-use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 use std::sync::Arc;
-use test_spec::TestCases;
 
 mod errors;
 mod resource;
@@ -136,7 +119,7 @@ fn main() {
     }
     let router = builder.build();
 
-    start_server(router, port);
+    server::start_server(router, port);
 }
 
 fn print_usage(arg0: &str) {
@@ -144,23 +127,4 @@ fn print_usage(arg0: &str) {
         "Usage: {} <client-test-cases.json> <verification-api.conjure.json>",
         arg0
     );
-}
-
-fn start_server(router: Router, port: u16) {
-    // bind to 0.0.0.0 instead of loopback so that requests can be served from docker
-    let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);
-
-    let router = Arc::new(router);
-
-    hyper::rt::run(future::lazy(move || {
-        let new_service = move || future::ok::<_, hyper::Error>(HttpService::new(router.clone()));
-
-        let server = Server::bind(&addr)
-            .serve(new_service)
-            .map_err(|e| eprintln!("server error: {}", e));
-
-        println!("Listening on http://{}", addr);
-
-        server
-    }));
 }

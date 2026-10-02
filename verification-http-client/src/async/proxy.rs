@@ -12,18 +12,68 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use config::HostAndPort;
-use futures::{Async, Future, Poll};
-use hyper::client::conn::{self, Connection, Handshake, ResponseFuture};
-use hyper::client::connect::{Connect, Connected, Destination};
-use hyper::{Body, Method, Request, Version};
-use state_machine_future::RentToOwn;
+use crate::config::HostAndPort;
+use crate::r#async::socket::{SocketConnector, SocketStream};
+use crate::ProxyAuthorization;
+use conjure_verification_http::headers;
+use http_body_util::Empty;
+use hyper::body::Bytes;
+use hyper::client::conn::http1 as client_conn;
+use hyper::{Method, Request, Uri, Version};
+use hyper_util::client::legacy::connect::{Connected, Connection};
+use hyper_util::rt::TokioIo;
 use std::error::Error;
-use tokio::net::TcpStream;
-use tokio_io_timeout::TimeoutStream;
-use typed_headers::{HeaderMapExt, Host, ProxyAuthorization};
+use std::future::{poll_fn, Future};
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use tower_service::Service;
 
-use async::socket::{SocketConnectFuture, SocketConnector};
+/// A timeout-wrapped TCP stream with hyper-util `Connection` metadata.
+/// Any bytes buffered during a CONNECT handshake are read before the socket.
+pub struct ConnStream {
+    stream: SocketStream,
+    read_buf: Bytes,
+    proxied: bool,
+}
+
+impl Connection for ConnStream {
+    fn connected(&self) -> Connected {
+        Connected::new().proxy(self.proxied)
+    }
+}
+
+impl hyper::rt::Read for ConnStream {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        mut buf: hyper::rt::ReadBufCursor<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        if !self.read_buf.is_empty() {
+            let len = buf.remaining().min(self.read_buf.len());
+            buf.put_slice(&self.read_buf.split_to(len));
+            return Poll::Ready(Ok(()));
+        }
+        Pin::new(&mut TokioIo::new(&mut self.stream)).poll_read(cx, buf)
+    }
+}
+
+impl hyper::rt::Write for ConnStream {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<std::io::Result<usize>> {
+        Pin::new(&mut TokioIo::new(&mut self.stream)).poll_write(cx, buf)
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut TokioIo::new(&mut self.stream)).poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut TokioIo::new(&mut self.stream)).poll_shutdown(cx)
+    }
+}
 
 #[derive(Clone)]
 pub struct ProxyConnectorConfig {
@@ -31,6 +81,7 @@ pub struct ProxyConnectorConfig {
     pub credentials: Option<ProxyAuthorization>,
 }
 
+#[derive(Clone)]
 pub struct ProxyConnector {
     connector: SocketConnector,
     proxy: Option<ProxyConnectorConfig>,
@@ -42,162 +93,91 @@ impl ProxyConnector {
     }
 }
 
-impl Connect for ProxyConnector {
-    type Transport = TimeoutStream<TcpStream>;
-    type Error = Box<Error + Sync + Send>;
-    type Future = ProxyConnectFuture;
+type BoxError = Box<dyn Error + Sync + Send>;
 
-    fn connect(&self, dst: Destination) -> ProxyConnectFuture {
-        ProxyConnect::start(self.connector, self.proxy.clone(), dst)
+impl Service<Uri> for ProxyConnector {
+    type Response = ConnStream;
+    type Error = BoxError;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
     }
-}
 
-#[derive(StateMachineFuture)]
-pub enum ProxyConnect {
-    #[state_machine_future(
-        start,
-        transitions(ConnectingDirect, ConnectingHttpProxy, ConnectingHttpsProxy)
-    )]
-    Start {
-        connector: SocketConnector,
-        proxy: Option<ProxyConnectorConfig>,
-        dst: Destination,
-    },
-    #[state_machine_future(transitions(Finished))]
-    ConnectingDirect { conn: SocketConnectFuture },
-    #[state_machine_future(transitions(Finished))]
-    ConnectingHttpProxy { conn: SocketConnectFuture },
-    #[state_machine_future(transitions(TunnelHandshaking))]
-    ConnectingHttpsProxy {
-        conn: SocketConnectFuture,
-        proxy: ProxyConnectorConfig,
-        dst: Destination,
-    },
-    #[state_machine_future(transitions(TunnelConnecting))]
-    TunnelHandshaking {
-        conn: Handshake<TimeoutStream<TcpStream>, Body>,
-        proxy: ProxyConnectorConfig,
-        dst: Destination,
-    },
-    #[state_machine_future(transitions(Finished))]
-    TunnelConnecting {
-        resp: ResponseFuture,
-        conn: Connection<TimeoutStream<TcpStream>, Body>,
-    },
-    #[state_machine_future(ready)]
-    Finished((TimeoutStream<TcpStream>, Connected)),
-    #[state_machine_future(error)]
-    Failed(Box<Error + Sync + Send>),
-}
+    fn call(&mut self, dst: Uri) -> Self::Future {
+        let connector = self.connector;
+        let proxy = self.proxy.clone();
+        Box::pin(async move {
+            let scheme = dst.scheme_str().unwrap_or("");
+            let default_port = match scheme {
+                "http" => 80,
+                "https" => 443,
+                _ => return Err("invalid URI scheme".into()),
+            };
+            let host = dst.host().ok_or("missing host in URI")?;
+            let port = dst.port_u16().unwrap_or(default_port);
 
-impl PollProxyConnect for ProxyConnect {
-    fn poll_start<'a>(
-        start: &'a mut RentToOwn<'a, Start>,
-    ) -> Poll<AfterStart, Box<Error + Sync + Send>> {
-        let start = start.take();
+            match (&proxy, scheme) {
+                (Some(p), "https") => {
+                    // CONNECT tunnel through the proxy
+                    let stream = connector.connect(p.addr.host(), p.addr.port()).await?;
+                    let io = TokioIo::new(stream);
 
-        let default_port = match start.dst.scheme() {
-            "http" => 80,
-            "https" => 443,
-            _ => return Err("invalid URI scheme".into()),
-        };
+                    let (mut sender, mut conn) = client_conn::handshake(io).await?;
 
-        let after = match (start.proxy, start.dst.scheme()) {
-            (Some(proxy), "https") => ConnectingHttpsProxy {
-                conn: start
-                    .connector
-                    .connect(proxy.addr.host(), proxy.addr.port()),
-                proxy,
-                dst: start.dst,
-            }.into(),
-            (Some(proxy), _) => ConnectingHttpProxy {
-                conn: start
-                    .connector
-                    .connect(proxy.addr.host(), proxy.addr.port()),
-            }.into(),
-            (None, _) => {
-                let port = start.dst.port().unwrap_or(default_port);
-                ConnectingDirect {
-                    conn: start.connector.connect(start.dst.host(), port),
-                }.into()
+                    let connect_uri = format!("{}:{}", host, port).parse::<Uri>().unwrap();
+                    let mut request = Request::new(Empty::<Bytes>::new());
+                    *request.method_mut() = Method::CONNECT;
+                    *request.uri_mut() = connect_uri;
+                    *request.version_mut() = Version::HTTP_11;
+                    headers::set_host(request.headers_mut(), host, Some(port));
+                    if let Some((ref username, ref password)) = p.credentials {
+                        headers::set_proxy_authorization_basic(
+                            request.headers_mut(),
+                            username,
+                            password,
+                        );
+                    }
+
+                    // Sending the request only queues it; the connection must
+                    // be polled concurrently to write it and read the response.
+                    let mut response = Box::pin(sender.send_request(request));
+                    let resp = poll_fn(|cx| {
+                        let _ = conn.poll_without_shutdown(cx)?;
+                        response.as_mut().poll(cx)
+                    })
+                    .await?;
+                    if !resp.status().is_success() {
+                        return Err(format!("got status {} from HTTPS proxy", resp.status()).into());
+                    }
+
+                    // The CONNECT request is complete; take the underlying
+                    // stream back out of the connection.
+                    let parts = conn.without_shutdown().await?;
+                    let stream = parts.io.into_inner();
+                    Ok(ConnStream {
+                        stream,
+                        read_buf: parts.read_buf,
+                        proxied: false,
+                    })
+                }
+                (Some(p), _) => {
+                    let stream = connector.connect(p.addr.host(), p.addr.port()).await?;
+                    Ok(ConnStream {
+                        stream,
+                        read_buf: Bytes::new(),
+                        proxied: true,
+                    })
+                }
+                (None, _) => {
+                    let stream = connector.connect(host, port).await?;
+                    Ok(ConnStream {
+                        stream,
+                        read_buf: Bytes::new(),
+                        proxied: false,
+                    })
+                }
             }
-        };
-
-        Ok(Async::Ready(after))
-    }
-
-    fn poll_connecting_direct<'a>(
-        state: &'a mut RentToOwn<'a, ConnectingDirect>,
-    ) -> Poll<AfterConnectingDirect, Box<Error + Sync + Send>> {
-        let stream = try_ready!(state.conn.poll());
-        let connected = Connected::new();
-
-        Ok(Async::Ready(Finished((stream, connected)).into()))
-    }
-
-    fn poll_connecting_http_proxy<'a>(
-        state: &'a mut RentToOwn<'a, ConnectingHttpProxy>,
-    ) -> Poll<AfterConnectingHttpProxy, Box<Error + Sync + Send>> {
-        let stream = try_ready!(state.conn.poll());
-        let connected = Connected::new().proxy(true);
-
-        Ok(Async::Ready(Finished((stream, connected)).into()))
-    }
-
-    fn poll_connecting_https_proxy<'a>(
-        state: &'a mut RentToOwn<'a, ConnectingHttpsProxy>,
-    ) -> Poll<AfterConnectingHttpsProxy, Box<Error + Sync + Send>> {
-        let stream = try_ready!(state.conn.poll());
-        let state = state.take();
-
-        Ok(Async::Ready(
-            TunnelHandshaking {
-                conn: conn::handshake(stream),
-                proxy: state.proxy,
-                dst: state.dst,
-            }.into(),
-        ))
-    }
-
-    fn poll_tunnel_handshaking<'a>(
-        state: &'a mut RentToOwn<'a, TunnelHandshaking>,
-    ) -> Poll<AfterTunnelHandshaking, Box<Error + Sync + Send>> {
-        let (mut sender, conn) = try_ready!(state.conn.poll());
-        let state = state.take();
-
-        let dst = format!("{}:{}", state.dst.host(), state.dst.port().unwrap_or(443))
-            .parse()
-            .unwrap();
-
-        let host = Host::new(state.proxy.addr.host(), Some(state.proxy.addr.port()))?;
-
-        let mut request = Request::new(Body::empty());
-        *request.method_mut() = Method::CONNECT;
-        *request.uri_mut() = dst;
-        *request.version_mut() = Version::HTTP_11;
-        request.headers_mut().typed_insert(&host);
-        if let Some(ref auth) = state.proxy.credentials {
-            request.headers_mut().typed_insert(auth);
-        }
-
-        let resp = sender.send_request(request);
-
-        Ok(Async::Ready(TunnelConnecting { conn, resp }.into()))
-    }
-
-    fn poll_tunnel_connecting<'a>(
-        state: &'a mut RentToOwn<'a, TunnelConnecting>,
-    ) -> Poll<AfterTunnelConnecting, Box<Error + Sync + Send>> {
-        state.conn.poll_without_shutdown()?;
-        let resp = try_ready!(state.resp.poll());
-        let state = state.take();
-
-        if !resp.status().is_success() {
-            return Err(format!("got status {} from HTTPS proxy", resp.status()).into());
-        }
-
-        let conn = state.conn.into_parts().io;
-        let connected = Connected::new();
-        Ok(Async::Ready(Finished((conn, connected)).into()))
+        })
     }
 }

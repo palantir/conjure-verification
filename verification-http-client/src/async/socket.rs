@@ -12,19 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use futures::{Async, Future, Poll};
-use state_machine_future::RentToOwn;
 use std::error::Error;
 use std::io;
-use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
+use std::pin::Pin;
 use std::time::Duration;
-use std::vec;
-use tokio::net::tcp::ConnectFuture;
 use tokio::net::TcpStream;
-use tokio::timer::Timeout;
+use tokio::time::timeout;
 use tokio_io_timeout::TimeoutStream;
-use tokio_threadpool;
+
+pub type SocketStream = Pin<Box<TimeoutStream<TcpStream>>>;
 
 #[derive(Copy, Clone)]
 pub struct Timeouts {
@@ -37,108 +34,57 @@ pub struct Timeouts {
 pub struct SocketConnector(pub Timeouts);
 
 impl SocketConnector {
-    pub fn connect(&self, host: &str, port: u16) -> SocketConnectFuture {
-        SocketConnect::start(host.to_string(), port, self.0)
-    }
-}
-
-#[derive(StateMachineFuture)]
-pub enum SocketConnect {
-    #[state_machine_future(start, transitions(Connecting))]
-    Start {
-        host: String,
+    pub async fn connect(
+        &self,
+        host: &str,
         port: u16,
-        timeouts: Timeouts,
-    },
-    #[state_machine_future(transitions(Ready))]
-    Connecting {
-        addrs: vec::IntoIter<SocketAddr>,
-        cur: Timeout<ConnectFuture>,
-        cur_addr: SocketAddr,
-        timeouts: Timeouts,
-    },
-    #[state_machine_future(ready)]
-    Ready(TimeoutStream<TcpStream>),
-    #[state_machine_future(error)]
-    Failed(Box<Error + Sync + Send>),
-}
+    ) -> Result<SocketStream, Box<dyn Error + Sync + Send>> {
+        let host = host.to_string();
+        let timeouts = self.0;
 
-impl PollSocketConnect for SocketConnect {
-    fn poll_start<'a>(
-        start: &'a mut RentToOwn<'a, Start>,
-    ) -> Poll<AfterStart, Box<Error + Sync + Send>> {
-        let mut addrs = try_ready!(tokio_threadpool::blocking(|| {
-            debug!(
-                "resolving addresses, host: {}, port: {}",
-                start.host, start.port
-            );
-            (&*start.host, start.port).to_socket_addrs()
-        }))?;
-
-        let addr = match addrs.next() {
-            Some(addr) => addr,
-            None => {
-                return Err(Box::new(io::Error::new(
-                    io::ErrorKind::Other,
-                    "resolved 0 addresses from hostname",
-                )))
-            }
-        };
-        debug!("connecting to server, addr: {}", addr);
-
-        let connect = TcpStream::connect(&addr);
-        let cur = Timeout::new(connect, start.timeouts.connect);
-
-        transition!(Connecting {
-            addrs,
-            cur,
-            cur_addr: addr,
-            timeouts: start.timeouts,
+        let addrs = tokio::task::spawn_blocking(move || {
+            debug!("resolving addresses, host: {}, port: {}", host, port);
+            (&*host, port).to_socket_addrs()
         })
-    }
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn Error + Sync + Send>)??;
 
-    fn poll_connecting<'a>(
-        connecting: &'a mut RentToOwn<'a, Connecting>,
-    ) -> Poll<AfterConnecting, Box<Error + Sync + Send>> {
-        loop {
-            let r = match connecting.cur.poll() {
-                Ok(Async::Ready(stream)) => Ok(stream),
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(e) => match e.into_inner() {
-                    Some(e) => Err(e),
-                    None => Err(io::Error::new(io::ErrorKind::Other, "connection timed out")),
-                },
-            };
-
-            match r {
-                Ok(stream) => {
+        let mut last_err: Option<Box<dyn Error + Sync + Send>> = None;
+        for addr in addrs {
+            debug!("connecting to server, addr: {}", addr);
+            match timeout(timeouts.connect, TcpStream::connect(addr)).await {
+                Ok(Ok(stream)) => {
                     stream.set_nodelay(true)?;
-                    let timeout =
-                        Duration::min(connecting.timeouts.read, connecting.timeouts.write);
-                    stream.set_keepalive(Some(timeout))?;
-
+                    let keepalive = Duration::min(timeouts.read, timeouts.write);
+                    let sock_ref = socket2::SockRef::from(&stream);
+                    let mut ka = socket2::TcpKeepalive::new();
+                    ka = ka.with_time(keepalive);
+                    let _ = sock_ref.set_tcp_keepalive(&ka);
+                    debug!("connected to server, addr: {}", addr);
                     let mut stream = TimeoutStream::new(stream);
-                    stream.set_read_timeout(Some(connecting.timeouts.read));
-                    stream.set_write_timeout(Some(connecting.timeouts.write));
-                    debug!("connected to server, addr: {}", connecting.cur_addr);
-                    transition!(Ready(stream));
+                    stream.set_read_timeout(Some(timeouts.read));
+                    stream.set_write_timeout(Some(timeouts.write));
+                    return Ok(Box::pin(stream));
                 }
-                Err(e) => {
-                    debug!(
-                        "error connecting to server, addr: {}, error: {}",
-                        connecting.cur_addr, e
-                    );
-                    match connecting.addrs.next() {
-                        Some(addr) => {
-                            debug!("connecting to server, addr: {}", addr);
-                            connecting.cur_addr = addr;
-                            let connect = TcpStream::connect(&addr);
-                            connecting.cur = Timeout::new(connect, connecting.timeouts.connect);
-                        }
-                        None => return Err(Box::new(e)),
-                    }
+                Ok(Err(e)) => {
+                    debug!("error connecting to server, addr: {}, error: {}", addr, e);
+                    last_err = Some(Box::new(e));
+                }
+                Err(_) => {
+                    debug!("connection timed out, addr: {}", addr);
+                    last_err = Some(Box::new(io::Error::new(
+                        io::ErrorKind::TimedOut,
+                        "connection timed out",
+                    )));
                 }
             }
         }
+
+        Err(last_err.unwrap_or_else(|| {
+            Box::new(io::Error::new(
+                io::ErrorKind::Other,
+                "resolved 0 addresses from hostname",
+            ))
+        }))
     }
 }

@@ -1,13 +1,13 @@
 restore_registry: &RESTORE_REGISTRY
   restore_cache:
-    key: registry-v1-{{ arch }}-
+    key: registry-v2-{{ arch }}-
 save_registry: &SAVE_REGISTRY
   save_cache:
-    key: registry-v1-{{ arch }}-{{ .BuildNum }}
+    key: registry-v2-{{ arch }}-{{ .BuildNum }}
     paths:
     - ~/.cargo/registry/index
 deps_key: &DEPS_KEY
-  key: deps-v1-{{ arch }}-{{ checksum "~/rust-version" }}-{{ checksum "Cargo.lock" }}
+  key: deps-v2-{{ arch }}-{{ checksum "rust-toolchain.toml" }}-{{ checksum "Cargo.lock" }}
 restore_deps: &RESTORE_DEPS
   restore_cache:
     <<: *DEPS_KEY
@@ -19,21 +19,21 @@ save_deps: &SAVE_DEPS
     - ~/.cargo/registry/cache
 restore_rustup: &RESTORE_RUSTUP
   restore_cache:
-    key: rustup-v2-{{ arch }}-{{ checksum "/tmp/rust-toolchain" }}
+    key: rustup-v3-{{ arch }}-{{ checksum "rust-toolchain.toml" }}
 save_rustup: &SAVE_RUSTUP
   save_cache:
-    key: rustup-v2-{{ arch }}-{{ checksum "/tmp/rust-toolchain" }}
+    key: rustup-v3-{{ arch }}-{{ checksum "rust-toolchain.toml" }}
     paths:
     - ~/.rustup
     - ~/.cargo/bin
 
 
-version: 2
+version: 2.1
 jobs:
 
   cargo-build-linux:
     docker:
-    - image: circleci/rust:1.29.2
+    - image: cimg/rust:1.98.1
     environment:
       RUSTFLAGS: -D warnings
     steps:
@@ -41,7 +41,6 @@ jobs:
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
-    - run: rustup component add rustfmt-preview
     - run: cargo fmt --all -- --check
     - attach_workspace: { at: . } # need the compiled conjure IR from `gradle-build`
     - run: cargo test && cargo build --release
@@ -55,7 +54,7 @@ jobs:
 
   publish-docker:
     docker:
-    - image: circleci/openjdk:8u171-jdk
+    - image: cimg/openjdk:17.0
     steps:
     - setup_remote_docker
     - checkout
@@ -80,18 +79,16 @@ jobs:
 
   cargo-build-osx:
     macos:
-      xcode: "9.4.1"
+      xcode: "15.4.0"
     environment:
       GRADLE_OPTS: -Dorg.gradle.console=plain -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false
       FL_OUTPUT_DIR: output
-      RUST_CHANNEL: 1.29.2
-      TARGET: x86_64-apple-darwin
+      CARGO_TARGET_DIR: target/osx
     steps:
     - checkout
     - run:
         name: 'Add ~/.cargo/bin to the PATH'
-        command: echo 'export PATH="~/.cargo/bin:$PATH"' | tee -a $BASH_ENV
-    - run: echo "$RUST_CHANNEL-$TARGET" > /tmp/rust-toolchain
+        command: echo 'export PATH="$HOME/.cargo/bin:$PATH"' | tee -a $BASH_ENV
     - *RESTORE_RUSTUP
     - run:
         name: Install rustup
@@ -99,27 +96,39 @@ jobs:
           if [[ ! -e ~/.cargo/bin/rustup ]]; then
              curl https://sh.rustup.rs -sSf | sh -s -- --no-modify-path --default-toolchain none -y
           fi
-    - run: rustup default $(cat /tmp/rust-toolchain)
+    # rust-toolchain.toml pins the toolchain; `rustup show` installs it (incl. rustfmt/clippy)
+    - run: rustup show
+    # The executor is Apple Silicon; also build for Intel so we can publish a universal binary.
+    - run: rustup target add x86_64-apple-darwin
     - *SAVE_RUSTUP
     - run: rustc --version > ~/rust-version
     - *RESTORE_REGISTRY
     - *RESTORE_DEPS
-    - run: cargo build --target $TARGET --release
+    - run:
+        name: Build universal binaries
+        command: |
+          cargo build --release --target aarch64-apple-darwin --target x86_64-apple-darwin
+          mkdir -p target/osx/release
+          for bin in conjure-verification-server conjure-verification-client; do
+            lipo -create -output target/osx/release/$bin \
+              target/osx/aarch64-apple-darwin/release/$bin \
+              target/osx/x86_64-apple-darwin/release/$bin
+          done
     - *SAVE_DEPS
     - *SAVE_REGISTRY
     - persist_to_workspace:
         root: .
         paths:
-          - ./target/x86_64-apple-darwin/release/conjure-verification-server
-          - ./target/x86_64-apple-darwin/release/conjure-verification-client
+          - ./target/osx/release/conjure-verification-server
+          - ./target/osx/release/conjure-verification-client
     - store_artifacts:
-        path: ./target/x86_64-apple-darwin/release/conjure-verification-server
+        path: ./target/osx/release/conjure-verification-server
     - store_artifacts:
-        path: ./target/x86_64-apple-darwin/release/conjure-verification-client
+        path: ./target/osx/release/conjure-verification-client
 
   publish:
     docker:
-      - image: circleci/openjdk:8u171-jdk
+      - image: cimg/openjdk:17.0
     steps:
       - checkout
       - attach_workspace: { at: . }
@@ -135,7 +144,7 @@ jobs:
 
   gradle-build:
     docker:
-      - image: circleci/openjdk:8u171-jdk-node-browsers
+      - image: cimg/openjdk:17.0
     steps:
       - checkout
       - restore_cache:
@@ -165,31 +174,62 @@ jobs:
       - image: iamdanfox/docker-liche:latest
     steps:
       - checkout
-      - run: liche -d . -r . -v
+      - run: liche -d . -r . -v -x '^https://(autorelease\.general\.dmz\.palantir\.tech|github\.com)/'
+
+  circle-all:
+    docker: [{ image: 'busybox:1.36.1@sha256:6d9ac9237a84afe1516540f40a0fafdc86859b2141954b4d643af7066d598b74' }]
+    resource_class: small
+    steps:
+      - run: {command: echo "All required jobs finished successfully"}
 
 workflows:
-  version: 2
   build:
     jobs:
       - markdown:
+          name: markdown
           filters:
             tags:
               only: /.*/
       - cargo-build-linux:
-          filters: { tags: { only: /.*/ } }
+          name: cargo-build-linux
+          filters:
+            tags:
+              only: /.*/
           requires:
             - gradle-build
       - cargo-build-osx:
-          filters: { tags: { only: /.*/ } }
+          name: cargo-build-osx
+          filters:
+            tags:
+              only: /.*/
       - gradle-build:
-          filters: { tags: { only: /.*/ } }
-      - publish-docker:
+          name: gradle-build
+          filters:
+            tags:
+              only: /.*/
+      - circle-all:
+          name: circle-all
           requires:
-            - cargo-build-linux
-          filters: { tags: { only: /.*/ } }
-      - publish:
-          requires:
+            - markdown
             - cargo-build-linux
             - cargo-build-osx
             - gradle-build
-          filters: { branches: { ignore: /.*/ }, tags: { only: /.*/ } }
+          filters:
+            tags:
+              only: /.*/
+      - publish-docker:
+          name: publish-docker
+          requires:
+            - circle-all
+          filters:
+            tags:
+              only: /.*/
+      - publish:
+          name: publish
+          requires:
+            - circle-all
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/

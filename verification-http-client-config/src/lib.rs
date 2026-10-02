@@ -13,9 +13,6 @@
 // limitations under the License.
 
 extern crate serde;
-extern crate serde_humantime;
-extern crate url;
-extern crate url_serde;
 
 #[macro_use]
 extern crate serde_derive;

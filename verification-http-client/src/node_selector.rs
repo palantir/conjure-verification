@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use rand::{self, Rng};
+use rand;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use url::Url;
 
@@ -34,11 +34,16 @@ impl NodeSelector {
                 let mut url = url.clone();
                 url.path_segments_mut().unwrap().pop_if_empty();
                 Node { url }
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         // randomize node order so all services don't hotspot on one node, but we want deterministic tests
         if cfg!(not(test)) {
-            rand::thread_rng().shuffle(&mut nodes);
+            {
+                use rand::seq::SliceRandom;
+                let mut rng = rand::rng();
+                nodes.shuffle(&mut rng);
+            }
         }
 
         NodeSelector {
@@ -47,7 +52,7 @@ impl NodeSelector {
         }
     }
 
-    pub fn iter(&self) -> Option<NodeIter> {
+    pub fn iter(&self) -> Option<NodeIter<'_>> {
         if self.nodes.is_empty() {
             None
         } else {

@@ -14,13 +14,14 @@
 
 use regex::Regex;
 use std::fmt;
+use std::sync::LazyLock;
 
-lazy_static! {
-    static ref VALID_NODE: Regex = Regex::new(r"^[a-zA-Z0-9][a-zA-Z0-9.\-]*$").unwrap();
-    static ref VALID_NAME: Regex = Regex::new(r"^[a-zA-Z][a-zA-Z0-9\-]*$").unwrap();
-    static ref VALID_VERSION: Regex =
-        Regex::new(r"^[0-9]+(\.[0-9]+)*(-rc[0-9]+)?(-[0-9]+-g[a-f0-9]+)?$").unwrap();
-}
+static VALID_NODE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9][a-zA-Z0-9.\-]*$").unwrap());
+static VALID_NAME: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-zA-Z][a-zA-Z0-9\-]*$").unwrap());
+static VALID_VERSION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[0-9]+(\.[0-9]+)*(-rc[0-9]+)?(-[0-9]+-g[a-f0-9]+)?$").unwrap());
 
 #[derive(Debug, Clone)]
 pub struct UserAgent {

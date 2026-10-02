@@ -18,8 +18,6 @@ extern crate serde;
 extern crate uuid;
 
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_plain;
@@ -36,11 +34,10 @@ use std::error;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::result;
+use std::sync::LazyLock;
 use uuid::Uuid;
 
-lazy_static! {
-    static ref UPPER_CAMEL: Regex = Regex::new("^([A-Z][a-z0-9]+)+$").unwrap();
-}
+static UPPER_CAMEL: LazyLock<Regex> = LazyLock::new(|| Regex::new("^([A-Z][a-z0-9]+)+$").unwrap());
 
 /// A convenience type definition for `Results` with `Error` as the error type.
 pub type Result<T> = result::Result<T, Error>;
@@ -196,7 +193,7 @@ make_code! {
 #[derive(Debug)]
 struct Inner {
     backtraces: Vec<Backtrace>,
-    cause: Box<error::Error + Sync + Send>,
+    cause: Box<dyn error::Error + Sync + Send>,
     cause_safe: bool,
     code: Code,
     name: String,
@@ -221,7 +218,7 @@ impl Error {
     /// Constructs an Conjure error from an unsafe cause.
     pub fn new<E, T>(error: E, error_type: T) -> Error
     where
-        E: Into<Box<error::Error + Sync + Send>>,
+        E: Into<Box<dyn error::Error + Sync + Send>>,
         T: ErrorType,
     {
         Error::new_inner(error, false, error_type)
@@ -230,7 +227,7 @@ impl Error {
     /// Constructs an Conjure error from a safe cause.
     pub fn new_safe<E, T>(error: E, error_type: T) -> Error
     where
-        E: Into<Box<error::Error + Sync + Send>>,
+        E: Into<Box<dyn error::Error + Sync + Send>>,
         T: ErrorType,
     {
         Error::new_inner(error, true, error_type)
@@ -238,7 +235,7 @@ impl Error {
 
     fn new_inner<E, T>(cause: E, cause_safe: bool, error_type: T) -> Error
     where
-        E: Into<Box<error::Error + Sync + Send>>,
+        E: Into<Box<dyn error::Error + Sync + Send>>,
         T: ErrorType,
     {
         let inner = Inner {
@@ -261,7 +258,7 @@ impl Error {
     /// A convenience function to construct a `Code::Internal` error from an unsafe cause.
     pub fn internal<E>(error: E) -> Error
     where
-        E: Into<Box<error::Error + Sync + Send>>,
+        E: Into<Box<dyn error::Error + Sync + Send>>,
     {
         Error::new(error, Code::Internal)
     }
@@ -269,7 +266,7 @@ impl Error {
     /// A convenience function to construct a `Code::Internal` error from an unsafe cause.
     pub fn internal_safe<E>(error: E) -> Error
     where
-        E: Into<Box<error::Error + Sync + Send>>,
+        E: Into<Box<dyn error::Error + Sync + Send>>,
     {
         Error::new_safe(error, Code::Internal)
     }
@@ -277,7 +274,7 @@ impl Error {
     /// A convenience function to construct a `Code::PermissionDenied` error from an unsafe cause.
     pub fn permission_denied<E>(error: E) -> Error
     where
-        E: Into<Box<error::Error + Sync + Send>>,
+        E: Into<Box<dyn error::Error + Sync + Send>>,
     {
         Error::new(error, Code::PermissionDenied)
     }
@@ -285,7 +282,7 @@ impl Error {
     /// A convenience function to construct a `Code::PermissionDenied` error from a safe cause.
     pub fn permission_denied_safe<E>(error: E) -> Error
     where
-        E: Into<Box<error::Error + Sync + Send>>,
+        E: Into<Box<dyn error::Error + Sync + Send>>,
     {
         Error::new_safe(error, Code::PermissionDenied)
     }
@@ -381,7 +378,7 @@ impl Error {
     }
 
     /// Returns the error's cause.
-    pub fn cause(&self) -> &(error::Error + 'static + Sync + Send) {
+    pub fn cause(&self) -> &(dyn error::Error + 'static + Sync + Send) {
         &*self.0.cause
     }
 

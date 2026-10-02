@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::value::ConjureValue;
+use crate::test_spec::EndpointName;
+use conjure_verification_common::conjure::value::ConjureValue;
 use serde_json;
 use std::fmt::Display;
-use test_spec::EndpointName;
 
 #[derive(ErrorType)]
 #[error_type(namespace = "ConjureVerification")]

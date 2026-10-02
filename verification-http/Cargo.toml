@@ -1,18 +1,19 @@
 [package]
 name = "conjure-verification-http"
+edition = "2021"
 version = "0.1.0"
 authors = ["Steven Fackler <sfackler@palantir.com>", "Dan Sanduleac <dsanduleac@palantir.com>"]
 license-file = "../LICENSE"
 
 [dependencies]
+base64 = "0.22"
+httpdate = "1"
 conjure-verification-error = { path = "../verification-error" }
 conjure-verification-error-derive = { path = "../verification-error-derive" }
 
-bytes = "0.4"
-http = "0.1"
-lazy_static = "1.0"
+bytes = "1"
+http = "1"
 mime = "0.3"
 serde = "1.0"
 serde_json = "1.0"
-typed-headers = "0.1"
-url = "1.0"
+url = "2"

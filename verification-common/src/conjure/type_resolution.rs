@@ -15,11 +15,11 @@
 //! Converts named and anonymous Conjure Types into ResolvedTypes (which no longer contain
 //! references/aliases).
 
-use conjure::ir;
-use conjure::ir::Type;
-use conjure::ir::TypeDefinition;
-use conjure::resolved_type::ResolvedType;
-use conjure::resolved_type::*;
+use crate::conjure::ir;
+use crate::conjure::ir::Type;
+use crate::conjure::ir::TypeDefinition;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::resolved_type::*;
 
 /// Recursively resolve references and aliases to get to the real types.
 pub fn resolve_type(types: &[TypeDefinition], t: &Type) -> ResolvedType {
@@ -50,7 +50,8 @@ pub fn resolve_type(types: &[TypeDefinition], t: &Type) -> ResolvedType {
                     "Map key type should be primitive or enum but found: {:?}",
                     it
                 ),
-            }).into(),
+            })
+            .into(),
             value_type: resolve_type(types, &value_type).into(),
         }),
     }

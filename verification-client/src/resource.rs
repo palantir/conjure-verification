@@ -15,20 +15,22 @@
 use std::collections::HashMap;
 use std::string::ToString;
 
+use conjure_verification_http::headers;
 use either::{Either, Left, Right};
 use hyper::header::HeaderValue;
 use hyper::header::ACCEPT;
 use hyper::Method;
 use hyper::StatusCode;
+use mime::Mime;
 use mime::APPLICATION_JSON;
 use mime::APPLICATION_OCTET_STREAM;
 use serde_json;
-use typed_headers::{ContentType, HeaderMapExt};
-use zipkin::Endpoint;
-use zipkin::Tracer;
 
-use conjure::resolved_type::ResolvedType;
-use conjure::value::*;
+use crate::errors::*;
+use crate::test_spec::*;
+use conjure_verification_common::conjure::resolved_type::ResolvedType;
+use conjure_verification_common::conjure::value::*;
+use conjure_verification_common::more_serde_json;
 use conjure_verification_common::type_mapping::ParamTypes;
 use conjure_verification_common::type_mapping::TestType;
 use conjure_verification_error::Error;
@@ -45,17 +47,14 @@ use conjure_verification_http_client::user_agent::Agent;
 use conjure_verification_http_client::user_agent::UserAgent;
 use conjure_verification_http_client::Client;
 use conjure_verification_http_server::RouteWithOptions;
-use errors::*;
-use more_serde_json;
-use test_spec::*;
 
 use self::client_config::ServiceConfig;
 use self::client_config::ServiceDiscoveryConfig;
+use derive_more::From;
+use std::sync::LazyLock;
 
-lazy_static! {
-    static ref USER_AGENT: UserAgent =
-        UserAgent::new(Agent::new("conjure-verification-client", "0.0.0"));
-}
+static USER_AGENT: LazyLock<UserAgent> =
+    LazyLock::new(|| UserAgent::new(Agent::new("conjure-verification-client", "0.0.0")));
 
 pub struct VerificationClientResource {
     test_cases: Box<ServerTestCases>,
@@ -135,7 +134,10 @@ impl VerificationClientResource {
     ) -> Result<()> {
         let test_body_str = positive.0;
         let response = builder
-            .body(BytesBody::new(test_body_str.as_str(), APPLICATION_JSON))
+            .body(BytesBody::new(
+                test_body_str.clone().into_bytes(),
+                APPLICATION_JSON,
+            ))
             .send()
             .map_err(|e| {
                 // Unpack error cause to expose it to user.
@@ -158,10 +160,8 @@ impl VerificationClientResource {
         }
 
         // Have to save this before the response is consumed by `Response::body`
-        let content_type = response
-            .headers()
-            .typed_get::<ContentType>()
-            .map_err(Error::internal_safe)?;
+        let content_type: Option<Mime> =
+            headers::get_content_type(response.headers()).map_err(Error::internal_safe)?;
 
         let conjure_type = get_endpoint(&self.param_types[&TestType::Body], &endpoint)?;
         let expected_body = deserialize_expected_value(
@@ -188,14 +188,14 @@ impl VerificationClientResource {
             &content_type,
             &mut vec![APPLICATION_JSON, APPLICATION_OCTET_STREAM]
                 .into_iter()
-                .map(|mime| Some(ContentType(mime))),
+                .map(Some),
         )?;
 
         // We deserialize into serde_json::Value first because .body()'s return type needs
         // to be Deserialize, but the ConjureValue deserializer is a DeserializeSeed
         let response_body;
         let response_body_value: serde_json::Value;
-        if content_type.unwrap() == ContentType(APPLICATION_JSON) {
+        if content_type.as_ref() == Some(&APPLICATION_JSON) {
             response_body_value = response.body()?;
             response_body = VerificationClientResource::try_parse_response_body(
                 conjure_type,
@@ -277,8 +277,8 @@ impl VerificationClientResource {
     }
 
     /// Assert content-type header matches one of the expected ones.
-    fn assert_content_type<ExpectedTypes: Iterator<Item = Option<ContentType>>>(
-        response_content_type: &Option<ContentType>,
+    fn assert_content_type<ExpectedTypes: Iterator<Item = Option<Mime>>>(
+        response_content_type: &Option<Mime>,
         expected_content_types: &mut ExpectedTypes,
     ) -> Result<()> {
         if expected_content_types.any(|expected| expected == *response_content_type) {
@@ -301,7 +301,6 @@ impl VerificationClientResource {
         Client::new_static(
             service_name,
             USER_AGENT.clone(),
-            &Tracer::builder().build(Endpoint::builder().build()),
             &ServiceDiscoveryConfig::builder()
                 .service(
                     service_name,
@@ -315,8 +314,10 @@ impl VerificationClientResource {
                                     url: base_url.to_string(),
                                 },
                             )
-                        })?]).build(),
-                ).build(),
+                        })?])
+                        .build(),
+                )
+                .build(),
         )
     }
 }
@@ -337,7 +338,7 @@ fn deserialize_expected_value(
 
 /// The full index among `PositiveAndNegativeTests` where positives start at index 0, and after them
 /// come the negative tests.
-#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, Display)]
+#[derive(Debug, Eq, Ord, PartialOrd, PartialEq, From, Hash, derive_more::Display)]
 pub struct TestIndex(usize);
 
 fn get_test_case_at_index(

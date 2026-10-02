@@ -13,13 +13,13 @@
 // limitations under the License.
 use bytes::Bytes;
 use conjure_verification_error::Result;
+use conjure_verification_http::headers;
 use conjure_verification_http::request::{Format, Request};
 use conjure_verification_http::response::IntoResponse;
 use conjure_verification_http::response::{Body, Response};
 use conjure_verification_http::SerializableFormat;
 use http::header::HeaderValue;
 use http::StatusCode;
-use typed_headers::{ContentLength, ContentType, HeaderMapExt};
 
 pub struct RawJson {
     pub data: Bytes,
@@ -31,15 +31,11 @@ impl IntoResponse for RawJson {
         let format = *request.response_format(&[SerializableFormat::Json])?;
 
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(format.mime().clone()));
+        headers::set_content_type(&mut response.headers, format.mime());
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
-        response
-            .headers
-            .typed_insert(&ContentLength(self.data.len() as u64));
+        headers::set_content_length(&mut response.headers, self.data.len() as u64);
         response.body = Body::Fixed(self.data);
         Ok(response)
     }

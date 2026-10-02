@@ -33,7 +33,8 @@ fn basic_struct() {
   "type": "thingy",
   "fizzBuzz": 15
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo {
             type_: "thingy".to_string(),
             fizz_buzz: 15,
@@ -46,7 +47,8 @@ fn basic_struct() {
   "fizzBuzz": 15,
   "type": "thingy"
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo {
             type_: "thingy".to_string(),
             fizz_buzz: 15,
@@ -68,7 +70,8 @@ fn optional_field() {
   "type": "thingy",
   "fizzBuzz": 15
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo {
             type_: Some("thingy".to_string()),
             fizz_buzz: 15,
@@ -80,7 +83,8 @@ fn optional_field() {
             r#"{
   "fizzBuzz": 15
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo {
             type_: None,
             fizz_buzz: 15,
@@ -93,7 +97,8 @@ fn optional_field() {
   "type": null,
   "fizzBuzz": 15
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo {
             type_: None,
             fizz_buzz: 15,
@@ -115,7 +120,8 @@ fn generic_struct() {
   "type": "thingy",
   "fizzBuzz": 15
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo {
             type_: "thingy".to_string(),
             fizz_buzz: 15,
@@ -154,7 +160,8 @@ fn union() {
   "type": "bar",
   "bar": "hello"
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo::Bar("hello".to_string())
     );
 
@@ -164,7 +171,8 @@ fn union() {
   "bar": "hello",
   "type": "bar"
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo::Bar("hello".to_string())
     );
 
@@ -176,7 +184,8 @@ fn union() {
     "foo": 15
   }
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo::FizzBuzz(FizzBuzz { foo: 15 })
     );
 }
@@ -194,7 +203,8 @@ fn single_variant_union() {
   "type": "bar",
   "bar": "hello"
 }"#,
-        ).unwrap(),
+        )
+        .unwrap(),
         Foo::Bar("hello".to_string())
     );
 }

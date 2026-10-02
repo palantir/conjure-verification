@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use conjure::ir::PrimitiveType;
-use conjure::resolved_type::builders::*;
-use conjure::resolved_type::FieldDefinition;
-use conjure::resolved_type::UnionDefinition;
-use conjure::value::*;
+use crate::conjure::ir::PrimitiveType;
+use crate::conjure::resolved_type::builders::*;
+use crate::conjure::resolved_type::FieldDefinition;
+use crate::conjure::resolved_type::UnionDefinition;
+use crate::conjure::value::*;
 use serde::de::DeserializeSeed;
 use serde::de::Error;
 use serde::de::MapAccess;

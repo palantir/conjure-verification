@@ -23,6 +23,7 @@ pub use serde::de::DeserializeSeed;
 use self::double::ConjureDouble;
 use chrono::DateTime;
 use chrono::FixedOffset;
+use derive_new::new;
 use serde_value::Value;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;

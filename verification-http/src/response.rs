@@ -11,18 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use crate::error::ConjureVerificationError;
+use crate::headers;
+use crate::request::{Format, Request};
+use crate::SerializableFormat;
 use bytes::Bytes;
 use conjure_verification_error::{Error, Result};
-use error::ConjureVerificationError;
 use http::header::{HeaderMap, HeaderValue};
 use http::StatusCode;
 use serde::Serialize;
 use serde_json;
 use std::io::Write;
-use typed_headers::{ContentLength, ContentType, HeaderMapExt};
-
-use request::{Format, Request};
-use SerializableFormat;
 
 pub struct Response {
     pub status: StatusCode,
@@ -43,11 +42,11 @@ impl Response {
 pub enum Body {
     Empty,
     Fixed(Bytes),
-    Streaming(Box<WriteBody>),
+    Streaming(Box<dyn WriteBody + Send>),
 }
 
-pub trait WriteBody {
-    fn write_body(&mut self, w: &mut Write) -> Result<()>;
+pub trait WriteBody: Send {
+    fn write_body(&mut self, w: &mut dyn Write) -> Result<()>;
 }
 
 pub trait IntoResponse {
@@ -72,12 +71,8 @@ where
         };
 
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(format.mime().clone()));
-        response
-            .headers
-            .typed_insert(&ContentLength(buf.len() as u64));
+        headers::set_content_type(&mut response.headers, format.mime());
+        headers::set_content_length(&mut response.headers, buf.len() as u64);
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
@@ -90,15 +85,13 @@ pub struct StreamedSerializable<T>(pub T);
 
 impl<T> IntoResponse for StreamedSerializable<T>
 where
-    T: 'static + Serialize,
+    T: 'static + Serialize + Send,
 {
     fn into_response(self, request: &Request) -> Result<Response> {
         let format = *request.response_format(&[SerializableFormat::Json])?;
 
         let mut response = Response::new(StatusCode::OK);
-        response
-            .headers
-            .typed_insert(&ContentType(format.mime().clone()));
+        headers::set_content_type(&mut response.headers, format.mime());
         response
             .headers
             .append("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
@@ -117,9 +110,9 @@ struct SerializableBody<T> {
 
 impl<T> WriteBody for SerializableBody<T>
 where
-    T: Serialize,
+    T: Serialize + Send,
 {
-    fn write_body(&mut self, res: &mut Write) -> Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> Result<()> {
         match self.format {
             SerializableFormat::Json => serde_json::to_writer(res, &self.body).map_err(|e| {
                 if e.is_io() {

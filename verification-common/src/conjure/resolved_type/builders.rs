@@ -14,14 +14,14 @@
 
 //! Convenient methods that construct [ResolvedType]s.
 
-use conjure::ir;
-use conjure::resolved_type::FieldDefinition;
-use conjure::resolved_type::ListType;
-use conjure::resolved_type::MapType;
-use conjure::resolved_type::ObjectDefinition;
-use conjure::resolved_type::OptionalType;
-use conjure::resolved_type::ResolvedType;
-use conjure::resolved_type::SetType;
+use crate::conjure::ir;
+use crate::conjure::resolved_type::FieldDefinition;
+use crate::conjure::resolved_type::ListType;
+use crate::conjure::resolved_type::MapType;
+use crate::conjure::resolved_type::ObjectDefinition;
+use crate::conjure::resolved_type::OptionalType;
+use crate::conjure::resolved_type::ResolvedType;
+use crate::conjure::resolved_type::SetType;
 
 const PACKAGE: &'static str = "com.palantir.package";
 
@@ -49,7 +49,8 @@ pub fn enum_definition(name: &str, variants: &[&str]) -> ResolvedType {
             .iter()
             .map(|value| ir::EnumValueDefinition {
                 value: value.to_string(),
-            }).collect(),
+            })
+            .collect(),
     })
 }
 
