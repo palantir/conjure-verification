@@ -176,6 +176,12 @@ jobs:
       - checkout
       - run: liche -d . -r . -v -x '^https://(autorelease\.general\.dmz\.palantir\.tech|github\.com)/'
 
+  circle-all:
+    docker: [{ image: 'busybox:1.36.1@sha256:6d9ac9237a84afe1516540f40a0fafdc86859b2141954b4d643af7066d598b74' }]
+    resource_class: small
+    steps:
+      - run: {command: echo "All required jobs finished successfully"}
+
 workflows:
   build:
     jobs:
@@ -201,19 +207,27 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - circle-all:
+          name: circle-all
+          requires:
+            - markdown
+            - cargo-build-linux
+            - cargo-build-osx
+            - gradle-build
+          filters:
+            tags:
+              only: /.*/
       - publish-docker:
           name: publish-docker
           requires:
-            - cargo-build-linux
+            - circle-all
           filters:
             tags:
               only: /.*/
       - publish:
           name: publish
           requires:
-            - cargo-build-linux
-            - cargo-build-osx
-            - gradle-build
+            - circle-all
           filters:
             branches:
               ignore: /.*/
