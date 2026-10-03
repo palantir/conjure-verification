@@ -74,6 +74,7 @@ public final class CompileVerificationClientTestCasesJson {
                 .filter(path -> path.getFileName().toString().endsWith(".yml"))
                 .map(Path::toFile)
                 .collect(Collectors.toList());
+        @SuppressWarnings("for-rollout:deprecation")
         ConjureDefinition ir = Conjure.parse(files);
 
         checkEndpointNamesMatchPaths(ir);
@@ -143,7 +144,7 @@ public final class CompileVerificationClientTestCasesJson {
                                 .map(TestCase::get)
                                 .collect(Collectors.toList()))
                         .build()));
-        return builder.build();
+        return builder.buildOrThrow();
     }
 
     private static EndpointName endpointName(String prefix, ConjureTypeString type) {

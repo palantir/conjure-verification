@@ -53,7 +53,7 @@ public final class GenerateClientServices {
                 fileName,
                 createConjureYmlBuilder()
                         .put("services", ImmutableMap.of(serviceName, service))
-                        .build());
+                        .buildOrThrow());
     }
 
     private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {
@@ -93,6 +93,6 @@ public final class GenerateClientServices {
                 "package", "com.palantir.conjure.verification.client",
                 "default-auth", "none",
                 "base-path", "/body",
-                "endpoints", endpoints.build());
+                "endpoints", endpoints.buildOrThrow());
     }
 }

@@ -83,6 +83,7 @@ public final class CompileVerificationServerTestCasesJson {
                 .filter(path -> path.getFileName().toString().endsWith(".yml"))
                 .map(Path::toFile)
                 .collect(Collectors.toList());
+        @SuppressWarnings("for-rollout:deprecation")
         ConjureDefinition ir = Conjure.parse(files);
 
         checkEndpointNamesMatchPaths(ir);
@@ -168,7 +169,7 @@ public final class CompileVerificationServerTestCasesJson {
                                 .map(TestCase::get)
                                 .collect(Collectors.toList()))
                         .build()));
-        return builder.build();
+        return builder.buildOrThrow();
     }
 
     private static Map<EndpointName, List<String>> generateSingleHeaderParamTestCases(
@@ -177,7 +178,7 @@ public final class CompileVerificationServerTestCasesJson {
         singleHeaderParam.forEach(t -> builder.put(
                 endpointName("header", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
-        return builder.build();
+        return builder.buildOrThrow();
     }
 
     private static Map<EndpointName, List<String>> generateSingleQueryParamTestCases(
@@ -186,7 +187,7 @@ public final class CompileVerificationServerTestCasesJson {
         singleQueryParam.forEach(t -> builder.put(
                 endpointName("queryParam", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
-        return builder.build();
+        return builder.buildOrThrow();
     }
 
     private static Map<EndpointName, List<String>> generateSinglePathParamTestCases(
@@ -195,7 +196,7 @@ public final class CompileVerificationServerTestCasesJson {
         singlePathParam.forEach(t -> builder.put(
                 endpointName("pathParam", t.getType()),
                 t.getPositive().stream().map(TestCase::get).collect(Collectors.toList())));
-        return builder.build();
+        return builder.buildOrThrow();
     }
 
     private static EndpointName endpointName(String prefix, ConjureTypeString type) {

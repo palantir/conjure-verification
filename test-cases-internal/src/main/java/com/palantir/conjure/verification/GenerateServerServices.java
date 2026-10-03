@@ -79,8 +79,8 @@ public final class GenerateServerServices {
                                         .put("endpoint", "testCases.EndpointName")
                                         .put("index", "integer")
                                         .put("body", "any")
-                                        .build())
-                        .build());
+                                        .buildOrThrow())
+                        .buildOrThrow());
 
         body.stream()
                 .map(BodyTests::getType)
@@ -102,7 +102,7 @@ public final class GenerateServerServices {
                 "package", "com.palantir.conjure.verification.server",
                 "default-auth", "none",
                 "base-path", "/confirm",
-                "endpoints", endpoints.build());
+                "endpoints", endpoints.buildOrThrow());
     }
 
     private static void writeServiceDefinition(File fileName, String serviceName, Map<String, Object> service)
@@ -111,7 +111,7 @@ public final class GenerateServerServices {
                 fileName,
                 createConjureYmlBuilder()
                         .put("services", ImmutableMap.of(serviceName, service))
-                        .build());
+                        .buildOrThrow());
     }
 
     private static ImmutableMap.Builder<String, Object> createConjureYmlBuilder() {
@@ -151,7 +151,7 @@ public final class GenerateServerServices {
                 "package", "com.palantir.conjure.verification.server",
                 "default-auth", "none",
                 "base-path", "/body",
-                "endpoints", endpoints.build());
+                "endpoints", endpoints.buildOrThrow());
     }
 
     private static Map<String, Object> generateSingleHeaderService(List<SingleHeaderParamTests> testCases) {
@@ -184,7 +184,7 @@ public final class GenerateServerServices {
                 "package", "com.palantir.conjure.verification.server",
                 "default-auth", "none",
                 "base-path", "/single-header-param",
-                "endpoints", endpoints.build());
+                "endpoints", endpoints.buildOrThrow());
     }
 
     private static Map<String, Object> generateSinglePathParamService(List<SinglePathParamTests> testCases) {
@@ -210,7 +210,7 @@ public final class GenerateServerServices {
                 "package", "com.palantir.conjure.verification.server",
                 "default-auth", "none",
                 "base-path", "/single-path-param",
-                "endpoints", endpoints.build());
+                "endpoints", endpoints.buildOrThrow());
     }
 
     private static Map<String, Object> generateSingleQueryParamService(List<SingleQueryParamTests> testCases) {
@@ -243,6 +243,6 @@ public final class GenerateServerServices {
                 "package", "com.palantir.conjure.verification.server",
                 "default-auth", "none",
                 "base-path", "/single-query-param",
-                "endpoints", endpoints.build());
+                "endpoints", endpoints.buildOrThrow());
     }
 }
