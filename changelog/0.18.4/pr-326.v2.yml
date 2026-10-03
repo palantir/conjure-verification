@@ -1,6 +1,0 @@
-type: fix
-fix:
-  description: Conjure bindings for AutoDeserializeServicecorrectly correctly reflect
-    the the verifier's implementation
-  links:
-  - https://github.com/palantir/conjure-verification/pull/326
