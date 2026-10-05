@@ -24,6 +24,8 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.io.MoreFiles;
 import com.palantir.conjure.defs.Conjure;
+import com.palantir.conjure.defs.ConjureArgs;
+import com.palantir.conjure.defs.SafetyDeclarationRequirements;
 import com.palantir.conjure.java.serialization.ObjectMappers;
 import com.palantir.conjure.spec.ConjureDefinition;
 import com.palantir.conjure.spec.ServiceDefinition;
@@ -83,7 +85,10 @@ public final class CompileVerificationServerTestCasesJson {
                 .filter(path -> path.getFileName().toString().endsWith(".yml"))
                 .map(Path::toFile)
                 .collect(Collectors.toList());
-        ConjureDefinition ir = Conjure.parse(files);
+        ConjureDefinition ir = Conjure.parse(ConjureArgs.builder()
+                .definitions(files)
+                .safetyDeclarations(SafetyDeclarationRequirements.ALLOWED)
+                .build());
 
         checkEndpointNamesMatchPaths(ir);
         checkNoLeftovers(
